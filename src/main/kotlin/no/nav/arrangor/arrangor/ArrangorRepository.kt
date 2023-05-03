@@ -6,6 +6,7 @@ import no.nav.arrangor.utils.sqlParameters
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 import java.util.*
 
 @Repository
@@ -31,7 +32,8 @@ class ArrangorRepository(
                 :overordnet_arrangor_id)
         ON CONFLICT (organisasjonsnummer) DO UPDATE SET
                 navn     							 = :navn,
-                overordnet_arrangor_id 			     = :overordnet_arrangor_id
+                overordnet_arrangor_id 			     = :overordnet_arrangor_id,
+                last_synchronized                    = current_timestamp
         RETURNING *
         """.trimIndent()
 
@@ -59,6 +61,23 @@ class ArrangorRepository(
         sqlParameters("organisasjonsnummer" to orgNr),
         rowMapper
     ).firstOrNull()
+
+    fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<Arrangor> {
+        val sql = """
+        SELECT *
+        FROM arrangor
+        WHERE last_synchronized < :synchronized_before
+        ORDER BY last_synchronized asc
+        limit :limit
+        """.trimIndent()
+
+        val parameters = sqlParameters(
+            "limit" to maxSize,
+            "synchronized_before" to synchronizedBefore
+        )
+
+        return template.query(sql, parameters, rowMapper)
+    }
 
     data class ArrangorInput(
         val id: UUID = UUID.randomUUID(),

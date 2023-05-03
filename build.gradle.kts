@@ -16,6 +16,7 @@ repositories {
 }
 
 val logstashEncoderVersion = "7.3"
+val shedlockVersion = "5.2.0"
 val okHttpVersion = "4.10.0"
 val tokenSupportVersion = "3.0.10"
 val arrowVersion = "1.2.0-RC"
@@ -32,6 +33,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
+    implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")

@@ -40,6 +40,7 @@ class IntegrationTest {
     @AfterEach
     fun cleanDatabase() {
         DbTestDataUtils.cleanDatabase(postgresDataSource)
+        mockAmtEnhetsregiserServer.resetHttpServer()
     }
 
     companion object {
