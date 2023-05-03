@@ -53,6 +53,7 @@ spec:
     enabled: true
   kafka:
     pool: nav-dev
+  leaderElection: true
   accessPolicy:
     inbound:
       rules:
