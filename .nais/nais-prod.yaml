@@ -1,0 +1,69 @@
+kind: Application
+apiVersion: nais.io/v1alpha1
+metadata:
+  name: amt-arrangor
+  namespace: amt
+  labels:
+    team: amt
+spec:
+  image: {{image}}
+  gcp:
+    sqlInstances:
+      - name: amt-arrangor
+        type: POSTGRES_14
+        tier: db-custom-2-5120
+        databases:
+          - name: amt-arrangor
+            envVarPrefix: DB
+        diskAutoresize: true
+        highAvailability: true
+        insights:
+          enabled: true
+  port: 8080
+  ingresses:
+    - https://amt-arrangor.intern.nav.no
+  prometheus:
+    enabled: true
+    path: /internal/prometheus
+  readiness:
+    path: /internal/health/readiness
+    initialDelay: 20
+  liveness:
+    path: /internal/health/liveness
+    initialDelay: 20
+  startup:
+    path: /internal/health/liveness
+    initialDelay: 10
+    failureThreshold: 30
+    periodSeconds: 5
+  replicas:
+    min: 2
+    max: 3
+    cpuThresholdPercentage: 75
+  resources:
+    limits:
+      cpu: "1"
+      memory: 2048Mi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  kafka:
+    pool: nav-prod
+  tokenx:
+    enabled: true
+  accessPolicy:
+    inbound:
+      rules:
+        - application: amt-tiltak
+        - application: amt-tiltaksarrangor-bff
+    outbound:
+      rules:
+        - application: amt-enhetsregister
+          namespace: amt
+          cluster: prod-gcp
+        - application: amt-altinn-acl
+          namespace: amt
+          cluster: prod-gcp
+        - application: amt-tiltak
+          namespace: amt
+          cluster: prod-gcp
