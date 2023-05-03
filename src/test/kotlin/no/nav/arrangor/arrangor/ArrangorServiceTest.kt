@@ -5,9 +5,7 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.arrangor.domain.Arrangor
 import no.nav.arrangor.client.enhetsregister.Virksomhet
-import no.nav.arrangor.testutils.DbTestDataUtils
 import no.nav.arrangor.utils.JsonUtils
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDateTime
@@ -76,6 +74,5 @@ class ArrangorServiceTest : IntegrationTest() {
 
         response.navn shouldBe "nyttNavn"
         response.overordnetArrangorId shouldNotBe null
-
     }
 }
