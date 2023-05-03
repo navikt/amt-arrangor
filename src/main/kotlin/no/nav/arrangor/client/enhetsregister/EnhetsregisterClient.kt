@@ -24,6 +24,7 @@ class EnhetsregisterClient(
         val start = Instant.now()
         val request = Request.Builder()
             .url("$baseUrl/api/enhet/$orgNr")
+            .addHeader("Authorization", "Bearer ${tokenProvider.get()}")
             .get()
             .build()
 
