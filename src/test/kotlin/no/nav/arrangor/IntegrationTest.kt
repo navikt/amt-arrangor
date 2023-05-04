@@ -19,13 +19,15 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.*
 
 @ActiveProfiles("test")
 @TestConfiguration("application-test.properties")
 @ExtendWith(SpringExtension::class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = [ArrangorApplication::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class IntegrationTest {
 
     @LocalServerPort
@@ -61,12 +63,17 @@ class IntegrationTest {
             registry.add("amt-enhetsregister.url") { mockAmtEnhetsregiserServer.serverUrl() }
             registry.add("amt-enhetsregister.scope") { "test.enhetsregister.scope" }
 
-            val container = SingletonPostgresContainer.getContainer()
+            SingletonPostgresContainer.getContainer().also {
+                registry.add("spring.datasource.url") { it.jdbcUrl }
+                registry.add("spring.datasource.username") { it.username }
+                registry.add("spring.datasource.password") { it.password }
+                registry.add("spring.datasource.hikari.maximum-pool-size") { 3 }
+            }
 
-            registry.add("spring.datasource.url") { container.jdbcUrl }
-            registry.add("spring.datasource.username") { container.username }
-            registry.add("spring.datasource.password") { container.password }
-            registry.add("spring.datasource.hikari.maximum-pool-size") { 3 }
+            KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.0.1")).apply {
+                start()
+                System.setProperty("KAFKA_BROKERS", bootstrapServers)
+            }
         }
     }
 

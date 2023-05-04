@@ -16,12 +16,14 @@ repositories {
 }
 
 val logstashEncoderVersion = "7.3"
+val kafkaClientsVersion = "3.4.0"
 val shedlockVersion = "5.2.0"
 val okHttpVersion = "4.10.0"
 val tokenSupportVersion = "3.0.10"
 val arrowVersion = "1.2.0-RC"
 val kotestVersion = "5.5.5"
 val testcontainersVersion = "1.17.6"
+val mockkVersion = "1.13.5"
 
 val commonVersion = "3.2023.04.18_10.07-0576b4e09008"
 
@@ -35,6 +37,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-configuration-processor")
     implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
+    implementation("org.springframework.kafka:spring-kafka")
+    implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion")
+
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
@@ -47,7 +52,6 @@ dependencies {
     implementation("com.github.navikt.common-java-modules:token-client:$commonVersion")
     implementation("com.github.navikt.common-java-modules:rest:$commonVersion")
     implementation("com.github.navikt.common-java-modules:job:$commonVersion")
-    implementation("com.github.navikt.common-java-modules:kafka:$commonVersion")
 
     implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
 
@@ -66,6 +70,7 @@ dependencies {
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")
     testImplementation("org.awaitility:awaitility")
+    testImplementation("io.mockk:mockk:$mockkVersion")
 }
 
 tasks.test {

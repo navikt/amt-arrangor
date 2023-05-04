@@ -1,6 +1,6 @@
 package no.nav.arrangor.arrangor
 
-import no.nav.arrangor.arrangor.domain.Arrangor
+import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.utils.getNullableUUID
 import no.nav.arrangor.utils.sqlParameters
 import org.springframework.jdbc.core.RowMapper
@@ -15,7 +15,7 @@ class ArrangorRepository(
 ) {
 
     private val rowMapper = RowMapper { rs, _ ->
-        Arrangor(
+        ArrangorDto(
             id = UUID.fromString(rs.getString("id")),
             navn = rs.getString("navn"),
             organisasjonsnummer = rs.getString("organisasjonsnummer"),
@@ -23,7 +23,7 @@ class ArrangorRepository(
         )
     }
 
-    fun insertOrUpdateArrangor(arrangorInput: ArrangorInput): Arrangor {
+    fun insertOrUpdateArrangor(arrangorInput: ArrangorDto): ArrangorDto {
         val sql = """
         INSERT INTO arrangor(id, navn, organisasjonsnummer, overordnet_arrangor_id)
         VALUES (:id,
@@ -50,19 +50,21 @@ class ArrangorRepository(
             .first()
     }
 
-    fun get(id: UUID): Arrangor = template.query(
+    fun get(id: UUID): ArrangorDto = template.query(
         "SELECT * FROM arrangor WHERE id = :id",
-        sqlParameters("id" to id.toString()),
+        sqlParameters("id" to id),
         rowMapper
     ).first()
 
-    fun get(orgNr: String): Arrangor? = template.query(
+    fun get(orgNr: String): ArrangorDto? = template.query(
         "SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
         sqlParameters("organisasjonsnummer" to orgNr),
         rowMapper
     ).firstOrNull()
 
-    fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<Arrangor> {
+    fun getAll(): List<ArrangorDto> = template.query("SELECT * FROM arrangor", rowMapper)
+
+    fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<ArrangorDto> {
         val sql = """
         SELECT *
         FROM arrangor
@@ -79,10 +81,18 @@ class ArrangorRepository(
         return template.query(sql, parameters, rowMapper)
     }
 
-    data class ArrangorInput(
+    data class ArrangorDto(
         val id: UUID = UUID.randomUUID(),
         val navn: String,
         val organisasjonsnummer: String,
         val overordnetArrangorId: UUID?
-    )
+    ) {
+        fun toDomain(deltakerlister: Set<UUID>): Arrangor = Arrangor(
+            id = id,
+            navn = navn,
+            organisasjonsnummer = organisasjonsnummer,
+            overordnetArrangorId = overordnetArrangorId,
+            deltakerlister = deltakerlister
+        )
+    }
 }

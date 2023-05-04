@@ -1,0 +1,30 @@
+package no.nav.arrangor.ingest
+
+import no.nav.arrangor.arrangor.ArrangorRepository
+import no.nav.arrangor.arrangor.ArrangorService
+import no.nav.arrangor.dto.ArrangorDto
+import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Service
+
+@Service
+class IngestService(
+    private val arrangorService: ArrangorService,
+    private val arrangorRepository: ArrangorRepository
+) {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    fun handleArrangor(arrangor: ArrangorDto) {
+        val inserted = arrangorRepository.insertOrUpdateArrangor(
+            ArrangorRepository.ArrangorDto(
+                id = arrangor.id,
+                navn = arrangor.navn,
+                organisasjonsnummer = arrangor.organisasjonsnummer,
+                overordnetArrangorId = arrangor.overordnetArrangorId?.let { arrangorService.get(it) }?.id
+            )
+        )
+
+        arrangorService.addDeltakerlister(inserted.id, arrangor.deltakerlister.toSet())
+        logger.info("Håndterte arrangør med id ${arrangor.id}")
+    }
+}

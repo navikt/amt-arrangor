@@ -47,10 +47,14 @@ spec:
     requests:
       cpu: 250m
       memory: 512Mi
+  azure:
+    application:
+      enabled: true
+  secureLogs:
+    enabled: true
   kafka:
     pool: nav-prod
-  tokenx:
-    enabled: true
+  leaderElection: true
   accessPolicy:
     inbound:
       rules:
@@ -67,3 +71,8 @@ spec:
         - application: amt-tiltak
           namespace: amt
           cluster: prod-gcp
+  env:
+    - name: AMT_ENHETSREGISTER_SCOPE
+      value: api://prod-gcp.amt.amt-enhetsregister/.default
+    - name: AMT_ENHETSREGISTER_URL
+      value: http://amt-enhetsregister.amt.svc.cluster.local

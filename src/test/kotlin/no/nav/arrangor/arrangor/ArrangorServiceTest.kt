@@ -3,7 +3,7 @@ package no.nav.arrangor.arrangor
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
-import no.nav.arrangor.arrangor.domain.Arrangor
+import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.Test
@@ -46,7 +46,7 @@ class ArrangorServiceTest : IntegrationTest() {
 
     @Test
     fun `get - Finnes fra for - oppdaterer`() {
-        val input = ArrangorRepository.ArrangorInput(
+        val input = ArrangorRepository.ArrangorDto(
             navn = "originaltNavn",
             organisasjonsnummer = "123",
             overordnetArrangorId = null
