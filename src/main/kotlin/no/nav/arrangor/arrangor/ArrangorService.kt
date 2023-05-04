@@ -20,8 +20,10 @@ class ArrangorService(
     fun get(id: UUID): Arrangor = arrangorRepository.get(id)
         .let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
 
-    fun get(orgNr: String): Arrangor? = (arrangorRepository.get(orgNr)
-        ?: leggTilOppdaterArrangor(orgNr))
+    fun get(orgNr: String): Arrangor? = (
+        arrangorRepository.get(orgNr)
+            ?: leggTilOppdaterArrangor(orgNr)
+        )
         ?.let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
 
     fun addDeltakerlister(arrangorId: UUID, deltakerlisteIds: Set<UUID>) =

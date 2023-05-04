@@ -5,7 +5,7 @@ import java.util.*
 data class ArrangorAnsattPublishDto(
     val id: UUID,
     val personalia: PersonPublishDto,
-    val arrangorer: List<TilknyttetArrangor>,
+    val arrangorer: List<TilknyttetArrangor>
 )
 
 data class PersonPublishDto(

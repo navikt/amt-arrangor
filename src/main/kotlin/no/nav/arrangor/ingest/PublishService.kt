@@ -25,5 +25,4 @@ class PublishService(
         overordnetArrangorId = overordnetArrangorId,
         deltakerlister = deltakerlister.toList()
     )
-
 }

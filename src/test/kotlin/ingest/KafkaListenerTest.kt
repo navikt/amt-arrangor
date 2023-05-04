@@ -61,10 +61,8 @@ class KafkaListenerTest : IntegrationTest() {
             arrangorRepository.get(arrangor.organisasjonsnummer) != null
         }
 
-         arrangorService.get(arrangor.id) shouldNotBe null
-
+        arrangorService.get(arrangor.id) shouldNotBe null
     }
-
 
     fun arrangor(
         id: UUID = UUID.randomUUID(),
@@ -79,5 +77,4 @@ class KafkaListenerTest : IntegrationTest() {
         overordnetArrangorId = overordnetArrangorId,
         deltakerlister = deltakerlister
     )
-
 }

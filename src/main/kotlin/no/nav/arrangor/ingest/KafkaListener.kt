@@ -6,7 +6,6 @@ import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
 
-
 @Component
 class KafkaListener(
     private val ingestService: IngestService

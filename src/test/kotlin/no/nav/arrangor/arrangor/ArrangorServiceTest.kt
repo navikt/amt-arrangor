@@ -3,8 +3,8 @@ package no.nav.arrangor.arrangor
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
-import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.client.enhetsregister.Virksomhet
+import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired

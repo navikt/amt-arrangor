@@ -27,5 +27,4 @@ class DeltakerlisteRepository(
         "SELECT * FROM deltakerliste where arrangor_id = :arrangor_id",
         sqlParameters("arrangor_id" to arrangorId)
     ) { rs, _ -> UUID.fromString(rs.getString("id")) }.toSet()
-
 }

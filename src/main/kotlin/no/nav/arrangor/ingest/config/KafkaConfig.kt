@@ -64,13 +64,13 @@ class KafkaConfig(
         return factory
     }
 
-	@Bean
-	fun kafkaProducerFactory(): ProducerFactory<String, String> {
-		return DefaultKafkaProducerFactory(commonConfig())
-	}
+    @Bean
+    fun kafkaProducerFactory(): ProducerFactory<String, String> {
+        return DefaultKafkaProducerFactory(commonConfig())
+    }
 
-	@Bean
-	fun kafkaTemplate(): KafkaTemplate<String, String> {
-		return KafkaTemplate(kafkaProducerFactory())
-	}
+    @Bean
+    fun kafkaTemplate(): KafkaTemplate<String, String> {
+        return KafkaTemplate(kafkaProducerFactory())
+    }
 }
