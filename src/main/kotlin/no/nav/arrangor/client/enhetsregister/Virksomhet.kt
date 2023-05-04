@@ -6,3 +6,10 @@ data class Virksomhet(
     val overordnetEnhetOrganisasjonsnummer: String?,
     val overordnetEnhetNavn: String?
 )
+
+fun defaultVirksomhet(): Virksomhet = Virksomhet(
+    organisasjonsnummer = "999999999",
+    navn = "Ukjent virksomhet",
+    overordnetEnhetOrganisasjonsnummer = null,
+    overordnetEnhetNavn = null
+)

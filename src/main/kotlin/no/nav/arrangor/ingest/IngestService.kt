@@ -3,6 +3,7 @@ package no.nav.arrangor.ingest
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
+import no.nav.arrangor.client.enhetsregister.defaultVirksomhet
 import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.dto.ArrangorDto
 import org.slf4j.LoggerFactory
@@ -23,7 +24,10 @@ class IngestService(
         if (arrangor.overordnetArrangorId != null) {
             val hentet = enhetsregisterClient.hentVirksomhet(arrangor.organisasjonsnummer).getOrThrow()
             val overordnetVirksomhet =
-                enhetsregisterClient.hentVirksomhet(hentet.overordnetEnhetOrganisasjonsnummer!!).getOrThrow()
+                enhetsregisterClient.hentVirksomhet(hentet.overordnetEnhetOrganisasjonsnummer!!).getOrElse {
+                    logger.warn("Virksomhet med organisasjonsnummer ${hentet.overordnetEnhetOrganisasjonsnummer} finnes ikke, legger inn default")
+                    defaultVirksomhet()
+                }
             arrangorRepository.insertOrUpdateArrangor(
                 ArrangorRepository.ArrangorDto(
                     id = arrangor.overordnetArrangorId,
