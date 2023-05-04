@@ -22,21 +22,27 @@ class IngestService(
         var overordnetArrangor: Arrangor? = null
 
         if (arrangor.overordnetArrangorId != null) {
-            val hentet = enhetsregisterClient.hentVirksomhet(arrangor.organisasjonsnummer).getOrThrow()
-            val overordnetVirksomhet =
-                enhetsregisterClient.hentVirksomhet(hentet.overordnetEnhetOrganisasjonsnummer!!).getOrElse {
-                    logger.warn("Virksomhet med organisasjonsnummer ${hentet.overordnetEnhetOrganisasjonsnummer} finnes ikke, legger inn default")
-                    defaultVirksomhet()
-                }
-            arrangorRepository.insertOrUpdateArrangor(
-                ArrangorRepository.ArrangorDto(
-                    id = arrangor.overordnetArrangorId,
-                    navn = overordnetVirksomhet.navn,
-                    organisasjonsnummer = overordnetVirksomhet.organisasjonsnummer,
-                    overordnetArrangorId = null
+            val hentet = enhetsregisterClient.hentVirksomhet(arrangor.organisasjonsnummer).getOrElse {
+                logger.warn("Virksomhet med organisasjonsnummer ${arrangor.organisasjonsnummer} finnes ikke, legger inn default")
+                defaultVirksomhet()
+            }
+
+            if (hentet.organisasjonsnummer != "999999999") {
+                val overordnetVirksomhet =
+                    enhetsregisterClient.hentVirksomhet(hentet.overordnetEnhetOrganisasjonsnummer!!).getOrElse {
+                        logger.warn("Virksomhet med organisasjonsnummer ${hentet.overordnetEnhetOrganisasjonsnummer} finnes ikke, legger inn default")
+                        defaultVirksomhet()
+                    }
+                arrangorRepository.insertOrUpdateArrangor(
+                    ArrangorRepository.ArrangorDto(
+                        id = arrangor.overordnetArrangorId,
+                        navn = overordnetVirksomhet.navn,
+                        organisasjonsnummer = overordnetVirksomhet.organisasjonsnummer,
+                        overordnetArrangorId = null
+                    )
                 )
-            )
-            overordnetArrangor = arrangorService.get(arrangor.overordnetArrangorId)
+                overordnetArrangor = arrangorService.get(arrangor.overordnetArrangorId)
+            }
         }
 
         val inserted = arrangorRepository.insertOrUpdateArrangor(
