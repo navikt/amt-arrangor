@@ -18,5 +18,6 @@ class KafkaListener(
     )
     fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
         ingestService.handleArrangor(JsonUtils.fromJson(record.value()))
+        ack.acknowledge()
     }
 }
