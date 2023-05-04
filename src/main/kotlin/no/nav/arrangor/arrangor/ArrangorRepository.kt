@@ -50,11 +50,11 @@ class ArrangorRepository(
             .first()
     }
 
-    fun get(id: UUID): ArrangorDto = template.query(
+    fun get(id: UUID): ArrangorDto? = template.query(
         "SELECT * FROM arrangor WHERE id = :id",
         sqlParameters("id" to id),
         rowMapper
-    ).first()
+    ).firstOrNull()
 
     fun get(orgNr: String): ArrangorDto? = template.query(
         "SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",

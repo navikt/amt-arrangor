@@ -17,8 +17,8 @@ class ArrangorService(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun get(id: UUID): Arrangor = arrangorRepository.get(id)
-        .let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
+    fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
+        .let { it?.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
 
     fun get(orgNr: String): Arrangor? = (
         arrangorRepository.get(orgNr)

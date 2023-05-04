@@ -14,7 +14,7 @@ class ArrangorController(
 ) {
 
     @GetMapping("{id}")
-    fun get(@PathVariable("id") id: UUID): Arrangor = arrangorService.get(id)
+    fun get(@PathVariable("id") id: UUID): Arrangor = arrangorService.get(id) ?: throw IllegalStateException("Expected arrangor with id $id to exist")
 
     @GetMapping("/organisasjonsnummer/{orgNr}")
     fun getByOrgNr(@PathVariable("orgNr") orgNr: String): Arrangor? = arrangorService.get(orgNr)
