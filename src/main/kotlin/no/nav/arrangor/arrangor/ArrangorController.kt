@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.util.*
+import kotlin.NoSuchElementException
 
 @RestController
 @RequestMapping("/api/arrangor")
@@ -14,7 +15,8 @@ class ArrangorController(
 ) {
 
     @GetMapping("{id}")
-    fun get(@PathVariable("id") id: UUID): Arrangor = arrangorService.get(id) ?: throw IllegalStateException("Expected arrangor with id $id to exist")
+    fun get(@PathVariable("id") id: UUID): Arrangor = arrangorService.get(id)
+        ?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 
     @GetMapping("/organisasjonsnummer/{orgNr}")
     fun getByOrgNr(@PathVariable("orgNr") orgNr: String): Arrangor? = arrangorService.get(orgNr)

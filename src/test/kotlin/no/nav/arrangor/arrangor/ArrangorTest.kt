@@ -9,8 +9,9 @@ import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDateTime
+import java.util.*
 
-class ArrangorServiceTest : IntegrationTest() {
+class ArrangorTest : IntegrationTest() {
 
     @Autowired
     lateinit var arrangorService: ArrangorService
@@ -74,5 +75,27 @@ class ArrangorServiceTest : IntegrationTest() {
 
         response.navn shouldBe "nyttNavn"
         response.overordnetArrangorId shouldNotBe null
+    }
+
+    @Test
+    fun `get by orgnr - finnes ikke i enhetsregisteret - returnerer 404`() {
+        val orgNr = "123"
+
+        mockAmtEnhetsregiserServer.addVirksomhetFailure(orgNr, 404)
+
+        sendRequest(
+            method = "GET",
+            path = "/api/arrangor/organisasjonsnummer/$orgNr"
+        )
+            .also { it.code shouldBe 404 }
+    }
+
+    @Test
+    fun `get by id - finnes ikke - returnerer 404`() {
+        sendRequest(
+            method = "GET",
+            path = "/api/arrangor/${UUID.randomUUID()}"
+        )
+            .also { it.code shouldBe 404 }
     }
 }

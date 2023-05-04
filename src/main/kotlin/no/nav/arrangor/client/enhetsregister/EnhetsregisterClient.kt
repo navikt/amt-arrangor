@@ -47,7 +47,9 @@ class EnhetsregisterClient(
     }
 
     private fun isFailure(response: Response): Exception? {
-        if (!response.isSuccessful) {
+        if (response.code == 404) {
+            return NoSuchElementException("[${response.request.method}] ${response.request.url}: 404")
+        } else if (!response.isSuccessful) {
             val errorMessage =
                 "[${response.request.method}] ${response.request.url}: Expected call to succeed, was ${response.code}"
             log.error(errorMessage)

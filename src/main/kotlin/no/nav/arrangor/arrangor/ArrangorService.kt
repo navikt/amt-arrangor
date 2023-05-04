@@ -20,11 +20,11 @@ class ArrangorService(
     fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
         .let { it?.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
 
-    fun get(orgNr: String): Arrangor? = (
+    fun get(orgNr: String): Arrangor = (
         arrangorRepository.get(orgNr)
             ?: leggTilOppdaterArrangor(orgNr)
         )
-        ?.let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
+        .let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
 
     fun addDeltakerlister(arrangorId: UUID, deltakerlisteIds: Set<UUID>) =
         deltakerlisteRepository.addUpdateDeltakerlister(arrangorId, deltakerlisteIds)
@@ -36,10 +36,9 @@ class ArrangorService(
 
     fun oppdaterArrangor(arrangor: ArrangorRepository.ArrangorDto): ArrangorRepository.ArrangorDto =
         leggTilOppdaterArrangor(arrangor.organisasjonsnummer)
-            ?: throw IllegalStateException("Arrangør med orgNr ${arrangor.organisasjonsnummer} burde eksistert")
 
-    private fun leggTilOppdaterArrangor(orgNr: String): ArrangorRepository.ArrangorDto? {
-        val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrNull() ?: return null
+    private fun leggTilOppdaterArrangor(orgNr: String): ArrangorRepository.ArrangorDto {
+        val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrThrow()
 
         val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
             arrangorRepository.insertOrUpdateArrangor(
