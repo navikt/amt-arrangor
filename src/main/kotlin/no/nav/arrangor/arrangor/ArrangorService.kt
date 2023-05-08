@@ -34,15 +34,15 @@ class ArrangorService(
             .map { oppdaterArrangor(it) }
             .also { logger.info("Oppdaterte ${it.size} arrangører") }
 
-    fun oppdaterArrangor(arrangor: ArrangorRepository.ArrangorDto): ArrangorRepository.ArrangorDto =
+    fun oppdaterArrangor(arrangor: ArrangorRepository.ArrangorDbo): ArrangorRepository.ArrangorDbo =
         leggTilOppdaterArrangor(arrangor.organisasjonsnummer)
 
-    private fun leggTilOppdaterArrangor(orgNr: String): ArrangorRepository.ArrangorDto {
+    private fun leggTilOppdaterArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
         val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrThrow()
 
         val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
-            arrangorRepository.insertOrUpdateArrangor(
-                ArrangorRepository.ArrangorDto(
+            arrangorRepository.insertOrUpdate(
+                ArrangorRepository.ArrangorDbo(
                     navn = virksomhet.overordnetEnhetNavn
                         ?: throw IllegalStateException("Navn burde vært satt for $orgNr's overordnet enhet (${virksomhet.overordnetEnhetOrganisasjonsnummer}"),
                     organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
@@ -51,8 +51,8 @@ class ArrangorService(
             )
         }
 
-        return arrangorRepository.insertOrUpdateArrangor(
-            ArrangorRepository.ArrangorDto(
+        return arrangorRepository.insertOrUpdate(
+            ArrangorRepository.ArrangorDbo(
                 navn = virksomhet.navn,
                 organisasjonsnummer = virksomhet.organisasjonsnummer,
                 overordnetArrangorId = overordnetArrangor?.id

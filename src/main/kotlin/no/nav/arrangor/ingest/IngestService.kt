@@ -33,8 +33,8 @@ class IngestService(
                         logger.warn("Virksomhet med organisasjonsnummer ${hentet.overordnetEnhetOrganisasjonsnummer} finnes ikke, legger inn default")
                         defaultVirksomhet()
                     }
-                arrangorRepository.insertOrUpdateArrangor(
-                    ArrangorRepository.ArrangorDto(
+                arrangorRepository.insertOrUpdate(
+                    ArrangorRepository.ArrangorDbo(
                         id = arrangor.overordnetArrangorId,
                         navn = overordnetVirksomhet.navn,
                         organisasjonsnummer = overordnetVirksomhet.organisasjonsnummer,
@@ -45,8 +45,8 @@ class IngestService(
             }
         }
 
-        val inserted = arrangorRepository.insertOrUpdateArrangor(
-            ArrangorRepository.ArrangorDto(
+        val inserted = arrangorRepository.insertOrUpdate(
+            ArrangorRepository.ArrangorDbo(
                 id = arrangor.id,
                 navn = arrangor.navn,
                 organisasjonsnummer = arrangor.organisasjonsnummer,

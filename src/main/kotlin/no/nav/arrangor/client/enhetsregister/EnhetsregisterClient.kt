@@ -1,13 +1,11 @@
 package no.nav.arrangor.client.enhetsregister
 
 import no.nav.arrangor.utils.JsonUtils
+import no.nav.arrangor.utils.isFailure
 import no.nav.common.rest.client.RestClient.baseClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
 import org.slf4j.LoggerFactory
-import org.springframework.http.HttpStatusCode
-import org.springframework.web.client.HttpClientErrorException
 import java.time.Duration
 import java.time.Instant
 import java.util.function.Supplier
@@ -29,7 +27,7 @@ class EnhetsregisterClient(
             .build()
 
         val virksomhet = client.newCall(request).execute()
-            .also { res -> isFailure(res)?.let { exception -> return Result.failure(exception) } }
+            .also { res -> isFailure(res, log)?.let { exception -> return Result.failure(exception) } }
             .let {
                 it.body?.string()
                     ?: return Result.failure(IllegalStateException("Forventet body for organisasjonsnummer $orgNr"))
@@ -44,18 +42,5 @@ class EnhetsregisterClient(
             }
 
         return Result.success(virksomhet)
-    }
-
-    private fun isFailure(response: Response): Exception? {
-        if (response.code == 404) {
-            return NoSuchElementException("[${response.request.method}] ${response.request.url}: 404")
-        } else if (!response.isSuccessful) {
-            val errorMessage =
-                "[${response.request.method}] ${response.request.url}: Expected call to succeed, was ${response.code}"
-            log.error(errorMessage)
-            return HttpClientErrorException(HttpStatusCode.valueOf(response.code), errorMessage)
-        }
-
-        return null
     }
 }

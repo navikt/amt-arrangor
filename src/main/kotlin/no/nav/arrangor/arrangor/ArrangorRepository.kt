@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
 @Repository
 class ArrangorRepository(
@@ -15,7 +15,7 @@ class ArrangorRepository(
 ) {
 
     private val rowMapper = RowMapper { rs, _ ->
-        ArrangorDto(
+        ArrangorDbo(
             id = UUID.fromString(rs.getString("id")),
             navn = rs.getString("navn"),
             organisasjonsnummer = rs.getString("organisasjonsnummer"),
@@ -23,7 +23,7 @@ class ArrangorRepository(
         )
     }
 
-    fun insertOrUpdateArrangor(arrangorInput: ArrangorDto): ArrangorDto {
+    fun insertOrUpdate(arrangorInput: ArrangorDbo): ArrangorDbo {
         val sql = """
         INSERT INTO arrangor(id, navn, organisasjonsnummer, overordnet_arrangor_id)
         VALUES (:id,
@@ -50,21 +50,27 @@ class ArrangorRepository(
             .first()
     }
 
-    fun get(id: UUID): ArrangorDto? = template.query(
+    fun get(id: UUID): ArrangorDbo? = template.query(
         "SELECT * FROM arrangor WHERE id = :id",
         sqlParameters("id" to id),
         rowMapper
     ).firstOrNull()
 
-    fun get(orgNr: String): ArrangorDto? = template.query(
+    fun get(orgNr: String): ArrangorDbo? = template.query(
         "SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
         sqlParameters("organisasjonsnummer" to orgNr),
         rowMapper
     ).firstOrNull()
 
-    fun getAll(): List<ArrangorDto> = template.query("SELECT * FROM arrangor", rowMapper)
+    fun getIdsForOrganisasjonsnummer(orgiansasjonsnummer: List<String>): Map<String, UUID> {
+        return template.query(
+            "SELECT * from arrangor where organisasjonsnummer in (:orgiansasjonsnummer)",
+            sqlParameters("orgiansasjonsnummer" to orgiansasjonsnummer),
+            rowMapper
+        ).associate { it.organisasjonsnummer to it.id }
+    }
 
-    fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<ArrangorDto> {
+    fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<ArrangorDbo> {
         val sql = """
         SELECT *
         FROM arrangor
@@ -81,7 +87,7 @@ class ArrangorRepository(
         return template.query(sql, parameters, rowMapper)
     }
 
-    data class ArrangorDto(
+    data class ArrangorDbo(
         val id: UUID = UUID.randomUUID(),
         val navn: String,
         val organisasjonsnummer: String,
