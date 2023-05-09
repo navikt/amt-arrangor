@@ -25,7 +25,8 @@ class AnsattController(
 ) {
 
     @GetMapping("{id}")
-    fun get(@PathVariable("id") id: UUID): Ansatt = ansattService.get(id)!!
+    fun get(@PathVariable("id") id: UUID): Ansatt = ansattService.get(id)
+        ?: throw NoSuchElementException("Ansatt $id eksisterer ikke.")
 
     @GetMapping
     fun getByPersonident(): Ansatt =
@@ -55,9 +56,8 @@ class AnsattController(
         ansattService.setVeileder(personident, body.deltakerId, body.type)
     }
 
-    @DeleteMapping("{id}/veileder/{deltakerId}")
+    @DeleteMapping("veileder/{deltakerId}")
     fun fjernVeilederForDeltaker(
-        @PathVariable("id") ansattId: UUID,
         @PathVariable("deltakerId") deltakerId: UUID
     ): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
         ansattService.fjernVeileder(personident, deltakerId)

@@ -1,5 +1,6 @@
 package no.nav.arrangor.ansatt.repositories
 
+import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.utils.getNullableZonedDateTime
 import no.nav.arrangor.utils.getZonedDateTime
 import no.nav.arrangor.utils.sqlParameters
@@ -10,61 +11,70 @@ import java.time.ZonedDateTime
 import java.util.UUID
 
 @Repository
-class KoordinatorDeltakerlisteRepository(
+class VeilederDeltakerRepository(
     private val template: NamedParameterJdbcTemplate
 ) {
 
     private val rowMapper = RowMapper { rs, _ ->
-        KoordinatorDeltakerlisteDbo(
+        VeilederDeltakerDbo(
             id = rs.getInt("id"),
             ansattId = UUID.fromString(rs.getString("ansatt_id")),
-            deltakerlisteId = UUID.fromString(rs.getString("deltakerliste_id")),
+            deltakerId = UUID.fromString(rs.getString("deltaker_id")),
+            veilederType = VeilederType.valueOf(rs.getString("veileder_type")),
             gyldigFra = rs.getZonedDateTime("gyldig_fra"),
             gyldigTil = rs.getNullableZonedDateTime("gyldig_til")
         )
     }
 
-    fun leggTilKoordinatorDeltakerlister(ansattId: UUID, deltakerlisteIds: List<UUID>) {
+    fun leggTil(ansattId: UUID, deltakere: List<VeilederDeltakerInput>) {
         val sql = """
-            INSERT INTO koordinator_deltakerliste(ansatt_id, deltakerliste_id)
-            VALUES(:ansatt_id, :deltakerliste_id)
+            INSERT INTO veileder_deltaker(ansatt_id, deltaker_id, veileder_type)
+            VALUES(:ansatt_id, :deltaker_id, :veileder_type)
         """.trimIndent()
 
-        if (deltakerlisteIds.isNotEmpty()) {
+        if (deltakere.isNotEmpty()) {
             template.batchUpdate(
                 sql,
-                deltakerlisteIds.map { deltakerlisteId ->
+                deltakere.map { deltaker ->
                     sqlParameters(
                         "ansatt_id" to ansattId,
-                        "deltakerliste_id" to deltakerlisteId
+                        "deltaker_id" to deltaker.deltakerId,
+                        "veileder_type" to deltaker.veilederType.name
                     )
                 }.toTypedArray()
             )
         }
     }
 
-    fun deaktiverKoordinatorDeltakerliste(ids: List<Int>) {
+    fun deaktiver(ids: List<Int>) {
         if (ids.isNotEmpty()) {
             template.update(
-                "UPDATE koordinator_deltakerliste SET gyldig_til = current_timestamp WHERE id in (:ids)",
+                "UPDATE veileder_deltaker SET gyldig_til = current_timestamp WHERE id in (:ids)",
                 sqlParameters("ids" to ids)
             )
         }
     }
 
-    fun getAktive(ansattId: UUID): List<KoordinatorDeltakerlisteDbo> {
+    fun getAktive(ansattId: UUID): List<VeilederDeltakerDbo> {
         return template.query(
-            "SELECT * FROM koordinator_deltakerliste WHERE ansatt_id = :ansatt_id AND gyldig_til IS NULL",
+            "SELECT * FROM veileder_deltaker WHERE ansatt_id = :ansatt_id AND gyldig_til IS NULL",
             sqlParameters("ansatt_id" to ansattId),
             rowMapper
         )
     }
 
-    data class KoordinatorDeltakerlisteDbo(
+    data class VeilederDeltakerInput(
+        val deltakerId: UUID,
+        val veilederType: VeilederType
+    )
+
+    data class VeilederDeltakerDbo(
         val id: Int,
         val ansattId: UUID,
-        val deltakerlisteId: UUID,
+        val deltakerId: UUID,
+        val veilederType: VeilederType,
         val gyldigFra: ZonedDateTime,
         val gyldigTil: ZonedDateTime?
+
     )
 }

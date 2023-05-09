@@ -68,6 +68,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
         )
 
         val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+            .also { it.isUpdated shouldBe true }
+            .data
 
         roller.size shouldBe 3
 
@@ -80,5 +82,46 @@ class AnsattRolleServiceTest : IntegrationTest() {
         val rollerArrangorTwo = roller.filter { it.arrangorId == arrangorTwo.id }
         rollerArrangorTwo.size shouldBe 2
         rollerArrangorTwo.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
+    }
+
+    @Test
+    fun `oppdaterRoller - likt i altinn og database - ingen endringer`() {
+        rolleRepository.leggTilRoller(
+            listOf(
+                RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR)
+            )
+        )
+
+        mockAltinnServer.addRoller(
+            ansatt.personident,
+            AltinnAclClient.ResponseWrapper(
+                listOf(AltinnAclClient.ResponseEntry(arrangorOne.organisasjonsnummer, listOf(KOORDINATOR)))
+            )
+        )
+
+        val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+            .also { it.isUpdated shouldBe false }
+            .data
+
+        roller.size shouldBe 1
+        roller[0].arrangorId shouldBe arrangorOne.id
+        roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+    }
+
+    @Test
+    fun `oppdaterRoller - i database, men ingen i altinn - fjerner roller`() {
+        rolleRepository.leggTilRoller(
+            listOf(
+                RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR)
+            )
+        )
+
+        mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
+
+        val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+            .also { it.isUpdated shouldBe true }
+            .data
+
+        roller.isEmpty() shouldBe true
     }
 }

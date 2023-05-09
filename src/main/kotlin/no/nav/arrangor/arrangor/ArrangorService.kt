@@ -6,8 +6,11 @@ import no.nav.arrangor.domain.Arrangor
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
+/*
+    TODO: Mangler publisering om endringer
+ */
 @Service
 class ArrangorService(
     private val arrangorRepository: ArrangorRepository,

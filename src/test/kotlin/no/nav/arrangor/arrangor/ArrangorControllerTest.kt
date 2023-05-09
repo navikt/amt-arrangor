@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDateTime
 import java.util.UUID
 
-class ArrangorTest : IntegrationTest() {
+class ArrangorControllerTest : IntegrationTest() {
 
     @Autowired
     lateinit var arrangorService: ArrangorService

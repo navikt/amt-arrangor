@@ -4,6 +4,7 @@ import no.nav.arrangor.ansatt.repositories.RolleRepository
 import no.nav.arrangor.client.altinn.AltinnAclClient
 import no.nav.arrangor.client.altinn.AltinnRolle
 import no.nav.arrangor.domain.AnsattRolle
+import no.nav.arrangor.utils.DataUpdateWrapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -16,7 +17,11 @@ class AnsattRolleService(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun oppdaterRoller(ansattId: UUID, personident: String): List<RolleRepository.RolleDbo> {
+    fun getRoller(ansattId: UUID): List<RolleRepository.RolleDbo> {
+        return rolleRepository.getAktiveRoller(ansattId)
+    }
+
+    fun oppdaterRoller(ansattId: UUID, personident: String): DataUpdateWrapper<List<RolleRepository.RolleDbo>> {
         val gamleRoller = dboToOrgRolle(rolleRepository.getAktiveRoller(ansattId))
         val nyeRoller = altinnToOrgRolle(altinnClient.hentRoller(personident).getOrThrow())
 
@@ -24,12 +29,23 @@ class AnsattRolleService(
         val rollerSomSkalLeggesTil = nyeRoller.filter { !gamleRoller.contains(it) }
 
         rolleRepository.deaktiverRoller(rollerSomSkalSlettes.map { it.id })
-            .also { if (rollerSomSkalSlettes.isNotEmpty()) logger.info("Deaktiverte ${rollerSomSkalSlettes.size} roller for ansatt med id $ansattId") }
+            .also { logFjernet(ansattId, rollerSomSkalSlettes) }
 
         rolleRepository.leggTilRoller(rollerSomSkalLeggesTil.map { it.toInput(ansattId) })
-            .also { if (rollerSomSkalLeggesTil.isNotEmpty()) logger.info("La til ${rollerSomSkalLeggesTil.size} roller for ansatt med id $ansattId") }
+            .also { logLagtTil(ansattId, rollerSomSkalLeggesTil) }
 
-        return rolleRepository.getAktiveRoller(ansattId)
+        return DataUpdateWrapper(
+            isUpdated = rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty(),
+            data = rolleRepository.getAktiveRoller(ansattId)
+        )
+    }
+
+    private fun logFjernet(ansattId: UUID, fjernet: List<OrgRolle>) = fjernet.forEach {
+        logger.info("Ansatt med $ansattId mistet ${it.rolle} hos ${it.organisasjonsnummer}")
+    }
+
+    private fun logLagtTil(ansattId: UUID, lagtTil: List<OrgRolle>) = lagtTil.forEach {
+        logger.info("Ansatt med $ansattId fikk ${it.rolle} hos ${it.organisasjonsnummer}")
     }
 
     private fun dboToOrgRolle(roller: List<RolleRepository.RolleDbo>): List<OrgRolle> = roller
@@ -49,5 +65,21 @@ class AnsattRolleService(
             organisasjonsnummer,
             rolle
         )
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as OrgRolle
+
+            if (organisasjonsnummer != other.organisasjonsnummer) return false
+            return rolle == other.rolle
+        }
+
+        override fun hashCode(): Int {
+            var result = organisasjonsnummer.hashCode()
+            result = 31 * result + rolle.hashCode()
+            return result
+        }
     }
 }

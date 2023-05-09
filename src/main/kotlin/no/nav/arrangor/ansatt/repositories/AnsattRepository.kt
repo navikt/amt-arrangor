@@ -18,6 +18,7 @@ class AnsattRepository(
     private val rowMapper = RowMapper { rs, _ ->
         AnsattDbo(
             id = UUID.fromString(rs.getString("id")),
+            personId = UUID.fromString(rs.getString("person_id")),
             personident = rs.getString("personident"),
             fornavn = rs.getString("fornavn"),
             mellomnavn = rs.getString("mellomnavn"),
@@ -29,8 +30,9 @@ class AnsattRepository(
 
     fun insertOrUpdate(ansatt: AnsattDbo): AnsattDbo {
         val sql = """
-            INSERT INTO ansatt(id, personident, fornavn, mellomnavn, etternavn, modified_at, last_synchronized)
+            INSERT INTO ansatt(id, person_id, personident, fornavn, mellomnavn, etternavn, modified_at, last_synchronized)
             VALUES (:id,
+                    :person_id,
                     :personident,
                     :fornavn,
                     :mellomnavn,
@@ -50,6 +52,7 @@ class AnsattRepository(
             sql,
             sqlParameters(
                 "id" to ansatt.id,
+                "person_id" to ansatt.personId,
                 "personident" to ansatt.personident,
                 "fornavn" to ansatt.fornavn,
                 "mellomnavn" to ansatt.mellomnavn,
@@ -73,11 +76,15 @@ class AnsattRepository(
         rowMapper
     ).firstOrNull()
 
-    fun setSynchronized(id: UUID) = setSynchronized(listOf(id))
+    fun setSynchronized(id: UUID, timestamp: LocalDateTime = LocalDateTime.now()) =
+        setSynchronized(listOf(id), timestamp)
 
-    fun setSynchronized(ids: List<UUID>) = template.update(
-        "UPDATE ansatt SET last_synchronized = current_timestamp WHERE id IN (:ids)",
-        sqlParameters("ids" to ids)
+    fun setSynchronized(ids: List<UUID>, timestamp: LocalDateTime = LocalDateTime.now()) = template.update(
+        "UPDATE ansatt SET last_synchronized = :last_synchronized WHERE id IN (:ids)",
+        sqlParameters(
+            "ids" to ids,
+            "last_synchronized" to timestamp
+        )
     )
 
     fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<AnsattDbo> {
@@ -99,6 +106,7 @@ class AnsattRepository(
 
     data class AnsattDbo(
         val id: UUID = UUID.randomUUID(),
+        val personId: UUID,
         val personident: String,
         val fornavn: String,
         val mellomnavn: String?,
@@ -109,6 +117,7 @@ class AnsattRepository(
 
         fun toPersonalia(): Personalia = Personalia(
             personident = personident,
+            personId = personId,
             navn = Navn(fornavn, mellomnavn, etternavn)
         )
     }

@@ -70,6 +70,13 @@ class ArrangorRepository(
         ).associate { it.organisasjonsnummer to it.id }
     }
 
+    fun getOrganiasjonsnummerForId(id: UUID): String? = template.query(
+        "SELECT * FROM arrangor where id = :id",
+        sqlParameters("id" to id),
+        rowMapper
+    ).firstOrNull()
+        ?.organisasjonsnummer
+
     fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<ArrangorDbo> {
         val sql = """
         SELECT *

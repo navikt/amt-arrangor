@@ -35,6 +35,7 @@ class AnsattRepositoryTest {
     fun `insertOrUpdate - not exists - adds to database`() {
         val ansatt = AnsattRepository.AnsattDbo(
             personident = "123456",
+            personId = UUID.randomUUID(),
             fornavn = "Test",
             mellomnavn = "Mellom",
             etternavn = "Testersen"
@@ -53,6 +54,7 @@ class AnsattRepositoryTest {
     fun `insertOrUpdate - exists - updates`() {
         val old = AnsattRepository.AnsattDbo(
             personident = "123456",
+            personId = UUID.randomUUID(),
             fornavn = "Test",
             mellomnavn = "Mellom",
             etternavn = "Testersen"
@@ -60,6 +62,7 @@ class AnsattRepositoryTest {
 
         val new = AnsattRepository.AnsattDbo(
             personident = old.personident,
+            personId = old.personId,
             fornavn = "Test2",
             mellomnavn = null,
             etternavn = "Testersen2"
@@ -81,6 +84,7 @@ class AnsattRepositoryTest {
     fun `get(UUID) - exists - returns Ansatt`() {
         val stored = AnsattRepository.AnsattDbo(
             personident = "123456",
+            personId = UUID.randomUUID(),
             fornavn = "Test",
             mellomnavn = "Mellom",
             etternavn = "Testersen"
@@ -98,6 +102,7 @@ class AnsattRepositoryTest {
     fun `get(String) - exists - returns Ansatt`() {
         val stored = AnsattRepository.AnsattDbo(
             personident = "123456",
+            personId = UUID.randomUUID(),
             fornavn = "Test",
             mellomnavn = "Mellom",
             etternavn = "Testersen"

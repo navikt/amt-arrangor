@@ -96,6 +96,12 @@ class IntegrationTest {
         }
     }
 
+    fun resetMockServers() {
+        mockAmtEnhetsregiserServer.resetHttpServer()
+        mockAltinnServer.resetHttpServer()
+        mockPersonServer.resetHttpServer()
+    }
+
     fun sendRequest(
         method: String,
         path: String,
