@@ -39,14 +39,14 @@ class IngestService(
         if (arrangor.overordnetArrangorId != null) {
             val hentet = enhetsregisterClient.hentVirksomhet(arrangor.organisasjonsnummer).getOrElse {
                 logger.warn("Virksomhet med organisasjonsnummer ${arrangor.organisasjonsnummer} finnes ikke, legger inn default")
-                defaultVirksomhet()
+                defaultVirksomhet(arrangor.organisasjonsnummer)
             }
 
             if (hentet.organisasjonsnummer != "999999999") {
                 val overordnetVirksomhet =
                     enhetsregisterClient.hentVirksomhet(hentet.overordnetEnhetOrganisasjonsnummer!!).getOrElse {
                         logger.warn("Virksomhet med organisasjonsnummer ${hentet.overordnetEnhetOrganisasjonsnummer} finnes ikke, legger inn default")
-                        defaultVirksomhet()
+                        defaultVirksomhet(hentet.overordnetEnhetOrganisasjonsnummer)
                     }
                 arrangorRepository.insertOrUpdate(
                     ArrangorRepository.ArrangorDbo(

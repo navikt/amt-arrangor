@@ -54,7 +54,7 @@ class ArrangorService(
             Virksomhet(oar.organisasjonsnummer, oar.navn, overordnet?.organisasjonsnummer, overordnet?.navn)
         }
 
-        val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(defaultVirksomhet())
+        val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(defaultVirksomhet(orgNr))
 
         if (oldVirksomhet != virksomhet) {
             val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {

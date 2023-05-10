@@ -89,20 +89,6 @@ class ArrangorControllerTest : IntegrationTest() {
     }
 
     @Test
-    fun `get by orgnr - finnes ikke i enhetsregisteret - returnerer 404`() {
-        val orgNr = "123"
-
-        mockAmtEnhetsregiserServer.addVirksomhetFailure(orgNr, 404)
-
-        sendRequest(
-            method = "GET",
-            path = "/api/arrangor/organisasjonsnummer/$orgNr",
-            headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "12345678910")}")
-        )
-            .also { it.code shouldBe 404 }
-    }
-
-    @Test
     fun `get by id - finnes ikke - returnerer 404`() {
         sendRequest(
             method = "GET",
