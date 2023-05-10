@@ -1,5 +1,6 @@
 package no.nav.arrangor.ansatt
 
+import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.repositories.RolleRepository
 import no.nav.arrangor.client.altinn.AltinnAclClient
 import no.nav.arrangor.client.altinn.AltinnRolle
@@ -12,7 +13,8 @@ import java.util.UUID
 @Service
 class AnsattRolleService(
     private val rolleRepository: RolleRepository,
-    private val altinnClient: AltinnAclClient
+    private val altinnClient: AltinnAclClient,
+    private val metricsService: MetricsService
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -38,6 +40,7 @@ class AnsattRolleService(
             isUpdated = rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty(),
             data = rolleRepository.getAktiveRoller(ansattId)
         )
+            .also { if(it.isUpdated) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
     }
 
     private fun logFjernet(ansattId: UUID, fjernet: List<OrgRolle>) = fjernet.forEach {

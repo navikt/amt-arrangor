@@ -1,5 +1,6 @@
 package no.nav.arrangor.ansatt
 
+import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.repositories.AnsattRepository
 import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
 import no.nav.arrangor.ansatt.repositories.RolleRepository
@@ -23,7 +24,8 @@ class AnsattService(
     private val koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository,
     private val veilederDeltakerRepository: VeilederDeltakerRepository,
     private val rolleService: AnsattRolleService,
-    private val publishService: PublishService
+    private val publishService: PublishService,
+    private val metricsService: MetricsService
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -48,6 +50,7 @@ class AnsattService(
 
         return getAnsatt(ansattDbo)
             .also { publishService.publishAnsatt(it) }
+            .also { metricsService.incLagtTilSomKoordinator() }
             .also { logger.info("Ansatt ${ansattDbo.id} ble koordinator for deltakerliste $deltakerlisteId") }
     }
 
@@ -56,11 +59,12 @@ class AnsattService(
 
         val currentDeltakerlister = koordinatorDeltakerlisteRepository.getAktive(ansattDbo.id)
 
-        currentDeltakerlister.find { it.deltakerlisteId == deltakerlisteId }?.let {
+        currentDeltakerlister.find { it.deltakerlisteId == deltakerlisteId }?.let { it ->
             koordinatorDeltakerlisteRepository.deaktiverKoordinatorDeltakerliste(listOf(it.id))
 
             return getAnsatt(ansattDbo)
-                .also { publishService.publishAnsatt(it) }
+                .also { ansatt -> publishService.publishAnsatt(ansatt) }
+                .also { metricsService.incFjernetSomKoodrinator() }
                 .also { logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId") }
         }
 
@@ -81,9 +85,11 @@ class AnsattService(
                 )
 
                 return getAnsatt(ansattDbo)
-                    .also { publishService.publishAnsatt(it) }
+                    .also { ansatt -> publishService.publishAnsatt(ansatt) }
+                    .also { metricsService.incLagtTilSomVeileder() }
                     .also { _ -> logger.info("Ansatt ${ansattDbo.id} byttet fra ${it.veilederType} til $type for deltaker $deltakerId") }
             }
+
             return getAnsatt(ansattDbo)
         }
 
@@ -96,7 +102,8 @@ class AnsattService(
 
         return getAnsatt(ansattDbo)
             .also { publishService.publishAnsatt(it) }
-            .also { _ -> logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId") }
+            .also { metricsService.incLagtTilSomVeileder() }
+            .also { logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId") }
     }
 
     fun fjernVeileder(personident: String, deltakerId: UUID): Ansatt {
@@ -108,6 +115,7 @@ class AnsattService(
             veilederDeltakerRepository.deaktiver(listOf(it.id))
             return getAnsatt(ansattDbo)
                 .also { publishService.publishAnsatt(it) }
+                .also { metricsService.incFjernetSomVeileder() }
                 .also { _ -> logger.info("Ansatt ${ansattDbo.id} mistet veilederrolle for $deltakerId") }
         }
 
@@ -128,6 +136,7 @@ class AnsattService(
                 )
             )
         }
+        .also { metricsService.incEndretAnsattPersonalia() }
         .also { logger.info("Opprettet ansatt ${it.id}") }
 
     fun oppdaterAnsatte() = ansattRepository.getToSynchronize(
@@ -175,6 +184,7 @@ class AnsattService(
             )
 
             return DataUpdateWrapper(true, stored)
+                .also { metricsService.incEndretAnsattPersonalia() }
         }
 
         return DataUpdateWrapper(false, oldData)
