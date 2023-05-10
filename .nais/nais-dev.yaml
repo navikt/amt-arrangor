@@ -61,6 +61,9 @@ spec:
       rules:
         - application: amt-tiltak
         - application: amt-tiltaksarrangor-bff
+        - application: debug-dings
+          namespace: plattformsikkerhet
+          cluster: dev-gcp
     outbound:
       rules:
         - application: amt-enhetsregister
