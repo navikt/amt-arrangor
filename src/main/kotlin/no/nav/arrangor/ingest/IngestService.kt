@@ -100,8 +100,8 @@ class IngestService(
                 }
             )
 
-            oppdaterKoordinatortilganger(arrangor.arrangorId, arrangor.koordinator)
-            oppdaterVeiledertilganger(arrangor.arrangorId, arrangor.veileder)
+            oppdaterKoordinatortilganger(ansatt.id, arrangor.koordinator)
+            oppdaterVeiledertilganger(ansatt.id, arrangor.veileder)
         }
 
         logger.info("Konsumerte ansatt med id ${ansatt.id}")
