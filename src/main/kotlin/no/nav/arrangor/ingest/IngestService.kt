@@ -14,6 +14,7 @@ import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.dto.ArrangorDto
+import no.nav.arrangor.ingest.mulighetsrommet.MulighetsrommetGjennomforingDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -163,6 +164,11 @@ class IngestService(
         if (skalSlettes.isNotEmpty() || skalLeggesTil.isNotEmpty()) {
             logger.info("Ansatt $ansattId veileder roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size}")
         }
+    }
+
+    fun handleGjennomforing(gjennomforing: MulighetsrommetGjennomforingDto) {
+        val arrangor = arrangorService.get(gjennomforing.virksomhetsnummer)
+        arrangorService.addDeltakerlister(arrangor.id, setOf(gjennomforing.id))
     }
 
     private data class KoordinatorDeltakerHolder(val id: Int, val deltakerlisteId: UUID) {

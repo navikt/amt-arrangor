@@ -20,6 +20,7 @@ class KafkaListener(
         when (record.topic()) {
             ARRANGOR_TOPIC -> ingestService.handleArrangor(JsonUtils.fromJson(record.value()))
             ANSATT_TOPIC -> ingestService.handleAnsatt(JsonUtils.fromJson(record.value()))
+            MULIGHETSROMMET_TOPIC -> ingestService.handleGjennomforing(JsonUtils.fromJson(record.value()))
             else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
         }
         ack.acknowledge()
