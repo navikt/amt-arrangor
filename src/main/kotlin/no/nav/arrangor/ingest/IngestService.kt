@@ -123,7 +123,8 @@ class IngestService(
         koordinatorDeltakerlisteRepository.deaktiverKoordinatorDeltakerliste(skalSlettes.map { it.id })
         koordinatorDeltakerlisteRepository.leggTilKoordinatorDeltakerlister(
             ansattId,
-            skalLeggesTil.map { it.deltakerlisteId })
+            skalLeggesTil.map { it.deltakerlisteId }
+        )
 
         if (skalSlettes.isNotEmpty() || skalLeggesTil.isNotEmpty()) {
             logger.info("Ansatt $ansattId koordinator roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size}")
@@ -140,15 +141,19 @@ class IngestService(
         val skalLeggesTil = nye.filter { !gamle.contains(it) }
 
         veilederDeltakerRepository.deaktiver(skalSlettes.map { it.id })
-        veilederDeltakerRepository.leggTil(ansattId, skalLeggesTil.map { VeilederDeltakerRepository.VeilederDeltakerInput(
-            deltakerId = it.deltakerId,
-            veilederType = it.veilederType
-        ) })
+        veilederDeltakerRepository.leggTil(
+            ansattId,
+            skalLeggesTil.map {
+                VeilederDeltakerRepository.VeilederDeltakerInput(
+                    deltakerId = it.deltakerId,
+                    veilederType = it.veilederType
+                )
+            }
+        )
 
         if (skalSlettes.isNotEmpty() || skalLeggesTil.isNotEmpty()) {
             logger.info("Ansatt $ansattId veileder roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size}")
         }
-
     }
 
     private data class KoordinatorDeltakerHolder(val id: Int, val deltakerlisteId: UUID) {
