@@ -87,7 +87,6 @@ class RolleRepository(
         rowMapper
     )
 
-
     data class RolleInput(
         val ansattId: UUID,
         val organisasjonsnummer: String,

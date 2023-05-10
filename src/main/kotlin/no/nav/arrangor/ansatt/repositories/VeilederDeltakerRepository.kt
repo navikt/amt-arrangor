@@ -69,7 +69,6 @@ class VeilederDeltakerRepository(
         rowMapper
     )
 
-
     data class VeilederDeltakerInput(
         val deltakerId: UUID,
         val veilederType: VeilederType

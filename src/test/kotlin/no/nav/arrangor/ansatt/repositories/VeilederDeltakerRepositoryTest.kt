@@ -31,16 +31,20 @@ class VeilederDeltakerRepositoryTest {
     @Test
     fun `leggTil - Legger til`() {
         val ansatt = db.insertAnsatt()
-        repository.leggTil(ansatt.id, deltakere = listOf(
-            lagDeltaker(),
-            lagDeltaker()
-        ))
+        repository.leggTil(
+            ansatt.id,
+            deltakere = listOf(
+                lagDeltaker(),
+                lagDeltaker()
+            )
+        )
     }
 
     private fun lagDeltaker(
         deltakerId: UUID = UUID.randomUUID(),
         veilederType: VeilederType = VeilederType.VEILEDER
     ): VeilederDeltakerRepository.VeilederDeltakerInput = VeilederDeltakerRepository.VeilederDeltakerInput(
-        deltakerId, veilederType
+        deltakerId,
+        veilederType
     )
 }
