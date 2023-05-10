@@ -33,5 +33,4 @@ class MetricsService(
     fun incPubliserteAnsatte(count: Int = 1) = publishedAnsatte.increment(count.toDouble())
     fun incEndretAnsattPersonalia(count: Int = 1) = endredeAnsattPersonalia.increment(count.toDouble())
     fun incEndretAnsattRolle(count: Int = 1) = endredeAnsattRoller.increment(count.toDouble())
-
 }

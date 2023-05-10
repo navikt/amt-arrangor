@@ -40,7 +40,7 @@ class AnsattRolleService(
             isUpdated = rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty(),
             data = rolleRepository.getAktiveRoller(ansattId)
         )
-            .also { if(it.isUpdated) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
+            .also { if (it.isUpdated) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
     }
 
     private fun logFjernet(ansattId: UUID, fjernet: List<OrgRolle>) = fjernet.forEach {
