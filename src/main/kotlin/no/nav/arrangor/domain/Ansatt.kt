@@ -10,7 +10,7 @@ data class Ansatt(
 
 data class Personalia(
     val personident: String,
-    val personId: UUID = UUID.randomUUID(),
+    val personId: UUID?,
     val navn: Navn
 )
 

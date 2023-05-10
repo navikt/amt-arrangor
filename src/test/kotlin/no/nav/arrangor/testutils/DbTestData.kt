@@ -15,7 +15,7 @@ class DbTestData(
 
     fun insertAnsatt(
         personident: String = UUID.randomUUID().toString(),
-        personId: UUID = UUID.randomUUID(),
+        personId: UUID? = null,
         fornavn: String = UUID.randomUUID().toString(),
         mellomnavn: String = UUID.randomUUID().toString(),
         etternavn: String = UUID.randomUUID().toString(),
@@ -32,7 +32,7 @@ class DbTestData(
 
     fun ansatt(
         personident: String = UUID.randomUUID().toString(),
-        personId: UUID = UUID.randomUUID(),
+        personId: UUID? = null,
         fornavn: String = UUID.randomUUID().toString(),
         mellomnavn: String = UUID.randomUUID().toString(),
         etternavn: String = UUID.randomUUID().toString(),

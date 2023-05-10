@@ -52,7 +52,7 @@ class AnsattRepository(
             sql,
             sqlParameters(
                 "id" to ansatt.id,
-                "person_id" to ansatt.personId,
+                "person_id" to (ansatt.personId ?: UUID.randomUUID()),
                 "personident" to ansatt.personident,
                 "fornavn" to ansatt.fornavn,
                 "mellomnavn" to ansatt.mellomnavn,
@@ -106,7 +106,7 @@ class AnsattRepository(
 
     data class AnsattDbo(
         val id: UUID = UUID.randomUUID(),
-        val personId: UUID,
+        val personId: UUID? = UUID.randomUUID(),
         val personident: String,
         val fornavn: String,
         val mellomnavn: String?,
