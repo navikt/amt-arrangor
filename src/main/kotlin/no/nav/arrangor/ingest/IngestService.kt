@@ -1,13 +1,17 @@
 package no.nav.arrangor.ingest
 
 import no.nav.arrangor.ansatt.repositories.AnsattRepository
+import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
 import no.nav.arrangor.ansatt.repositories.RolleRepository
+import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.client.enhetsregister.defaultVirksomhet
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.Arrangor
+import no.nav.arrangor.domain.Veileder
+import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.dto.ArrangorDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -19,6 +23,8 @@ class IngestService(
     private val arrangorRepository: ArrangorRepository,
     private val ansattRepository: AnsattRepository,
     private val rolleRepository: RolleRepository,
+    private val koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository,
+    private val veilederDeltakerRepository: VeilederDeltakerRepository,
     private val enhetsregisterClient: EnhetsregisterClient
 ) {
 
@@ -93,6 +99,76 @@ class IngestService(
                     )
                 }
             )
+
+            oppdaterKoordinatortilganger(arrangor.arrangorId, arrangor.koordinator)
+            oppdaterVeiledertilganger(arrangor.arrangorId, arrangor.veileder)
+        }
+
+        logger.info("Konsumerte ansatt med id ${ansatt.id}")
+    }
+
+    fun oppdaterKoordinatortilganger(ansattId: UUID, deltakerlisteIds: List<UUID>) {
+        val nyeDeltakerlisteIds = deltakerlisteIds.map { KoordinatorDeltakerHolder(-1, it) }
+
+        val gamleDeltakerlisteIds = koordinatorDeltakerlisteRepository.getAktive(ansattId).map {
+            KoordinatorDeltakerHolder(
+                id = it.id,
+                deltakerlisteId = it.deltakerlisteId
+            )
+        }
+
+        val skalSlettes = gamleDeltakerlisteIds.filter { !nyeDeltakerlisteIds.contains(it) }
+        val skalLeggesTil = nyeDeltakerlisteIds.filter { !gamleDeltakerlisteIds.contains(it) }
+
+        koordinatorDeltakerlisteRepository.deaktiverKoordinatorDeltakerliste(skalSlettes.map { it.id })
+        koordinatorDeltakerlisteRepository.leggTilKoordinatorDeltakerlister(
+            ansattId,
+            skalLeggesTil.map { it.deltakerlisteId })
+
+        if (skalSlettes.isNotEmpty() || skalLeggesTil.isNotEmpty()) {
+            logger.info("Ansatt $ansattId koordinator roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size}")
         }
     }
+
+    fun oppdaterVeiledertilganger(ansattId: UUID, veileder: List<Veileder>) {
+        val nye = veileder.map { VeilederDeltakerHolder(-1, it.deltakerId, it.type) }
+
+        val gamle = veilederDeltakerRepository.getAktive(ansattId)
+            .map { VeilederDeltakerHolder(it.id, it.deltakerId, it.veilederType) }
+
+        val skalSlettes = gamle.filter { !nye.contains(it) }
+        val skalLeggesTil = nye.filter { !gamle.contains(it) }
+
+        veilederDeltakerRepository.deaktiver(skalSlettes.map { it.id })
+        veilederDeltakerRepository.leggTil(ansattId, skalLeggesTil.map { VeilederDeltakerRepository.VeilederDeltakerInput(
+            deltakerId = it.deltakerId,
+            veilederType = it.veilederType
+        ) })
+
+        if (skalSlettes.isNotEmpty() || skalLeggesTil.isNotEmpty()) {
+            logger.info("Ansatt $ansattId veileder roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size}")
+        }
+
+    }
+
+    private data class KoordinatorDeltakerHolder(val id: Int, val deltakerlisteId: UUID) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as KoordinatorDeltakerHolder
+
+            return deltakerlisteId == other.deltakerlisteId
+        }
+
+        override fun hashCode(): Int {
+            return deltakerlisteId.hashCode()
+        }
+    }
+
+    private data class VeilederDeltakerHolder(
+        val id: Int,
+        val deltakerId: UUID,
+        val veilederType: VeilederType
+    )
 }
