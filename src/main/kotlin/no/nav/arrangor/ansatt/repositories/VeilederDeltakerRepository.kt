@@ -63,6 +63,13 @@ class VeilederDeltakerRepository(
         )
     }
 
+    fun getAll(ansattId: UUID): List<VeilederDeltakerDbo> = template.query(
+        "SELECT * FROM veileder_deltaker WHERE ansatt_id = :ansatt_id",
+        sqlParameters("ansatt_id" to ansattId),
+        rowMapper
+    )
+
+
     data class VeilederDeltakerInput(
         val deltakerId: UUID,
         val veilederType: VeilederType

@@ -1,5 +1,6 @@
 package no.nav.arrangor.ingest
 
+import no.nav.arrangor.ansatt.AnsattRolleService
 import no.nav.arrangor.ansatt.repositories.AnsattRepository
 import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
 import no.nav.arrangor.ansatt.repositories.RolleRepository
@@ -23,6 +24,7 @@ class IngestService(
     private val arrangorRepository: ArrangorRepository,
     private val ansattRepository: AnsattRepository,
     private val rolleRepository: RolleRepository,
+    private val rolleService: AnsattRolleService,
     private val koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository,
     private val veilederDeltakerRepository: VeilederDeltakerRepository,
     private val enhetsregisterClient: EnhetsregisterClient
@@ -90,16 +92,23 @@ class IngestService(
                 return
             }
 
-            rolleRepository.leggTilRoller(
-                arrangor.roller.map {
-                    RolleRepository.RolleInput(
-                        ansattId = ansatt.id,
-                        organisasjonsnummer = organisasjonsnummer,
-                        rolle = it
-                    )
-                }
-            )
+            val gamleRoller = rolleRepository.getAktiveRoller(ansatt.id).map {
+                AnsattRolleService.OrgRolle(
+                    id = it.id,
+                    organisasjonsnummer = it.organisasjonsnummer,
+                    rolle = it.rolle
+                )
+            }
 
+            val nyeRoller = arrangor.roller.map {
+                AnsattRolleService.OrgRolle(
+                    id = -1,
+                    organisasjonsnummer = organisasjonsnummer,
+                    rolle = it
+                )
+            }
+
+            rolleService.oppdaterRoller(ansatt.id, gamleRoller, nyeRoller)
             oppdaterKoordinatortilganger(ansatt.id, arrangor.koordinator)
             oppdaterVeiledertilganger(ansatt.id, arrangor.veileder)
         }
@@ -175,5 +184,21 @@ class IngestService(
         val id: Int,
         val deltakerId: UUID,
         val veilederType: VeilederType
-    )
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as VeilederDeltakerHolder
+
+            if (deltakerId != other.deltakerId) return false
+            return veilederType == other.veilederType
+        }
+
+        override fun hashCode(): Int {
+            var result = deltakerId.hashCode()
+            result = 31 * result + veilederType.hashCode()
+            return result
+        }
+    }
 }

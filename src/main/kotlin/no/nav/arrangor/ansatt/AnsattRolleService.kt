@@ -27,6 +27,15 @@ class AnsattRolleService(
         val gamleRoller = dboToOrgRolle(rolleRepository.getAktiveRoller(ansattId))
         val nyeRoller = altinnToOrgRolle(altinnClient.hentRoller(personident).getOrThrow())
 
+        val updated = oppdaterRoller(ansattId, gamleRoller, nyeRoller)
+
+        return DataUpdateWrapper(
+            isUpdated = updated,
+            data = rolleRepository.getAktiveRoller(ansattId)
+        )
+    }
+
+    fun oppdaterRoller(ansattId: UUID, gamleRoller: List<OrgRolle>, nyeRoller: List<OrgRolle>): Boolean {
         val rollerSomSkalSlettes = gamleRoller.filter { !nyeRoller.contains(it) }
         val rollerSomSkalLeggesTil = nyeRoller.filter { !gamleRoller.contains(it) }
 
@@ -36,11 +45,8 @@ class AnsattRolleService(
         rolleRepository.leggTilRoller(rollerSomSkalLeggesTil.map { it.toInput(ansattId) })
             .also { logLagtTil(ansattId, rollerSomSkalLeggesTil) }
 
-        return DataUpdateWrapper(
-            isUpdated = rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty(),
-            data = rolleRepository.getAktiveRoller(ansattId)
-        )
-            .also { if (it.isUpdated) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
+        return rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty()
+            .also { if (it) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
     }
 
     private fun logFjernet(ansattId: UUID, fjernet: List<OrgRolle>) = fjernet.forEach {
@@ -58,7 +64,7 @@ class AnsattRolleService(
         .flatMap { entry -> entry.roller.map { entry.organisasjonsnummer to it } }
         .map { OrgRolle(-1, it.first, it.second) }
 
-    private data class OrgRolle(
+    data class OrgRolle(
         val id: Int,
         val organisasjonsnummer: String,
         val rolle: AnsattRolle

@@ -60,6 +60,12 @@ class KoordinatorDeltakerlisteRepository(
         )
     }
 
+    fun getAll(ansattId: UUID): List<KoordinatorDeltakerlisteDbo> = template.query(
+        "SELECT * FROM koordinator_deltakerliste WHERE ansatt_id = :ansatt_id",
+        sqlParameters("ansatt_id" to ansattId),
+        rowMapper
+    )
+
     data class KoordinatorDeltakerlisteDbo(
         val id: Int,
         val ansattId: UUID,

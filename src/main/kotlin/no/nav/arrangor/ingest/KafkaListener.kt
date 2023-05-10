@@ -12,7 +12,7 @@ class KafkaListener(
 ) {
 
     @KafkaListener(
-        topics = [ARRANGOR_TOPIC, ANSATT_TOPIC],
+        topics = [ARRANGOR_TOPIC, ANSATT_TOPIC, MULIGHETSROMMET_TOPIC],
         properties = ["auto.offset.reset = earliest"],
         containerFactory = "kafkaListenerContainerFactory"
     )

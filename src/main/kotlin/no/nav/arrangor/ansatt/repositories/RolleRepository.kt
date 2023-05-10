@@ -75,6 +75,19 @@ class RolleRepository(
         )
     }
 
+    fun getAll(ansattId: UUID): List<RolleDbo> = template.query(
+        """
+            SELECT ansatt_rolle.*,
+                   arrangor.organisasjonsnummer as organisasjonsnummer
+            FROM ansatt_rolle 
+            left join arrangor on ansatt_rolle.arrangor_id = arrangor.id 
+            WHERE ansatt_id = :ansatt_id
+        """.trimIndent(),
+        sqlParameters("ansatt_id" to ansattId),
+        rowMapper
+    )
+
+
     data class RolleInput(
         val ansattId: UUID,
         val organisasjonsnummer: String,
