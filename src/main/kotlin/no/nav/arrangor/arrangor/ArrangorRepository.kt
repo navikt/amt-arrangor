@@ -11,101 +11,101 @@ import java.util.UUID
 
 @Repository
 class ArrangorRepository(
-    private val template: NamedParameterJdbcTemplate
+	private val template: NamedParameterJdbcTemplate
 ) {
 
-    private val rowMapper = RowMapper { rs, _ ->
-        ArrangorDbo(
-            id = UUID.fromString(rs.getString("id")),
-            navn = rs.getString("navn"),
-            organisasjonsnummer = rs.getString("organisasjonsnummer"),
-            overordnetArrangorId = rs.getNullableUUID("overordnet_arrangor_id")
-        )
-    }
+	private val rowMapper = RowMapper { rs, _ ->
+		ArrangorDbo(
+			id = UUID.fromString(rs.getString("id")),
+			navn = rs.getString("navn"),
+			organisasjonsnummer = rs.getString("organisasjonsnummer"),
+			overordnetArrangorId = rs.getNullableUUID("overordnet_arrangor_id")
+		)
+	}
 
-    fun insertOrUpdate(arrangorInput: ArrangorDbo): ArrangorDbo {
-        val sql = """
-        INSERT INTO arrangor(id, navn, organisasjonsnummer, overordnet_arrangor_id)
-        VALUES (:id,
-                :navn,
-                :organisasjonsnummer,
-                :overordnet_arrangor_id)
-        ON CONFLICT (organisasjonsnummer) DO UPDATE SET
-                navn     							 = :navn,
-                overordnet_arrangor_id 			     = :overordnet_arrangor_id,
-                last_synchronized                    = current_timestamp
-        RETURNING *
-        """.trimIndent()
+	fun insertOrUpdate(arrangorInput: ArrangorDbo): ArrangorDbo {
+		val sql = """
+		INSERT INTO arrangor(id, navn, organisasjonsnummer, overordnet_arrangor_id)
+		VALUES (:id,
+		        :navn,
+		        :organisasjonsnummer,
+		        :overordnet_arrangor_id)
+		ON CONFLICT (organisasjonsnummer) DO UPDATE SET
+		        navn     							 = :navn,
+		        overordnet_arrangor_id 			     = :overordnet_arrangor_id,
+		        last_synchronized                    = current_timestamp
+		RETURNING *
+		""".trimIndent()
 
-        return template.query(
-            sql,
-            sqlParameters(
-                "id" to arrangorInput.id,
-                "navn" to arrangorInput.navn,
-                "organisasjonsnummer" to arrangorInput.organisasjonsnummer,
-                "overordnet_arrangor_id" to arrangorInput.overordnetArrangorId
-            ),
-            rowMapper
-        )
-            .first()
-    }
+		return template.query(
+			sql,
+			sqlParameters(
+				"id" to arrangorInput.id,
+				"navn" to arrangorInput.navn,
+				"organisasjonsnummer" to arrangorInput.organisasjonsnummer,
+				"overordnet_arrangor_id" to arrangorInput.overordnetArrangorId
+			),
+			rowMapper
+		)
+			.first()
+	}
 
-    fun get(id: UUID): ArrangorDbo? = template.query(
-        "SELECT * FROM arrangor WHERE id = :id",
-        sqlParameters("id" to id),
-        rowMapper
-    ).firstOrNull()
+	fun get(id: UUID): ArrangorDbo? = template.query(
+		"SELECT * FROM arrangor WHERE id = :id",
+		sqlParameters("id" to id),
+		rowMapper
+	).firstOrNull()
 
-    fun get(orgNr: String): ArrangorDbo? = template.query(
-        "SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
-        sqlParameters("organisasjonsnummer" to orgNr),
-        rowMapper
-    ).firstOrNull()
+	fun get(orgNr: String): ArrangorDbo? = template.query(
+		"SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
+		sqlParameters("organisasjonsnummer" to orgNr),
+		rowMapper
+	).firstOrNull()
 
-    fun getIdsForOrganisasjonsnummer(orgiansasjonsnummer: List<String>): Map<String, UUID> {
-        return template.query(
-            "SELECT * from arrangor where organisasjonsnummer in (:orgiansasjonsnummer)",
-            sqlParameters("orgiansasjonsnummer" to orgiansasjonsnummer),
-            rowMapper
-        ).associate { it.organisasjonsnummer to it.id }
-    }
+	fun getIdsForOrganisasjonsnummer(orgiansasjonsnummer: List<String>): Map<String, UUID> {
+		return template.query(
+			"SELECT * from arrangor where organisasjonsnummer in (:orgiansasjonsnummer)",
+			sqlParameters("orgiansasjonsnummer" to orgiansasjonsnummer),
+			rowMapper
+		).associate { it.organisasjonsnummer to it.id }
+	}
 
-    fun getOrganiasjonsnummerForId(id: UUID): String? = template.query(
-        "SELECT * FROM arrangor where id = :id",
-        sqlParameters("id" to id),
-        rowMapper
-    ).firstOrNull()
-        ?.organisasjonsnummer
+	fun getOrganiasjonsnummerForId(id: UUID): String? = template.query(
+		"SELECT * FROM arrangor where id = :id",
+		sqlParameters("id" to id),
+		rowMapper
+	).firstOrNull()
+		?.organisasjonsnummer
 
-    fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<ArrangorDbo> {
-        val sql = """
-        SELECT *
-        FROM arrangor
-        WHERE last_synchronized < :synchronized_before
-        ORDER BY last_synchronized asc
-        limit :limit
-        """.trimIndent()
+	fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<ArrangorDbo> {
+		val sql = """
+		SELECT *
+		FROM arrangor
+		WHERE last_synchronized < :synchronized_before
+		ORDER BY last_synchronized asc
+		limit :limit
+		""".trimIndent()
 
-        val parameters = sqlParameters(
-            "limit" to maxSize,
-            "synchronized_before" to synchronizedBefore
-        )
+		val parameters = sqlParameters(
+			"limit" to maxSize,
+			"synchronized_before" to synchronizedBefore
+		)
 
-        return template.query(sql, parameters, rowMapper)
-    }
+		return template.query(sql, parameters, rowMapper)
+	}
 
-    data class ArrangorDbo(
-        val id: UUID = UUID.randomUUID(),
-        val navn: String,
-        val organisasjonsnummer: String,
-        val overordnetArrangorId: UUID?
-    ) {
-        fun toDomain(deltakerlister: Set<UUID>): Arrangor = Arrangor(
-            id = id,
-            navn = navn,
-            organisasjonsnummer = organisasjonsnummer,
-            overordnetArrangorId = overordnetArrangorId,
-            deltakerlister = deltakerlister
-        )
-    }
+	data class ArrangorDbo(
+		val id: UUID = UUID.randomUUID(),
+		val navn: String,
+		val organisasjonsnummer: String,
+		val overordnetArrangorId: UUID?
+	) {
+		fun toDomain(deltakerlister: Set<UUID>): Arrangor = Arrangor(
+			id = id,
+			navn = navn,
+			organisasjonsnummer = organisasjonsnummer,
+			overordnetArrangorId = overordnetArrangorId,
+			deltakerlister = deltakerlister
+		)
+	}
 }

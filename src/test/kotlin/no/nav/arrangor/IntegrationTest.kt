@@ -36,116 +36,116 @@ import java.util.*
 @SpringBootTest(classes = [ArrangorApplication::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class IntegrationTest {
 
-    @Autowired
-    lateinit var mockOAuth2Server: MockOAuth2Server
+	@Autowired
+	lateinit var mockOAuth2Server: MockOAuth2Server
 
-    @LocalServerPort
-    private var port: Int = 0
+	@LocalServerPort
+	private var port: Int = 0
 
-    fun serverUrl() = "http://localhost:$port"
+	fun serverUrl() = "http://localhost:$port"
 
-    private val client = OkHttpClient.Builder()
-        .callTimeout(Duration.ofMinutes(5))
-        .build()
+	private val client = OkHttpClient.Builder()
+		.callTimeout(Duration.ofMinutes(5))
+		.build()
 
-    @AfterEach
-    fun cleanDatabase() {
-        DbTestDataUtils.cleanDatabase(postgresDataSource)
-        mockAmtEnhetsregiserServer.resetHttpServer()
-    }
+	@AfterEach
+	fun cleanDatabase() {
+		DbTestDataUtils.cleanDatabase(postgresDataSource)
+		mockAmtEnhetsregiserServer.resetHttpServer()
+	}
 
-    companion object {
-        val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer()
-        val mockMachineToMachineHttpServer = MockMachineToMachineHttpServer()
-        val mockAltinnServer = MockAltinnServer()
-        val mockPersonServer = MockPersonServer()
+	companion object {
+		val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer()
+		val mockMachineToMachineHttpServer = MockMachineToMachineHttpServer()
+		val mockAltinnServer = MockAltinnServer()
+		val mockPersonServer = MockPersonServer()
 
-        val postgresDataSource = SingletonPostgresContainer.getDataSource()
+		val postgresDataSource = SingletonPostgresContainer.getDataSource()
 
-        @JvmStatic
-        @DynamicPropertySource
-        fun registerProperties(registry: DynamicPropertyRegistry) {
-            mockMachineToMachineHttpServer.start()
-            registry.add("nais.env.azureOpenIdConfigTokenEndpoint") {
-                mockMachineToMachineHttpServer.serverUrl() + MockMachineToMachineHttpServer.tokenPath
-            }
+		@JvmStatic
+		@DynamicPropertySource
+		fun registerProperties(registry: DynamicPropertyRegistry) {
+			mockMachineToMachineHttpServer.start()
+			registry.add("nais.env.azureOpenIdConfigTokenEndpoint") {
+				mockMachineToMachineHttpServer.serverUrl() + MockMachineToMachineHttpServer.tokenPath
+			}
 
-            mockAmtEnhetsregiserServer.start()
-            registry.add("amt-enhetsregister.url") { mockAmtEnhetsregiserServer.serverUrl() }
-            registry.add("amt-enhetsregister.scope") { "test.enhetsregister.scope" }
+			mockAmtEnhetsregiserServer.start()
+			registry.add("amt-enhetsregister.url") { mockAmtEnhetsregiserServer.serverUrl() }
+			registry.add("amt-enhetsregister.scope") { "test.enhetsregister.scope" }
 
-            mockAltinnServer.start()
-            registry.add("amt-altinn.url") { mockAltinnServer.serverUrl() }
-            registry.add("amt-altinn.scope") { "test.altinn.scope" }
+			mockAltinnServer.start()
+			registry.add("amt-altinn.url") { mockAltinnServer.serverUrl() }
+			registry.add("amt-altinn.scope") { "test.altinn.scope" }
 
-            mockPersonServer.start()
-            registry.add("amt-person.url") { mockPersonServer.serverUrl() }
-            registry.add("amt-person.scope") { "test.person.scope" }
+			mockPersonServer.start()
+			registry.add("amt-person.url") { mockPersonServer.serverUrl() }
+			registry.add("amt-person.scope") { "test.person.scope" }
 
-            SingletonPostgresContainer.getContainer().also {
-                registry.add("spring.datasource.url") { it.jdbcUrl }
-                registry.add("spring.datasource.username") { it.username }
-                registry.add("spring.datasource.password") { it.password }
-                registry.add("spring.datasource.hikari.maximum-pool-size") { 3 }
-            }
+			SingletonPostgresContainer.getContainer().also {
+				registry.add("spring.datasource.url") { it.jdbcUrl }
+				registry.add("spring.datasource.username") { it.username }
+				registry.add("spring.datasource.password") { it.password }
+				registry.add("spring.datasource.hikari.maximum-pool-size") { 3 }
+			}
 
-            KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.0.1")).apply {
-                start()
-                System.setProperty("KAFKA_BROKERS", bootstrapServers)
-            }
-        }
-    }
+			KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.0.1")).apply {
+				start()
+				System.setProperty("KAFKA_BROKERS", bootstrapServers)
+			}
+		}
+	}
 
-    fun resetMockServers() {
-        mockAmtEnhetsregiserServer.resetHttpServer()
-        mockAltinnServer.resetHttpServer()
-        mockPersonServer.resetHttpServer()
-    }
+	fun resetMockServers() {
+		mockAmtEnhetsregiserServer.resetHttpServer()
+		mockAltinnServer.resetHttpServer()
+		mockPersonServer.resetHttpServer()
+	}
 
-    fun sendRequest(
-        method: String,
-        path: String,
-        body: RequestBody? = null,
-        headers: Map<String, String> = emptyMap()
-    ): Response {
-        val reqBuilder = Request.Builder()
-            .url("${serverUrl()}$path")
-            .method(method, body)
+	fun sendRequest(
+		method: String,
+		path: String,
+		body: RequestBody? = null,
+		headers: Map<String, String> = emptyMap()
+	): Response {
+		val reqBuilder = Request.Builder()
+			.url("${serverUrl()}$path")
+			.method(method, body)
 
-        headers.forEach {
-            reqBuilder.addHeader(it.key, it.value)
-        }
+		headers.forEach {
+			reqBuilder.addHeader(it.key, it.value)
+		}
 
-        return client.newCall(reqBuilder.build()).execute()
-    }
+		return client.newCall(reqBuilder.build()).execute()
+	}
 
-    fun getTokenxToken(
-        fnr: String,
-        audience: String = "amt-arrangor-client-id",
-        issuerId: String = Issuer.TOKEN_X,
-        clientId: String = "amt-tiltaksarrangor-bff",
-        claims: Map<String, Any> = mapOf(
-            "acr" to "Level4",
-            "idp" to "idporten",
-            "client_id" to clientId,
-            "pid" to fnr
-        )
-    ): String {
-        return mockOAuth2Server.issueToken(
-            issuerId,
-            clientId,
-            DefaultOAuth2TokenCallback(
-                issuerId = issuerId,
-                subject = UUID.randomUUID().toString(),
-                audience = listOf(audience),
-                claims = claims,
-                expiry = 3600
-            )
-        ).serialize()
-    }
+	fun getTokenxToken(
+		fnr: String,
+		audience: String = "amt-arrangor-client-id",
+		issuerId: String = Issuer.TOKEN_X,
+		clientId: String = "amt-tiltaksarrangor-bff",
+		claims: Map<String, Any> = mapOf(
+			"acr" to "Level4",
+			"idp" to "idporten",
+			"client_id" to clientId,
+			"pid" to fnr
+		)
+	): String {
+		return mockOAuth2Server.issueToken(
+			issuerId,
+			clientId,
+			DefaultOAuth2TokenCallback(
+				issuerId = issuerId,
+				subject = UUID.randomUUID().toString(),
+				audience = listOf(audience),
+				claims = claims,
+				expiry = 3600
+			)
+		).serialize()
+	}
 }
 
 fun String.toJsonRequestBody(): RequestBody {
-    val mediaTypeJson = "application/json".toMediaType()
-    return this.toRequestBody(mediaTypeJson)
+	val mediaTypeJson = "application/json".toMediaType()
+	return this.toRequestBody(mediaTypeJson)
 }

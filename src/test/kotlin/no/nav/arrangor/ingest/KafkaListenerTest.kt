@@ -21,59 +21,59 @@ import java.util.concurrent.TimeUnit
 
 class KafkaListenerTest : IntegrationTest() {
 
-    @Autowired
-    lateinit var testKafkaProducer: KafkaProducer<String, String>
+	@Autowired
+	lateinit var testKafkaProducer: KafkaProducer<String, String>
 
-    @Autowired
-    lateinit var testKafkaConsumer: Consumer<String, String>
+	@Autowired
+	lateinit var testKafkaConsumer: Consumer<String, String>
 
-    @Autowired
-    lateinit var arrangorService: ArrangorService
+	@Autowired
+	lateinit var arrangorService: ArrangorService
 
-    @Autowired
-    lateinit var arrangorRepository: ArrangorRepository
+	@Autowired
+	lateinit var arrangorRepository: ArrangorRepository
 
-    @BeforeEach
-    fun setUp() {
-        testKafkaConsumer.subscribeHvisIkkeSubscribed(ARRANGOR_TOPIC)
-    }
+	@BeforeEach
+	fun setUp() {
+		testKafkaConsumer.subscribeHvisIkkeSubscribed(ARRANGOR_TOPIC)
+	}
 
-    @AfterEach
-    fun tearDown() {
-        DbTestDataUtils.cleanDatabase(postgresDataSource)
-    }
+	@AfterEach
+	fun tearDown() {
+		DbTestDataUtils.cleanDatabase(postgresDataSource)
+	}
 
-    @Test
-    fun `listen - lagre arrangor`() {
-        val arrangor = arrangor()
+	@Test
+	fun `listen - lagre arrangor`() {
+		val arrangor = arrangor()
 
-        testKafkaProducer.send(
-            ProducerRecord(
-                ARRANGOR_TOPIC,
-                null,
-                arrangor.id.toString(),
-                JsonUtils.toJson(arrangor)
-            )
-        )
+		testKafkaProducer.send(
+			ProducerRecord(
+				ARRANGOR_TOPIC,
+				null,
+				arrangor.id.toString(),
+				JsonUtils.toJson(arrangor)
+			)
+		)
 
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until {
-            arrangorRepository.get(arrangor.organisasjonsnummer) != null
-        }
+		Awaitility.await().atMost(5, TimeUnit.SECONDS).until {
+			arrangorRepository.get(arrangor.organisasjonsnummer) != null
+		}
 
-        arrangorService.get(arrangor.id) shouldNotBe null
-    }
+		arrangorService.get(arrangor.id) shouldNotBe null
+	}
 
-    fun arrangor(
-        id: UUID = UUID.randomUUID(),
-        navn: String = "navn",
-        organisasjonsnummer: String = "123",
-        overordnetArrangorId: UUID? = null,
-        deltakerlister: List<UUID> = listOf(UUID.randomUUID())
-    ) = ArrangorDto(
-        id = id,
-        navn = navn,
-        organisasjonsnummer = organisasjonsnummer,
-        overordnetArrangorId = overordnetArrangorId,
-        deltakerlister = deltakerlister
-    )
+	fun arrangor(
+		id: UUID = UUID.randomUUID(),
+		navn: String = "navn",
+		organisasjonsnummer: String = "123",
+		overordnetArrangorId: UUID? = null,
+		deltakerlister: List<UUID> = listOf(UUID.randomUUID())
+	) = ArrangorDto(
+		id = id,
+		navn = navn,
+		organisasjonsnummer = organisasjonsnummer,
+		overordnetArrangorId = overordnetArrangorId,
+		deltakerlister = deltakerlister
+	)
 }

@@ -13,13 +13,13 @@ import java.util.*
 @ProtectedWithClaims(issuer = Issuer.TOKEN_X)
 @RequestMapping("/api/arrangor")
 class ArrangorController(
-    private val arrangorService: ArrangorService
+	private val arrangorService: ArrangorService
 ) {
 
-    @GetMapping("{id}")
-    fun get(@PathVariable("id") id: UUID): Arrangor = arrangorService.get(id)
-        ?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
+	@GetMapping("{id}")
+	fun get(@PathVariable("id") id: UUID): Arrangor = arrangorService.get(id)
+		?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 
-    @GetMapping("/organisasjonsnummer/{orgNr}")
-    fun getByOrgNr(@PathVariable("orgNr") orgNr: String): Arrangor? = arrangorService.get(orgNr)
+	@GetMapping("/organisasjonsnummer/{orgNr}")
+	fun getByOrgNr(@PathVariable("orgNr") orgNr: String): Arrangor? = arrangorService.get(orgNr)
 }

@@ -17,68 +17,68 @@ import java.util.UUID
  */
 @Service
 class ArrangorService(
-    private val arrangorRepository: ArrangorRepository,
-    private val deltakerlisteRepository: DeltakerlisteRepository,
-    private val enhetsregisterClient: EnhetsregisterClient,
-    private val publishService: PublishService,
-    private val metricsService: MetricsService
+	private val arrangorRepository: ArrangorRepository,
+	private val deltakerlisteRepository: DeltakerlisteRepository,
+	private val enhetsregisterClient: EnhetsregisterClient,
+	private val publishService: PublishService,
+	private val metricsService: MetricsService
 ) {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+	private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
-        .let { it?.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
+	fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
+		.let { it?.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
 
-    fun get(orgNr: String): Arrangor = (
-        arrangorRepository.get(orgNr)
-            ?: leggTilOppdaterArrangor(orgNr)
-        )
-        .let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
+	fun get(orgNr: String): Arrangor = (
+		arrangorRepository.get(orgNr)
+			?: leggTilOppdaterArrangor(orgNr)
+		)
+		.let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
 
-    fun addDeltakerlister(arrangorId: UUID, deltakerlisteIds: Set<UUID>) =
-        deltakerlisteRepository.addUpdateDeltakerlister(arrangorId, deltakerlisteIds)
+	fun addDeltakerlister(arrangorId: UUID, deltakerlisteIds: Set<UUID>) =
+		deltakerlisteRepository.addUpdateDeltakerlister(arrangorId, deltakerlisteIds)
 
-    fun oppdaterArrangorer(limit: Int = 50, synchronizedBefore: LocalDateTime = LocalDateTime.now().minusDays(1)) =
-        arrangorRepository.getToSynchronize(limit, synchronizedBefore)
-            .map { oppdaterArrangor(it) }
-            .also { logger.info("Oppdaterte ${it.size} arrangører") }
+	fun oppdaterArrangorer(limit: Int = 50, synchronizedBefore: LocalDateTime = LocalDateTime.now().minusDays(1)) =
+		arrangorRepository.getToSynchronize(limit, synchronizedBefore)
+			.map { oppdaterArrangor(it) }
+			.also { logger.info("Oppdaterte ${it.size} arrangører") }
 
-    fun oppdaterArrangor(arrangor: ArrangorRepository.ArrangorDbo): ArrangorRepository.ArrangorDbo =
-        leggTilOppdaterArrangor(arrangor.organisasjonsnummer)
+	fun oppdaterArrangor(arrangor: ArrangorRepository.ArrangorDbo): ArrangorRepository.ArrangorDbo =
+		leggTilOppdaterArrangor(arrangor.organisasjonsnummer)
 
-    private fun leggTilOppdaterArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
-        val arrangor = arrangorRepository.get(orgNr)
+	private fun leggTilOppdaterArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
+		val arrangor = arrangorRepository.get(orgNr)
 
-        val oldVirksomhet = arrangor?.let { oar ->
-            val overordnet = oar.overordnetArrangorId?.let { arrangorRepository.get(it) }
-            Virksomhet(oar.organisasjonsnummer, oar.navn, overordnet?.organisasjonsnummer, overordnet?.navn)
-        }
+		val oldVirksomhet = arrangor?.let { oar ->
+			val overordnet = oar.overordnetArrangorId?.let { arrangorRepository.get(it) }
+			Virksomhet(oar.organisasjonsnummer, oar.navn, overordnet?.organisasjonsnummer, overordnet?.navn)
+		}
 
-        val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(defaultVirksomhet(orgNr))
+		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(defaultVirksomhet(orgNr))
 
-        if (oldVirksomhet != virksomhet) {
-            val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
-                arrangorRepository.insertOrUpdate(
-                    ArrangorRepository.ArrangorDbo(
-                        navn = virksomhet.overordnetEnhetNavn
-                            ?: throw IllegalStateException("Navn burde vært satt for $orgNr's overordnet enhet (${virksomhet.overordnetEnhetOrganisasjonsnummer}"),
-                        organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
-                        overordnetArrangorId = null
-                    )
-                )
-            }
+		if (oldVirksomhet != virksomhet) {
+			val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
+				arrangorRepository.insertOrUpdate(
+					ArrangorRepository.ArrangorDbo(
+						navn = virksomhet.overordnetEnhetNavn
+							?: throw IllegalStateException("Navn burde vært satt for $orgNr's overordnet enhet (${virksomhet.overordnetEnhetOrganisasjonsnummer}"),
+						organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
+						overordnetArrangorId = null
+					)
+				)
+			}
 
-            return arrangorRepository.insertOrUpdate(
-                ArrangorRepository.ArrangorDbo(
-                    navn = virksomhet.navn,
-                    organisasjonsnummer = virksomhet.organisasjonsnummer,
-                    overordnetArrangorId = overordnetArrangor?.id
-                )
-                    .also { publishService.publishArrangor(it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id))) }
-                    .also { metricsService.incEndredeArrangorer() }
-            )
-        }
+			return arrangorRepository.insertOrUpdate(
+				ArrangorRepository.ArrangorDbo(
+					navn = virksomhet.navn,
+					organisasjonsnummer = virksomhet.organisasjonsnummer,
+					overordnetArrangorId = overordnetArrangor?.id
+				)
+					.also { publishService.publishArrangor(it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id))) }
+					.also { metricsService.incEndredeArrangorer() }
+			)
+		}
 
-        return arrangor
-    }
+		return arrangor
+	}
 }

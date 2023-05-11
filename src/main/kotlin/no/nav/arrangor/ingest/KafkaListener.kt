@@ -8,21 +8,21 @@ import org.springframework.stereotype.Component
 
 @Component
 class KafkaListener(
-    private val ingestService: IngestService
+	private val ingestService: IngestService
 ) {
 
-    @KafkaListener(
-        topics = [ARRANGOR_TOPIC, ANSATT_TOPIC, MULIGHETSROMMET_TOPIC],
-        properties = ["auto.offset.reset = earliest"],
-        containerFactory = "kafkaListenerContainerFactory"
-    )
-    fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
-        when (record.topic()) {
-            ARRANGOR_TOPIC -> ingestService.handleArrangor(JsonUtils.fromJson(record.value()))
-            ANSATT_TOPIC -> ingestService.handleAnsatt(JsonUtils.fromJson(record.value()))
-            MULIGHETSROMMET_TOPIC -> ingestService.handleGjennomforing(JsonUtils.fromJson(record.value()))
-            else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
-        }
-        ack.acknowledge()
-    }
+	@KafkaListener(
+		topics = [ARRANGOR_TOPIC, ANSATT_TOPIC, MULIGHETSROMMET_TOPIC],
+		properties = ["auto.offset.reset = earliest"],
+		containerFactory = "kafkaListenerContainerFactory"
+	)
+	fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
+		when (record.topic()) {
+			ARRANGOR_TOPIC -> ingestService.handleArrangor(record.value()?.let { JsonUtils.fromJson(it) })
+			ANSATT_TOPIC -> ingestService.handleAnsatt(record.value()?.let { JsonUtils.fromJson(it) })
+			MULIGHETSROMMET_TOPIC -> ingestService.handleGjennomforing(record.value()?.let { JsonUtils.fromJson(it) })
+			else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
+		}
+		ack.acknowledge()
+	}
 }

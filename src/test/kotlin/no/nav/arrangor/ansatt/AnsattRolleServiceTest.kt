@@ -22,106 +22,106 @@ const val VEILEDER = "VEILEDER"
 
 class AnsattRolleServiceTest : IntegrationTest() {
 
-    @Autowired
-    lateinit var rolleService: AnsattRolleService
+	@Autowired
+	lateinit var rolleService: AnsattRolleService
 
-    @Autowired
-    lateinit var rolleRepository: RolleRepository
+	@Autowired
+	lateinit var rolleRepository: RolleRepository
 
-    @Autowired
-    lateinit var dataSource: DataSource
+	@Autowired
+	lateinit var dataSource: DataSource
 
-    lateinit var db: DbTestData
+	lateinit var db: DbTestData
 
-    lateinit var ansatt: AnsattRepository.AnsattDbo
+	lateinit var ansatt: AnsattRepository.AnsattDbo
 
-    lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
-    lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
-    lateinit var arrangorThree: ArrangorRepository.ArrangorDbo
+	lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
+	lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
+	lateinit var arrangorThree: ArrangorRepository.ArrangorDbo
 
-    @BeforeEach
-    fun setUp() {
-        db = DbTestData(NamedParameterJdbcTemplate(dataSource))
+	@BeforeEach
+	fun setUp() {
+		db = DbTestData(NamedParameterJdbcTemplate(dataSource))
 
-        ansatt = db.insertAnsatt()
+		ansatt = db.insertAnsatt()
 
-        arrangorOne = db.insertArrangor()
-        arrangorTwo = db.insertArrangor()
-        arrangorThree = db.insertArrangor()
-    }
+		arrangorOne = db.insertArrangor()
+		arrangorTwo = db.insertArrangor()
+		arrangorThree = db.insertArrangor()
+	}
 
-    @AfterEach
-    fun tearDown() {
-        DbTestDataUtils.cleanDatabase(dataSource)
-    }
+	@AfterEach
+	fun tearDown() {
+		DbTestDataUtils.cleanDatabase(dataSource)
+	}
 
-    @Test
-    fun `oppdaterRoller - nye roller, ingen gamle roller`() {
-        mockAltinnServer.addRoller(
-            ansatt.personident,
-            AltinnAclClient.ResponseWrapper(
-                listOf(
-                    AltinnAclClient.ResponseEntry(arrangorOne.organisasjonsnummer, listOf(KOORDINATOR)),
-                    AltinnAclClient.ResponseEntry(arrangorTwo.organisasjonsnummer, listOf(KOORDINATOR, VEILEDER))
-                )
-            )
-        )
+	@Test
+	fun `oppdaterRoller - nye roller, ingen gamle roller`() {
+		mockAltinnServer.addRoller(
+			ansatt.personident,
+			AltinnAclClient.ResponseWrapper(
+				listOf(
+					AltinnAclClient.ResponseEntry(arrangorOne.organisasjonsnummer, listOf(KOORDINATOR)),
+					AltinnAclClient.ResponseEntry(arrangorTwo.organisasjonsnummer, listOf(KOORDINATOR, VEILEDER))
+				)
+			)
+		)
 
-        val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
-            .also { it.isUpdated shouldBe true }
-            .data
+		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+			.also { it.isUpdated shouldBe true }
+			.data
 
-        roller.size shouldBe 3
+		roller.size shouldBe 3
 
-        val rollerArrangorOne = roller.filter { it.arrangorId == arrangorOne.id }
-        rollerArrangorOne.size shouldBe 1
-        rollerArrangorOne[0].ansattId shouldBe ansatt.id
-        rollerArrangorOne[0].rolle shouldBe AnsattRolle.KOORDINATOR
-        rollerArrangorOne[0].gyldigTil shouldBe null
+		val rollerArrangorOne = roller.filter { it.arrangorId == arrangorOne.id }
+		rollerArrangorOne.size shouldBe 1
+		rollerArrangorOne[0].ansattId shouldBe ansatt.id
+		rollerArrangorOne[0].rolle shouldBe AnsattRolle.KOORDINATOR
+		rollerArrangorOne[0].gyldigTil shouldBe null
 
-        val rollerArrangorTwo = roller.filter { it.arrangorId == arrangorTwo.id }
-        rollerArrangorTwo.size shouldBe 2
-        rollerArrangorTwo.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
-    }
+		val rollerArrangorTwo = roller.filter { it.arrangorId == arrangorTwo.id }
+		rollerArrangorTwo.size shouldBe 2
+		rollerArrangorTwo.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
+	}
 
-    @Test
-    fun `oppdaterRoller - likt i altinn og database - ingen endringer`() {
-        rolleRepository.leggTilRoller(
-            listOf(
-                RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR)
-            )
-        )
+	@Test
+	fun `oppdaterRoller - likt i altinn og database - ingen endringer`() {
+		rolleRepository.leggTilRoller(
+			listOf(
+				RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR)
+			)
+		)
 
-        mockAltinnServer.addRoller(
-            ansatt.personident,
-            AltinnAclClient.ResponseWrapper(
-                listOf(AltinnAclClient.ResponseEntry(arrangorOne.organisasjonsnummer, listOf(KOORDINATOR)))
-            )
-        )
+		mockAltinnServer.addRoller(
+			ansatt.personident,
+			AltinnAclClient.ResponseWrapper(
+				listOf(AltinnAclClient.ResponseEntry(arrangorOne.organisasjonsnummer, listOf(KOORDINATOR)))
+			)
+		)
 
-        val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
-            .also { it.isUpdated shouldBe false }
-            .data
+		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+			.also { it.isUpdated shouldBe false }
+			.data
 
-        roller.size shouldBe 1
-        roller[0].arrangorId shouldBe arrangorOne.id
-        roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
-    }
+		roller.size shouldBe 1
+		roller[0].arrangorId shouldBe arrangorOne.id
+		roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+	}
 
-    @Test
-    fun `oppdaterRoller - i database, men ingen i altinn - fjerner roller`() {
-        rolleRepository.leggTilRoller(
-            listOf(
-                RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR)
-            )
-        )
+	@Test
+	fun `oppdaterRoller - i database, men ingen i altinn - fjerner roller`() {
+		rolleRepository.leggTilRoller(
+			listOf(
+				RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR)
+			)
+		)
 
-        mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
+		mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
 
-        val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
-            .also { it.isUpdated shouldBe true }
-            .data
+		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+			.also { it.isUpdated shouldBe true }
+			.data
 
-        roller.isEmpty() shouldBe true
-    }
+		roller.isEmpty() shouldBe true
+	}
 }

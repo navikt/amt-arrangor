@@ -26,159 +26,159 @@ import javax.sql.DataSource
 
 class AnsattControllerTest : IntegrationTest() {
 
-    @Autowired
-    private lateinit var datasource: DataSource
+	@Autowired
+	private lateinit var datasource: DataSource
 
-    @Autowired
-    private lateinit var ansattRepository: AnsattRepository
+	@Autowired
+	private lateinit var ansattRepository: AnsattRepository
 
-    private lateinit var db: DbTestData
+	private lateinit var db: DbTestData
 
-    @BeforeEach
-    fun setUp() {
-        db = DbTestData(NamedParameterJdbcTemplate(datasource))
-    }
+	@BeforeEach
+	fun setUp() {
+		db = DbTestData(NamedParameterJdbcTemplate(datasource))
+	}
 
-    @AfterEach
-    fun tearDown() {
-        DbTestDataUtils.cleanDatabase(datasource)
-        resetMockServers()
-    }
+	@AfterEach
+	fun tearDown() {
+		DbTestDataUtils.cleanDatabase(datasource)
+		resetMockServers()
+	}
 
-    @Nested
-    @DisplayName("Tester at alle endepunkt er sikret")
-    inner class EndpointsSecuredTests {
+	@Nested
+	@DisplayName("Tester at alle endepunkt er sikret")
+	inner class EndpointsSecuredTests {
 
-        @Test
-        fun `get (id) - no token - unauthorized`() {
-            sendRequest("GET", "/api/ansatt/${UUID.randomUUID()}")
-                .also { it.code shouldBe 401 }
-        }
+		@Test
+		fun `get (id) - no token - unauthorized`() {
+			sendRequest("GET", "/api/ansatt/${UUID.randomUUID()}")
+				.also { it.code shouldBe 401 }
+		}
 
-        @Test
-        fun `getByPersonident - no token - unauthorized`() {
-            sendRequest("GET", "/api/ansatt")
-                .also { it.code shouldBe 401 }
-        }
+		@Test
+		fun `getByPersonident - no token - unauthorized`() {
+			sendRequest("GET", "/api/ansatt")
+				.also { it.code shouldBe 401 }
+		}
 
-        @Test
-        fun `setKoordinatorForDeltakerliste - no token - unauthorized`() {
-            sendRequest("POST", "/api/ansatt/koordinator/${UUID.randomUUID()}", "".toJsonRequestBody())
-                .also { it.code shouldBe 401 }
-        }
+		@Test
+		fun `setKoordinatorForDeltakerliste - no token - unauthorized`() {
+			sendRequest("POST", "/api/ansatt/koordinator/${UUID.randomUUID()}", "".toJsonRequestBody())
+				.also { it.code shouldBe 401 }
+		}
 
-        @Test
-        fun `fjernKoordinatorForDeltakerliste - no token - unauthorized`() {
-            sendRequest("DELETE", "/api/ansatt/koordinator/${UUID.randomUUID()}")
-                .also { it.code shouldBe 401 }
-        }
+		@Test
+		fun `fjernKoordinatorForDeltakerliste - no token - unauthorized`() {
+			sendRequest("DELETE", "/api/ansatt/koordinator/${UUID.randomUUID()}")
+				.also { it.code shouldBe 401 }
+		}
 
-        @Test
-        fun `setVeileder - no token - unauthorized`() {
-            sendRequest(
-                "POST",
-                "/api/ansatt/veileder",
-                JsonUtils.toJson(
-                    AnsattController.SetVeilederForDeltakerRequestBody(
-                        deltakerId = UUID.randomUUID(),
-                        type = VeilederType.VEILEDER
-                    )
-                ).toJsonRequestBody()
-            )
-                .also { it.code shouldBe 401 }
-        }
+		@Test
+		fun `setVeileder - no token - unauthorized`() {
+			sendRequest(
+				"POST",
+				"/api/ansatt/veileder",
+				JsonUtils.toJson(
+					AnsattController.SetVeilederForDeltakerRequestBody(
+						deltakerId = UUID.randomUUID(),
+						type = VeilederType.VEILEDER
+					)
+				).toJsonRequestBody()
+			)
+				.also { it.code shouldBe 401 }
+		}
 
-        @Test
-        fun `fjernVeilederForDeltaker - no token - unauthorized`() {
-            sendRequest("DELETE", "/api/ansatt/veileder/${UUID.randomUUID()}")
-                .also { it.code shouldBe 401 }
-        }
-    }
+		@Test
+		fun `fjernVeilederForDeltaker - no token - unauthorized`() {
+			sendRequest("DELETE", "/api/ansatt/veileder/${UUID.randomUUID()}")
+				.also { it.code shouldBe 401 }
+		}
+	}
 
-    @Nested
-    @DisplayName("/api/ansatt/ tester")
-    inner class GetByPersonidentTests {
+	@Nested
+	@DisplayName("/api/ansatt/ tester")
+	inner class GetByPersonidentTests {
 
-        @Test
-        fun `getAnsattByPersonident - returnerer Ansatt`() {
-            val arrangorOne = db.insertArrangor()
-            val arrangorTwo = db.insertArrangor()
-            val personident = UUID.randomUUID().toString()
-            val personId = UUID.randomUUID()
+		@Test
+		fun `getAnsattByPersonident - returnerer Ansatt`() {
+			val arrangorOne = db.insertArrangor()
+			val arrangorTwo = db.insertArrangor()
+			val personident = UUID.randomUUID().toString()
+			val personId = UUID.randomUUID()
 
-            mockAltinnServer.addRoller(
-                personident,
-                mapOf(
-                    arrangorOne.organisasjonsnummer to listOf(KOORDINATOR),
-                    arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
-                )
-            )
+			mockAltinnServer.addRoller(
+				personident,
+				mapOf(
+					arrangorOne.organisasjonsnummer to listOf(KOORDINATOR),
+					arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
+				)
+			)
 
-            mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+			mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
 
-            val ansatt = getAnsatt(personident)
+			val ansatt = getAnsatt(personident)
 
-            ansatt.personalia.personident shouldBe personident
-            ansatt.arrangorer.size shouldBe 2
+			ansatt.personalia.personident shouldBe personident
+			ansatt.arrangorer.size shouldBe 2
 
-            getRoller(ansatt, arrangorOne.id) shouldContainExactly listOf(KOORDINATOR)
-            getRoller(ansatt, arrangorTwo.id) shouldContainExactly listOf(KOORDINATOR, VEILEDER)
-        }
+			getRoller(ansatt, arrangorOne.id) shouldContainExactly listOf(KOORDINATOR)
+			getRoller(ansatt, arrangorTwo.id) shouldContainExactly listOf(KOORDINATOR, VEILEDER)
+		}
 
-        @Test
-        fun `getAnsattByPersonident - om lastSynchronized over 1 time - oppdater Ansatt`() {
-            val arrangorOne = db.insertArrangor()
-            val arrangorTwo = db.insertArrangor()
-            val arrangorThree = db.insertArrangor()
-            val personident = UUID.randomUUID().toString()
-            val personId = UUID.randomUUID()
+		@Test
+		fun `getAnsattByPersonident - om lastSynchronized over 1 time - oppdater Ansatt`() {
+			val arrangorOne = db.insertArrangor()
+			val arrangorTwo = db.insertArrangor()
+			val arrangorThree = db.insertArrangor()
+			val personident = UUID.randomUUID().toString()
+			val personId = UUID.randomUUID()
 
-            mockAltinnServer.addRoller(
-                personident,
-                mapOf(
-                    arrangorOne.organisasjonsnummer to listOf(KOORDINATOR),
-                    arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
-                )
-            )
+			mockAltinnServer.addRoller(
+				personident,
+				mapOf(
+					arrangorOne.organisasjonsnummer to listOf(KOORDINATOR),
+					arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
+				)
+			)
 
-            mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
-            val oldAnsatt = getAnsatt(personident)
+			mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+			val oldAnsatt = getAnsatt(personident)
 
-            ansattRepository.setSynchronized(oldAnsatt.id, LocalDateTime.now().minusMinutes(61))
+			ansattRepository.setSynchronized(oldAnsatt.id, LocalDateTime.now().minusMinutes(61))
 
-            resetMockServers()
-            mockAltinnServer.addRoller(
-                personident,
-                mapOf(
-                    arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR),
-                    arrangorThree.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
-                )
-            )
+			resetMockServers()
+			mockAltinnServer.addRoller(
+				personident,
+				mapOf(
+					arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR),
+					arrangorThree.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
+				)
+			)
 
-            mockPersonServer.setPerson(personident, personId, "Test2", "Mellom", "Testersen2")
-            val nyAnsatt = getAnsatt(personident)
+			mockPersonServer.setPerson(personident, personId, "Test2", "Mellom", "Testersen2")
+			val nyAnsatt = getAnsatt(personident)
 
-            nyAnsatt.personalia.navn.fornavn shouldBe "Test2"
-            nyAnsatt.personalia.navn.mellomnavn shouldBe "Mellom"
-            nyAnsatt.personalia.navn.etternavn shouldBe "Testersen2"
+			nyAnsatt.personalia.navn.fornavn shouldBe "Test2"
+			nyAnsatt.personalia.navn.mellomnavn shouldBe "Mellom"
+			nyAnsatt.personalia.navn.etternavn shouldBe "Testersen2"
 
-            nyAnsatt.arrangorer.map { it.arrangorId } shouldContainExactly listOf(arrangorTwo.id, arrangorThree.id)
+			nyAnsatt.arrangorer.map { it.arrangorId } shouldContainExactly listOf(arrangorTwo.id, arrangorThree.id)
 
-            getRoller(nyAnsatt, arrangorTwo.id) shouldContainExactly listOf(KOORDINATOR)
-            getRoller(nyAnsatt, arrangorThree.id) shouldContainExactly listOf(KOORDINATOR, VEILEDER)
-        }
-    }
+			getRoller(nyAnsatt, arrangorTwo.id) shouldContainExactly listOf(KOORDINATOR)
+			getRoller(nyAnsatt, arrangorThree.id) shouldContainExactly listOf(KOORDINATOR, VEILEDER)
+		}
+	}
 
-    private fun getRoller(ansatt: Ansatt, arrangorId: UUID): List<AnsattRolle> {
-        return ansatt.arrangorer.find { it.arrangorId == arrangorId }!!.roller
-    }
+	private fun getRoller(ansatt: Ansatt, arrangorId: UUID): List<AnsattRolle> {
+		return ansatt.arrangorer.find { it.arrangorId == arrangorId }!!.roller
+	}
 
-    private fun getAnsatt(personident: String): Ansatt = sendRequest(
-        method = "GET",
-        path = "/api/ansatt",
-        headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}")
-    )
-        .also { it.code shouldBe 200 }
-        .let { it.body?.string() ?: throw IllegalStateException("Body skal ikke være tom") }
-        .let { JsonUtils.fromJson(it) }
+	private fun getAnsatt(personident: String): Ansatt = sendRequest(
+		method = "GET",
+		path = "/api/ansatt",
+		headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}")
+	)
+		.also { it.code shouldBe 200 }
+		.let { it.body?.string() ?: throw IllegalStateException("Body skal ikke være tom") }
+		.let { JsonUtils.fromJson(it) }
 }

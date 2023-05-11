@@ -7,15 +7,15 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class PersonClientConfiguration(
-    @Value("\${amt-person.url}") private val baseUrl: String,
-    @Value("\${amt-person.scope}") private val scope: String
+	@Value("\${amt-person.url}") private val baseUrl: String,
+	@Value("\${amt-person.scope}") private val scope: String
 ) {
 
-    @Bean
-    fun personClient(machineToMachineTokenClient: MachineToMachineTokenClient): PersonClient {
-        return PersonClient(
-            baseUrl = baseUrl,
-            tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) }
-        )
-    }
+	@Bean
+	fun personClient(machineToMachineTokenClient: MachineToMachineTokenClient): PersonClient {
+		return PersonClient(
+			baseUrl = baseUrl,
+			tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) }
+		)
+	}
 }
