@@ -11,74 +11,74 @@ import javax.sql.DataSource
 
 object SingletonPostgresContainer {
 
-    private val log = LoggerFactory.getLogger(javaClass)
+	private val log = LoggerFactory.getLogger(javaClass)
 
-    private const val postgresDockerImageName = "postgres:14-alpine"
+	private const val postgresDockerImageName = "postgres:14-alpine"
 
-    private var postgresContainer: PostgreSQLContainer<Nothing>? = null
+	private var postgresContainer: PostgreSQLContainer<Nothing>? = null
 
-    private var containerDataSource: DataSource? = null
+	private var containerDataSource: DataSource? = null
 
-    fun getDataSource(): DataSource {
-        if (containerDataSource == null) {
-            containerDataSource = createDataSource(getContainer())
-        }
+	fun getDataSource(): DataSource {
+		if (containerDataSource == null) {
+			containerDataSource = createDataSource(getContainer())
+		}
 
-        return containerDataSource!!
-    }
+		return containerDataSource!!
+	}
 
-    fun getContainer(): PostgreSQLContainer<Nothing> {
-        if (postgresContainer == null) {
-            log.info("Starting new postgres database...")
+	fun getContainer(): PostgreSQLContainer<Nothing> {
+		if (postgresContainer == null) {
+			log.info("Starting new postgres database...")
 
-            val container = createContainer()
-            postgresContainer = container
+			val container = createContainer()
+			postgresContainer = container
 
-            container.start()
+			container.start()
 
-            log.info("Applying database migrations...")
-            applyMigrations(createDataSource(container))
+			log.info("Applying database migrations...")
+			applyMigrations(createDataSource(container))
 
-            setupShutdownHook()
-        }
+			setupShutdownHook()
+		}
 
-        return postgresContainer as PostgreSQLContainer<Nothing>
-    }
+		return postgresContainer as PostgreSQLContainer<Nothing>
+	}
 
-    private fun applyMigrations(dataSource: DataSource) {
-        val flyway: Flyway = Flyway.configure()
-            .dataSource(dataSource)
-            .connectRetries(10)
-            .cleanDisabled(false)
-            .load()
+	private fun applyMigrations(dataSource: DataSource) {
+		val flyway: Flyway = Flyway.configure()
+			.dataSource(dataSource)
+			.connectRetries(10)
+			.cleanDisabled(false)
+			.load()
 
-        flyway.clean()
-        flyway.migrate()
-    }
+		flyway.clean()
+		flyway.migrate()
+	}
 
-    private fun createContainer(): PostgreSQLContainer<Nothing> {
-        return PostgreSQLContainer<Nothing>(DockerImageName.parse(postgresDockerImageName))
-            .waitingFor(HostPortWaitStrategy())
-    }
+	private fun createContainer(): PostgreSQLContainer<Nothing> {
+		return PostgreSQLContainer<Nothing>(DockerImageName.parse(postgresDockerImageName))
+			.waitingFor(HostPortWaitStrategy())
+	}
 
-    private fun createDataSource(container: PostgreSQLContainer<Nothing>): DataSource {
-        val config = HikariConfig()
+	private fun createDataSource(container: PostgreSQLContainer<Nothing>): DataSource {
+		val config = HikariConfig()
 
-        config.jdbcUrl = container.jdbcUrl
-        config.username = container.username
-        config.password = container.password
-        config.maximumPoolSize = 3
-        config.minimumIdle = 1
+		config.jdbcUrl = container.jdbcUrl
+		config.username = container.username
+		config.password = container.password
+		config.maximumPoolSize = 3
+		config.minimumIdle = 1
 
-        return HikariDataSource(config)
-    }
+		return HikariDataSource(config)
+	}
 
-    private fun setupShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(
-            Thread {
-                log.info("Shutting down postgres database...")
-                postgresContainer?.stop()
-            }
-        )
-    }
+	private fun setupShutdownHook() {
+		Runtime.getRuntime().addShutdownHook(
+			Thread {
+				log.info("Shutting down postgres database...")
+				postgresContainer?.stop()
+			}
+		)
+	}
 }
