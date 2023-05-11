@@ -1,5 +1,6 @@
 package no.nav.arrangor.ingest
 
+import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.AnsattRolleService
 import no.nav.arrangor.ansatt.repositories.AnsattRepository
 import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
@@ -26,7 +27,8 @@ class IngestService(
     private val rolleService: AnsattRolleService,
     private val koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository,
     private val veilederDeltakerRepository: VeilederDeltakerRepository,
-    private val enhetsregisterClient: EnhetsregisterClient
+    private val enhetsregisterClient: EnhetsregisterClient,
+    private val metricsService: MetricsService
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -62,6 +64,7 @@ class IngestService(
 
         arrangorService.addDeltakerlister(inserted.id, arrangor.deltakerlister.toSet())
         logger.info("Håndterte arrangør med id ${arrangor.id}")
+        metricsService.incConsumedArrangor()
     }
 
     fun handleAnsatt(ansatt: Ansatt) {
@@ -106,9 +109,17 @@ class IngestService(
         }
 
         logger.info("Konsumerte ansatt med id ${ansatt.id}")
+        metricsService.incConsumedAnsatt()
     }
 
-    fun oppdaterKoordinatortilganger(ansattId: UUID, deltakerlisteIds: List<UUID>) {
+    fun handleGjennomforing(gjennomforing: MulighetsrommetGjennomforingDto) {
+        val arrangor = arrangorService.get(gjennomforing.virksomhetsnummer)
+        arrangorService.addDeltakerlister(arrangor.id, setOf(gjennomforing.id))
+        logger.info("Konsumerte gjennomføring med id ${gjennomforing.id}")
+        metricsService.incConsumedGjennomforing()
+    }
+
+    private fun oppdaterKoordinatortilganger(ansattId: UUID, deltakerlisteIds: List<UUID>) {
         val nyeDeltakerlisteIds = deltakerlisteIds.map { KoordinatorDeltakerHolder(-1, it) }
 
         val gamleDeltakerlisteIds = koordinatorDeltakerlisteRepository.getAktive(ansattId).map {
@@ -132,7 +143,7 @@ class IngestService(
         }
     }
 
-    fun oppdaterVeiledertilganger(ansattId: UUID, veileder: List<Veileder>) {
+    private fun oppdaterVeiledertilganger(ansattId: UUID, veileder: List<Veileder>) {
         val nye = veileder.map { VeilederDeltakerHolder(-1, it.deltakerId, it.type) }
 
         val gamle = veilederDeltakerRepository.getAktive(ansattId)
@@ -155,11 +166,6 @@ class IngestService(
         if (skalSlettes.isNotEmpty() || skalLeggesTil.isNotEmpty()) {
             logger.info("Ansatt $ansattId veileder roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size}")
         }
-    }
-
-    fun handleGjennomforing(gjennomforing: MulighetsrommetGjennomforingDto) {
-        val arrangor = arrangorService.get(gjennomforing.virksomhetsnummer)
-        arrangorService.addDeltakerlister(arrangor.id, setOf(gjennomforing.id))
     }
 
     private data class KoordinatorDeltakerHolder(val id: Int, val deltakerlisteId: UUID) {

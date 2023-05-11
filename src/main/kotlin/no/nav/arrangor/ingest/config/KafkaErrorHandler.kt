@@ -1,5 +1,6 @@
 package no.nav.arrangor.ingest.config
 
+import no.nav.arrangor.MetricsService
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.ConsumerRecords
@@ -10,7 +11,9 @@ import org.springframework.stereotype.Component
 import org.springframework.util.backoff.ExponentialBackOff
 
 @Component
-class KafkaErrorHandler : DefaultErrorHandler(
+class KafkaErrorHandler(
+    private val metricsService: MetricsService
+) : DefaultErrorHandler(
     null,
     ExponentialBackOff(1000L, 1.5).also {
         it.maxInterval = 60_000L * 10
@@ -29,6 +32,7 @@ class KafkaErrorHandler : DefaultErrorHandler(
                 "Feil i prossesseringen av record med offset: ${record.offset()}, key: ${record.key()} på topic ${record.topic()}",
                 thrownException
             )
+                .also { metricsService.incConsumerFaild() }
         }
         if (records.isEmpty()) {
             log.error("Feil i listener uten noen records", thrownException)
@@ -49,6 +53,7 @@ class KafkaErrorHandler : DefaultErrorHandler(
                 "Feil i prossesseringen av record med offset: ${record.offset()}, key: ${record.key()} på topic ${record.topic()}",
                 thrownException
             )
+                .also { metricsService.incConsumerFaild() }
         }
         if (data.isEmpty) {
             log.error("Feil i listener uten noen records", thrownException)
