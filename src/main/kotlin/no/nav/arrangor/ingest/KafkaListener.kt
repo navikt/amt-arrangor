@@ -12,12 +12,17 @@ class KafkaListener(
 ) {
 
     @KafkaListener(
-        topics = [ARRANGOR_TOPIC],
+        topics = [ARRANGOR_TOPIC, ANSATT_TOPIC, MULIGHETSROMMET_TOPIC],
         properties = ["auto.offset.reset = earliest"],
         containerFactory = "kafkaListenerContainerFactory"
     )
     fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
-        ingestService.handleArrangor(JsonUtils.fromJson(record.value()))
+        when (record.topic()) {
+            ARRANGOR_TOPIC -> ingestService.handleArrangor(JsonUtils.fromJson(record.value()))
+            ANSATT_TOPIC -> ingestService.handleAnsatt(JsonUtils.fromJson(record.value()))
+            MULIGHETSROMMET_TOPIC -> ingestService.handleGjennomforing(JsonUtils.fromJson(record.value()))
+            else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
+        }
         ack.acknowledge()
     }
 }

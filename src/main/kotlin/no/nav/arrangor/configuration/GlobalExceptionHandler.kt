@@ -2,6 +2,7 @@ package no.nav.arrangor.configuration
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import jakarta.servlet.http.HttpServletRequest
+import no.nav.security.token.support.spring.validation.interceptor.JwtTokenUnauthorizedException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,6 +17,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(Exception::class)
     fun handleException(ex: Exception, request: HttpServletRequest): ResponseEntity<Response> {
         return when (ex) {
+            is JwtTokenUnauthorizedException -> buildResponse(HttpStatus.UNAUTHORIZED, ex)
             is NoSuchElementException -> buildResponse(HttpStatus.NOT_FOUND, ex)
             is IllegalStateException -> buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex)
             else -> {

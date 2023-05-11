@@ -37,6 +37,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-configuration-processor")
     implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
+    implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
+
     implementation("org.springframework.kafka:spring-kafka")
     implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion")
 
@@ -64,7 +66,7 @@ dependencies {
         exclude("com.vaadin.external.google", "android-json")
     }
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
-//    testImplementation("no.nav.security:token-validation-spring-test:$tokenSupportVersion")
+    testImplementation("no.nav.security:token-validation-spring-test:$tokenSupportVersion")
     testImplementation("no.nav.security:mock-oauth2-server:0.5.8")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")

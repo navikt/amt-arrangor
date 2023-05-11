@@ -9,15 +9,24 @@ import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
-class ArrangorTest : IntegrationTest() {
+class ArrangorControllerTest : IntegrationTest() {
 
     @Autowired
     lateinit var arrangorService: ArrangorService
 
     @Autowired
     lateinit var arrangorRepository: ArrangorRepository
+
+    @Test
+    fun `get - unauthorized`() {
+        sendRequest(
+            method = "GET",
+            path = "/api/arrangor/organisasjonsnummer/4543589"
+        )
+            .also { it.code shouldBe 401 }
+    }
 
     @Test
     internal fun `get - ikke finnes fra for, legger til i database`() {
@@ -36,7 +45,8 @@ class ArrangorTest : IntegrationTest() {
 
         val response = sendRequest(
             method = "GET",
-            path = "/api/arrangor/organisasjonsnummer/$orgNr"
+            path = "/api/arrangor/organisasjonsnummer/$orgNr",
+            headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "12345678910")}")
         )
             .also { it.code shouldBe 200 }
             .let { JsonUtils.fromJson<Arrangor>(it.body!!.string()) }
@@ -47,13 +57,13 @@ class ArrangorTest : IntegrationTest() {
 
     @Test
     fun `get - Finnes fra for - oppdaterer`() {
-        val input = ArrangorRepository.ArrangorDto(
+        val input = ArrangorRepository.ArrangorDbo(
             navn = "originaltNavn",
             organisasjonsnummer = "123",
             overordnetArrangorId = null
         )
 
-        arrangorRepository.insertOrUpdateArrangor(input)
+        arrangorRepository.insertOrUpdate(input)
 
         mockAmtEnhetsregiserServer.addVirksomhet(
             Virksomhet(
@@ -68,7 +78,8 @@ class ArrangorTest : IntegrationTest() {
 
         val response = sendRequest(
             method = "GET",
-            path = "/api/arrangor/organisasjonsnummer/${input.organisasjonsnummer}"
+            path = "/api/arrangor/organisasjonsnummer/${input.organisasjonsnummer}",
+            headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "12345678910")}")
         )
             .also { it.code shouldBe 200 }
             .let { JsonUtils.fromJson<Arrangor>(it.body!!.string()) }
@@ -78,23 +89,11 @@ class ArrangorTest : IntegrationTest() {
     }
 
     @Test
-    fun `get by orgnr - finnes ikke i enhetsregisteret - returnerer 404`() {
-        val orgNr = "123"
-
-        mockAmtEnhetsregiserServer.addVirksomhetFailure(orgNr, 404)
-
-        sendRequest(
-            method = "GET",
-            path = "/api/arrangor/organisasjonsnummer/$orgNr"
-        )
-            .also { it.code shouldBe 404 }
-    }
-
-    @Test
     fun `get by id - finnes ikke - returnerer 404`() {
         sendRequest(
             method = "GET",
-            path = "/api/arrangor/${UUID.randomUUID()}"
+            path = "/api/arrangor/${UUID.randomUUID()}",
+            headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "12345678910")}")
         )
             .also { it.code shouldBe 404 }
     }

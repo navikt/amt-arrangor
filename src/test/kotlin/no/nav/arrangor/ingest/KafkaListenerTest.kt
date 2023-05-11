@@ -1,11 +1,10 @@
-package ingest
+package no.nav.arrangor.ingest
 
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.dto.ArrangorDto
-import no.nav.arrangor.ingest.ARRANGOR_TOPIC
 import no.nav.arrangor.testutils.DbTestDataUtils
 import no.nav.arrangor.testutils.subscribeHvisIkkeSubscribed
 import no.nav.arrangor.utils.JsonUtils
