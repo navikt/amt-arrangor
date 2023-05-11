@@ -8,9 +8,7 @@ import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
-import no.nav.arrangor.client.enhetsregister.defaultVirksomhet
 import no.nav.arrangor.domain.Ansatt
-import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.dto.ArrangorDto
@@ -34,29 +32,22 @@ class IngestService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun handleArrangor(arrangor: ArrangorDto) {
-        var overordnetArrangor: Arrangor? = null
+        var overordnetArrangor: ArrangorRepository.ArrangorDbo? = null
 
         if (arrangor.overordnetArrangorId != null) {
-            val hentet = enhetsregisterClient.hentVirksomhet(arrangor.organisasjonsnummer).getOrElse {
-                logger.warn("Virksomhet med organisasjonsnummer ${arrangor.organisasjonsnummer} finnes ikke, legger inn default")
-                defaultVirksomhet(arrangor.organisasjonsnummer)
-            }
-
-            if (hentet.organisasjonsnummer != "999999999") {
-                val overordnetVirksomhet =
-                    enhetsregisterClient.hentVirksomhet(hentet.overordnetEnhetOrganisasjonsnummer!!).getOrElse {
-                        logger.warn("Virksomhet med organisasjonsnummer ${hentet.overordnetEnhetOrganisasjonsnummer} finnes ikke, legger inn default")
-                        defaultVirksomhet(hentet.overordnetEnhetOrganisasjonsnummer)
+            enhetsregisterClient.hentVirksomhet(arrangor.organisasjonsnummer).let { result ->
+                result.getOrNull()?.let {
+                    if (it.overordnetEnhetOrganisasjonsnummer != null && it.overordnetEnhetNavn != null) {
+                        overordnetArrangor = arrangorRepository.insertOrUpdate(
+                            ArrangorRepository.ArrangorDbo(
+                                id = arrangor.overordnetArrangorId,
+                                navn = it.overordnetEnhetNavn,
+                                organisasjonsnummer = it.overordnetEnhetOrganisasjonsnummer,
+                                overordnetArrangorId = null
+                            )
+                        )
                     }
-                arrangorRepository.insertOrUpdate(
-                    ArrangorRepository.ArrangorDbo(
-                        id = arrangor.overordnetArrangorId,
-                        navn = overordnetVirksomhet.navn,
-                        organisasjonsnummer = overordnetVirksomhet.organisasjonsnummer,
-                        overordnetArrangorId = null
-                    )
-                )
-                overordnetArrangor = arrangorService.get(arrangor.overordnetArrangorId)
+                }
             }
         }
 
