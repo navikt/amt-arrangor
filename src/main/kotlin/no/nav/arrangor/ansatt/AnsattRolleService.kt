@@ -36,8 +36,10 @@ class AnsattRolleService(
 	}
 
 	fun oppdaterRoller(ansattId: UUID, gamleRoller: List<OrgRolle>, nyeRoller: List<OrgRolle>): Boolean {
-		val rollerSomSkalSlettes = gamleRoller.filter { !nyeRoller.contains(it) }
-		val rollerSomSkalLeggesTil = nyeRoller.filter { !gamleRoller.contains(it) }
+		val rollerSomSkalSlettes =
+			gamleRoller.filter { nyeRoller.find { nyRolle -> nyRolle.rolle == it.rolle && nyRolle.organisasjonsnummer == it.organisasjonsnummer } == null }
+		val rollerSomSkalLeggesTil =
+			nyeRoller.filter { gamleRoller.find { gammelRolle -> gammelRolle.rolle == it.rolle && gammelRolle.organisasjonsnummer == it.organisasjonsnummer } == null }
 
 		rolleRepository.deaktiverRoller(rollerSomSkalSlettes.map { it.id })
 			.also { logFjernet(ansattId, rollerSomSkalSlettes) }

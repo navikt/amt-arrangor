@@ -81,6 +81,7 @@ class AnsattControllerTest : IntegrationTest() {
 				JsonUtils.toJson(
 					AnsattController.SetVeilederForDeltakerRequestBody(
 						deltakerId = UUID.randomUUID(),
+						arrangorId = UUID.randomUUID(),
 						type = VeilederType.VEILEDER
 					)
 				).toJsonRequestBody()

@@ -19,6 +19,7 @@ class VeilederDeltakerRepository(
 		VeilederDeltakerDbo(
 			id = rs.getInt("id"),
 			ansattId = UUID.fromString(rs.getString("ansatt_id")),
+			arrangorId = UUID.fromString(rs.getString("arrangor_id")),
 			deltakerId = UUID.fromString(rs.getString("deltaker_id")),
 			veilederType = VeilederType.valueOf(rs.getString("veileder_type")),
 			gyldigFra = rs.getZonedDateTime("gyldig_fra"),
@@ -28,8 +29,8 @@ class VeilederDeltakerRepository(
 
 	fun leggTil(ansattId: UUID, deltakere: List<VeilederDeltakerInput>) {
 		val sql = """
-		INSERT INTO veileder_deltaker(ansatt_id, deltaker_id, veileder_type)
-		VALUES(:ansatt_id, :deltaker_id, :veileder_type)
+		INSERT INTO veileder_deltaker(ansatt_id, arrangor_id, deltaker_id, veileder_type)
+		VALUES(:ansatt_id, :arrangor_id, :deltaker_id, :veileder_type)
 		""".trimIndent()
 
 		if (deltakere.isNotEmpty()) {
@@ -38,6 +39,7 @@ class VeilederDeltakerRepository(
 				deltakere.map { deltaker ->
 					sqlParameters(
 						"ansatt_id" to ansattId,
+						"arrangor_id" to deltaker.arrangorId,
 						"deltaker_id" to deltaker.deltakerId,
 						"veileder_type" to deltaker.veilederType.name
 					)
@@ -71,6 +73,7 @@ class VeilederDeltakerRepository(
 
 	data class VeilederDeltakerInput(
 		val deltakerId: UUID,
+		val arrangorId: UUID,
 		val veilederType: VeilederType
 	)
 
@@ -78,6 +81,7 @@ class VeilederDeltakerRepository(
 		val id: Int,
 		val ansattId: UUID,
 		val deltakerId: UUID,
+		val arrangorId: UUID,
 		val veilederType: VeilederType,
 		val gyldigFra: ZonedDateTime,
 		val gyldigTil: ZonedDateTime?

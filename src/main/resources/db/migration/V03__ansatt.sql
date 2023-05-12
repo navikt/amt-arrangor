@@ -35,6 +35,7 @@ CREATE TABLE veileder_deltaker
 (
     id            serial PRIMARY KEY,
     ansatt_id     uuid                     not null references ansatt (id),
+    arrangor_id   uuid                     not null references arrangor (id),
     deltaker_id   uuid                     not null,
     veileder_type varchar                  not null,
     gyldig_fra    timestamp with time zone not null default current_timestamp,

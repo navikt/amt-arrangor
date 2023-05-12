@@ -18,6 +18,7 @@ class KoordinatorDeltakerlisteRepository(
 		KoordinatorDeltakerlisteDbo(
 			id = rs.getInt("id"),
 			ansattId = UUID.fromString(rs.getString("ansatt_id")),
+			arrangorId = UUID.fromString(rs.getString("arrangor_id")),
 			deltakerlisteId = UUID.fromString(rs.getString("deltakerliste_id")),
 			gyldigFra = rs.getZonedDateTime("gyldig_fra"),
 			gyldigTil = rs.getNullableZonedDateTime("gyldig_til")
@@ -53,22 +54,43 @@ class KoordinatorDeltakerlisteRepository(
 	}
 
 	fun getAktive(ansattId: UUID): List<KoordinatorDeltakerlisteDbo> {
+		val sql = """
+			SELECT koordinator_deltakerliste.*,
+			deltakerliste.arrangor_id as arrangor_id
+			FROM koordinator_deltakerliste
+			 INNER JOIN deltakerliste on koordinator_deltakerliste.deltakerliste_id = deltakerliste.id
+			WHERE ansatt_id = :ansatt_id
+			 AND gyldig_til IS NULL
+		""".trimIndent()
+
+
 		return template.query(
-			"SELECT * FROM koordinator_deltakerliste WHERE ansatt_id = :ansatt_id AND gyldig_til IS NULL",
+			sql,
 			sqlParameters("ansatt_id" to ansattId),
 			rowMapper
 		)
 	}
 
-	fun getAll(ansattId: UUID): List<KoordinatorDeltakerlisteDbo> = template.query(
-		"SELECT * FROM koordinator_deltakerliste WHERE ansatt_id = :ansatt_id",
-		sqlParameters("ansatt_id" to ansattId),
-		rowMapper
-	)
+	fun getAll(ansattId: UUID): List<KoordinatorDeltakerlisteDbo> {
+		val sql = """
+			SELECT koordinator_deltakerliste.*,
+			deltakerliste.arrangor_id as arrangor_id
+			FROM koordinator_deltakerliste
+			 INNER JOIN deltakerliste on koordinator_deltakerliste.deltakerliste_id = deltakerliste.id
+			WHERE ansatt_id = :ansatt_id
+		""".trimIndent()
+
+		return template.query(
+			sql,
+			sqlParameters("ansatt_id" to ansattId),
+			rowMapper
+		)
+	}
 
 	data class KoordinatorDeltakerlisteDbo(
 		val id: Int,
 		val ansattId: UUID,
+		val arrangorId: UUID,
 		val deltakerlisteId: UUID,
 		val gyldigFra: ZonedDateTime,
 		val gyldigTil: ZonedDateTime?

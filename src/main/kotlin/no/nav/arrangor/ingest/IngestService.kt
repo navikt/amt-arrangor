@@ -91,13 +91,15 @@ class IngestService(
 				return
 			}
 
-			val gamleRoller = rolleRepository.getAktiveRoller(ansatt.id).map {
-				AnsattRolleService.OrgRolle(
-					id = it.id,
-					organisasjonsnummer = it.organisasjonsnummer,
-					rolle = it.rolle
-				)
-			}
+			val gamleRoller = rolleRepository.getAktiveRoller(ansatt.id)
+				.filter { it.organisasjonsnummer == organisasjonsnummer }
+				.map {
+					AnsattRolleService.OrgRolle(
+						id = it.id,
+						organisasjonsnummer = it.organisasjonsnummer,
+						rolle = it.rolle
+					)
+				}
 
 			val nyeRoller = arrangor.roller.map {
 				AnsattRolleService.OrgRolle(
@@ -108,8 +110,8 @@ class IngestService(
 			}
 
 			rolleService.oppdaterRoller(ansatt.id, gamleRoller, nyeRoller)
-			oppdaterKoordinatortilganger(ansatt.id, arrangor.koordinator)
-			oppdaterVeiledertilganger(ansatt.id, arrangor.veileder)
+			oppdaterKoordinatortilganger(ansatt.id, arrangor.arrangorId, arrangor.koordinator)
+			oppdaterVeiledertilganger(ansatt.id, arrangor.arrangorId, arrangor.veileder)
 		}
 
 		logger.info("Konsumerte ansatt med id ${ansatt.id}")
@@ -125,15 +127,17 @@ class IngestService(
 		metricsService.incConsumedGjennomforing()
 	}
 
-	private fun oppdaterKoordinatortilganger(ansattId: UUID, deltakerlisteIds: List<UUID>) {
+	private fun oppdaterKoordinatortilganger(ansattId: UUID, arrangorId: UUID, deltakerlisteIds: List<UUID>) {
 		val nyeDeltakerlisteIds = deltakerlisteIds.map { KoordinatorDeltakerHolder(-1, it) }
 
-		val gamleDeltakerlisteIds = koordinatorDeltakerlisteRepository.getAktive(ansattId).map {
-			KoordinatorDeltakerHolder(
-				id = it.id,
-				deltakerlisteId = it.deltakerlisteId
-			)
-		}
+		val gamleDeltakerlisteIds = koordinatorDeltakerlisteRepository.getAktive(ansattId)
+			.filter { it.arrangorId == arrangorId }
+			.map {
+				KoordinatorDeltakerHolder(
+					id = it.id,
+					deltakerlisteId = it.deltakerlisteId
+				)
+			}
 
 		val skalSlettes = gamleDeltakerlisteIds.filter { !nyeDeltakerlisteIds.contains(it) }
 		val skalLeggesTil = nyeDeltakerlisteIds.filter { !gamleDeltakerlisteIds.contains(it) }
@@ -145,14 +149,15 @@ class IngestService(
 		)
 
 		if (skalSlettes.isNotEmpty() || skalLeggesTil.isNotEmpty()) {
-			logger.info("Ansatt $ansattId koordinator roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size}")
+			logger.info("Ansatt $ansattId koordinator roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size} for arrangor $arrangorId")
 		}
 	}
 
-	private fun oppdaterVeiledertilganger(ansattId: UUID, veileder: List<Veileder>) {
+	private fun oppdaterVeiledertilganger(ansattId: UUID, arrangorId: UUID, veileder: List<Veileder>) {
 		val nye = veileder.map { VeilederDeltakerHolder(-1, it.deltakerId, it.type) }
 
 		val gamle = veilederDeltakerRepository.getAktive(ansattId)
+			.filter { it.arrangorId == arrangorId }
 			.map { VeilederDeltakerHolder(it.id, it.deltakerId, it.veilederType) }
 
 		val skalSlettes = gamle.filter { !nye.contains(it) }
@@ -164,13 +169,14 @@ class IngestService(
 			skalLeggesTil.map {
 				VeilederDeltakerRepository.VeilederDeltakerInput(
 					deltakerId = it.deltakerId,
+					arrangorId = arrangorId,
 					veilederType = it.veilederType
 				)
 			}
 		)
 
 		if (skalSlettes.isNotEmpty() || skalLeggesTil.isNotEmpty()) {
-			logger.info("Ansatt $ansattId veileder roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size}")
+			logger.info("Ansatt $ansattId veileder roller lagt til: ${skalLeggesTil.size}, deaktivert: ${skalSlettes.size} for arrangor $arrangorId")
 		}
 	}
 
