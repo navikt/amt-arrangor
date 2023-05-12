@@ -3,7 +3,7 @@ package no.nav.arrangor.deltakerliste
 import no.nav.arrangor.utils.sqlParameters
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
-import java.util.*
+import java.util.UUID
 
 @Repository
 class DeltakerlisteRepository(
@@ -14,7 +14,8 @@ class DeltakerlisteRepository(
 		val sql = """
 		INSERT INTO deltakerliste(id, arrangor_id)
 		    VALUES (:id, :arrangor_id)
-		ON CONFLICT (id) DO UPDATE SET arrangor_id = :arrangor_id
+		ON CONFLICT (id) DO UPDATE SET arrangor_id = :arrangor_id,
+									   modified_at = current_timestamp
 		""".trimIndent()
 
 		template.batchUpdate(

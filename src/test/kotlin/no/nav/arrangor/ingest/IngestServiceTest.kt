@@ -61,9 +61,15 @@ class IngestServiceTest : IntegrationTest() {
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null,
 			deltakerlister = listOf(UUID.randomUUID(), UUID.randomUUID())
-		)
+		).also { ingestService.handleArrangor(it) }
 
-		ingestService.handleArrangor(arrangor)
+		val arrangorTwo = ArrangorDto(
+			id = UUID.randomUUID(),
+			navn = UUID.randomUUID().toString(),
+			organisasjonsnummer = UUID.randomUUID().toString(),
+			overordnetArrangorId = null,
+			deltakerlister = listOf(UUID.randomUUID(), UUID.randomUUID())
+		).also { ingestService.handleArrangor(it) }
 
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
@@ -85,6 +91,14 @@ class IngestServiceTest : IntegrationTest() {
 						Veileder(deltakerId = UUID.randomUUID(), type = VeilederType.MEDVEILEDER)
 					),
 					koordinator = arrangor.deltakerlister
+				),
+				TilknyttetArrangor(
+					arrangorId = arrangorTwo.id,
+					roller = listOf(AnsattRolle.VEILEDER),
+					veileder = listOf(
+						Veileder(deltakerId = UUID.randomUUID(), type = VeilederType.MEDVEILEDER)
+					),
+					koordinator = arrangorTwo.deltakerlister
 				)
 			)
 		)
@@ -96,8 +110,8 @@ class IngestServiceTest : IntegrationTest() {
 		val veileder = veilederDeltakerlisteRepository.getAll(ansatt.id)
 		val roller = rolleRepository.getAktiveRoller(ansatt.id)
 
-		koordinator.size shouldBe 2
-		veileder.size shouldBe 2
-		roller.size shouldBe 2
+		koordinator.size shouldBe 4
+		veileder.size shouldBe 3
+		roller.size shouldBe 3
 	}
 }

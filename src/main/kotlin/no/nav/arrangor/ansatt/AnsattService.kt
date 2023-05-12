@@ -71,7 +71,7 @@ class AnsattService(
 		return getAnsatt(ansattDbo)
 	}
 
-	fun setVeileder(personident: String, deltakerId: UUID, type: VeilederType): Ansatt {
+	fun setVeileder(personident: String, arrangorId: UUID, deltakerId: UUID, type: VeilederType): Ansatt {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 
 		val currentVeilederFor = veilederDeltakerRepository.getAktive(ansattDbo.id)
@@ -81,7 +81,7 @@ class AnsattService(
 				veilederDeltakerRepository.deaktiver(listOf(it.id))
 				veilederDeltakerRepository.leggTil(
 					ansattDbo.id,
-					listOf(VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, type))
+					listOf(VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, arrangorId, type))
 				)
 
 				return getAnsatt(ansattDbo)
@@ -96,7 +96,7 @@ class AnsattService(
 		veilederDeltakerRepository.leggTil(
 			ansattDbo.id,
 			listOf(
-				VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, type)
+				VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, arrangorId, type)
 			)
 		)
 

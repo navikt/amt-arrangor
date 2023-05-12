@@ -53,7 +53,7 @@ class AnsattController(
 	fun setVeileder(
 		@RequestBody body: SetVeilederForDeltakerRequestBody
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.setVeileder(personident, body.deltakerId, body.type)
+		ansattService.setVeileder(personident, body.deltakerId, body.arrangorId, body.type)
 	}
 
 	@DeleteMapping("veileder/{deltakerId}")
@@ -78,6 +78,7 @@ class AnsattController(
 
 	data class SetVeilederForDeltakerRequestBody(
 		val deltakerId: UUID,
+		val arrangorId: UUID,
 		val type: VeilederType
 	)
 }
