@@ -63,7 +63,6 @@ class KoordinatorDeltakerlisteRepository(
 			 AND gyldig_til IS NULL
 		""".trimIndent()
 
-
 		return template.query(
 			sql,
 			sqlParameters("ansatt_id" to ansattId),
