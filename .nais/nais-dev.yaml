@@ -75,6 +75,9 @@ spec:
         - application: amt-tiltak
           namespace: amt
           cluster: dev-gcp
+        - application: amt-person-service
+          namespace: amt
+          cluster: dev-gcp
   env:
     - name: AMT_ENHETSREGISTER_URL
       value: http://amt-enhetsregister.amt.svc.cluster.local
