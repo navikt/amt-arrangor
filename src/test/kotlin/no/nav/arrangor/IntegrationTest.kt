@@ -143,6 +143,15 @@ class IntegrationTest {
 			)
 		).serialize()
 	}
+
+	fun getAzureAdToken(
+		subject: String = "test",
+		audience: String = "test-aud",
+		issuerId: String = Issuer.AZURE_AD,
+		claims: Map<String, Any> = emptyMap()
+	): String {
+		return mockOAuth2Server.issueToken(issuerId, subject, audience, claims).serialize()
+	}
 }
 
 fun String.toJsonRequestBody(): RequestBody {
