@@ -1,6 +1,7 @@
 package no.nav.arrangor.arrangor
 
 import no.nav.arrangor.MetricsService
+import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.client.enhetsregister.defaultVirksomhet
@@ -34,6 +35,23 @@ class ArrangorService(
 			?: leggTilOppdaterArrangor(orgNr)
 		)
 		.let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
+
+	fun getArrangorMedOverordnetArrangor(orgNr: String): ArrangorMedOverordnetArrangor {
+		val arrangor = arrangorRepository.get(orgNr)
+			?: leggTilOppdaterArrangor(orgNr)
+		val overordnetArrangor = arrangor.overordnetArrangorId?.let {
+			get(it)
+		}
+		return ArrangorMedOverordnetArrangor(
+			id = arrangor.id,
+			navn = arrangor.navn,
+			organisasjonsnummer = arrangor.organisasjonsnummer,
+			overordnetArrangorId = arrangor.overordnetArrangorId,
+			overordnetArrangorNavn = overordnetArrangor?.navn,
+			overordnetArrangorOrgnummer = overordnetArrangor?.organisasjonsnummer,
+			deltakerlister = deltakerlisteRepository.getDeltakerlisterForArrangor(arrangor.id)
+		)
+	}
 
 	fun addDeltakerlister(arrangorId: UUID, deltakerlisteIds: Set<UUID>) =
 		deltakerlisteRepository.addUpdateDeltakerlister(arrangorId, deltakerlisteIds)
