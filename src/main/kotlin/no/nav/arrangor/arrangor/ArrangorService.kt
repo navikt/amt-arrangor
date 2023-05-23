@@ -4,7 +4,6 @@ import no.nav.arrangor.MetricsService
 import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.client.enhetsregister.Virksomhet
-import no.nav.arrangor.client.enhetsregister.defaultVirksomhet
 import no.nav.arrangor.deltakerliste.DeltakerlisteRepository
 import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.ingest.PublishService
@@ -72,7 +71,7 @@ class ArrangorService(
 			Virksomhet(oar.organisasjonsnummer, oar.navn, overordnet?.organisasjonsnummer, overordnet?.navn)
 		}
 
-		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(defaultVirksomhet(orgNr))
+		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrThrow()
 
 		if (oldVirksomhet != virksomhet) {
 			val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
