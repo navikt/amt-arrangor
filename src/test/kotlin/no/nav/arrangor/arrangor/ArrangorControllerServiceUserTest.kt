@@ -55,7 +55,7 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 		val arrangor = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body!!.string())
 		arrangor.organisasjonsnummer shouldBe orgnummer
 		arrangor.navn shouldBe "Navn"
-		arrangor.overordnetArrangorId shouldBe null
+		arrangor.overordnetArrangor shouldBe null
 	}
 
 	@Test
@@ -75,8 +75,8 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 		val arrangor = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body!!.string())
 		arrangor.organisasjonsnummer shouldBe orgnummer
 		arrangor.navn shouldBe "Navn"
-		arrangor.overordnetArrangorId shouldBe overordnetArrangor.id
-		arrangor.overordnetArrangorNavn shouldBe "Overordnet"
-		arrangor.overordnetArrangorOrgnummer shouldBe orgnummerOverordnetArrangor
+		arrangor.overordnetArrangor?.id shouldBe overordnetArrangor.id
+		arrangor.overordnetArrangor?.navn shouldBe "Overordnet"
+		arrangor.overordnetArrangor?.organisasjonsnummer shouldBe orgnummerOverordnetArrangor
 	}
 }

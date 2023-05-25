@@ -5,8 +5,10 @@ import no.nav.arrangor.ansatt.repositories.AnsattRepository
 import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
 import no.nav.arrangor.ansatt.repositories.RolleRepository
 import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
+import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.person.PersonClient
 import no.nav.arrangor.domain.Ansatt
+import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
@@ -25,7 +27,8 @@ class AnsattService(
 	private val veilederDeltakerRepository: VeilederDeltakerRepository,
 	private val rolleService: AnsattRolleService,
 	private val publishService: PublishService,
-	private val metricsService: MetricsService
+	private val metricsService: MetricsService,
+	private val arrangorService: ArrangorService
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -195,13 +198,29 @@ class AnsattService(
 		val veilederFor =
 			veilederDeltakerRepository.getAktive(ansatt.id).map { Veileder(it.deltakerId, it.veilederType) }
 		val koordinatorFor = koordinatorDeltakerlisteRepository.getAktive(ansatt.id).map { it.deltakerlisteId }
+		val arrangorer = arrangorIds.map { arrangorService.getArrangorMedOverordnetArrangorForArrangorId(it) }
 
 		return Ansatt(
 			id = ansatt.id,
 			personalia = ansatt.toPersonalia(),
 			arrangorer = arrangorIds.map { arrangorId ->
+				val arrangor = arrangorer.find { it.id == arrangorId } ?: throw IllegalStateException("Mangler arrangør med id $arrangorId")
 				TilknyttetArrangor(
 					arrangorId = arrangorId,
+					arrangor = Arrangor(
+						id = arrangor.id,
+						navn = arrangor.navn,
+						organisasjonsnummer = arrangor.organisasjonsnummer,
+						overordnetArrangorId = arrangor.overordnetArrangor?.id
+					),
+					overordnetArrangor = arrangor.overordnetArrangor?.let {
+						Arrangor(
+							id = it.id,
+							navn = it.navn,
+							organisasjonsnummer = it.organisasjonsnummer,
+							overordnetArrangorId = it.overordnetArrangorId
+						)
+					},
 					roller = roller.filter { it.arrangorId == arrangorId }.map { it.rolle },
 					veileder = veilederFor,
 					koordinator = koordinatorFor

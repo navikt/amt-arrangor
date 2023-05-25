@@ -27,13 +27,13 @@ class ArrangorService(
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
-		.let { it?.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
+		.let { it?.toDomain() }
 
 	fun get(orgNr: String): Arrangor = (
 		arrangorRepository.get(orgNr)
 			?: leggTilOppdaterArrangor(orgNr)
 		)
-		.let { it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id)) }
+		.let { it.toDomain() }
 
 	fun getArrangorMedOverordnetArrangor(orgNr: String): ArrangorMedOverordnetArrangor {
 		val arrangor = arrangorRepository.get(orgNr)
@@ -45,10 +45,20 @@ class ArrangorService(
 			id = arrangor.id,
 			navn = arrangor.navn,
 			organisasjonsnummer = arrangor.organisasjonsnummer,
-			overordnetArrangorId = arrangor.overordnetArrangorId,
-			overordnetArrangorNavn = overordnetArrangor?.navn,
-			overordnetArrangorOrgnummer = overordnetArrangor?.organisasjonsnummer,
-			deltakerlister = deltakerlisteRepository.getDeltakerlisterForArrangor(arrangor.id)
+			overordnetArrangor = overordnetArrangor
+		)
+	}
+
+	fun getArrangorMedOverordnetArrangorForArrangorId(arrangorId: UUID): ArrangorMedOverordnetArrangor {
+		val arrangor = arrangorRepository.get(arrangorId) ?: throw IllegalStateException("Fant ikke arrangør med id $arrangorId")
+		val overordnetArrangor = arrangor.overordnetArrangorId?.let {
+			get(it)
+		}
+		return ArrangorMedOverordnetArrangor(
+			id = arrangor.id,
+			navn = arrangor.navn,
+			organisasjonsnummer = arrangor.organisasjonsnummer,
+			overordnetArrangor = overordnetArrangor
 		)
 	}
 
@@ -91,7 +101,7 @@ class ArrangorService(
 					organisasjonsnummer = virksomhet.organisasjonsnummer,
 					overordnetArrangorId = overordnetArrangor?.id
 				)
-					.also { publishService.publishArrangor(it.toDomain(deltakerlisteRepository.getDeltakerlisterForArrangor(it.id))) }
+					.also { publishService.publishArrangor(it.toDomain()) }
 					.also { metricsService.incEndredeArrangorer() }
 			)
 		}

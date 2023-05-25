@@ -47,7 +47,6 @@ class PublishService(
 		id = id,
 		navn = navn,
 		organisasjonsnummer = organisasjonsnummer,
-		overordnetArrangorId = overordnetArrangorId,
-		deltakerlister = deltakerlister.toList()
+		overordnetArrangorId = overordnetArrangorId
 	)
 }
