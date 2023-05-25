@@ -22,7 +22,7 @@ data class Navn(
 
 data class TilknyttetArrangor(
 	val arrangorId: UUID,
-	val arrangor: Arrangor,
+	val arrangor: Arrangor?,
 	val overordnetArrangor: Arrangor?,
 	val roller: List<AnsattRolle>,
 	val veileder: List<Veileder>,
