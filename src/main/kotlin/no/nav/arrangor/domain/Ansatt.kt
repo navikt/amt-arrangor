@@ -1,6 +1,6 @@
 package no.nav.arrangor.domain
 
-import java.util.*
+import java.util.UUID
 
 data class Ansatt(
 	val id: UUID,
@@ -22,6 +22,8 @@ data class Navn(
 
 data class TilknyttetArrangor(
 	val arrangorId: UUID,
+	val arrangor: Arrangor,
+	val overordnetArrangor: Arrangor?,
 	val roller: List<AnsattRolle>,
 	val veileder: List<Veileder>,
 	val koordinator: List<UUID>

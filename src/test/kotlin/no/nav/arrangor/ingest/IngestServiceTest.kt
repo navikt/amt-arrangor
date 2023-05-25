@@ -7,12 +7,14 @@ import no.nav.arrangor.ansatt.repositories.RolleRepository
 import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.AnsattRolle
+import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.domain.Navn
 import no.nav.arrangor.domain.Personalia
 import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.dto.ArrangorDto
+import no.nav.arrangor.ingest.mulighetsrommet.MulighetsrommetGjennomforingDto
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
 import org.junit.jupiter.api.AfterEach
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import java.time.LocalDate
 import java.util.UUID
 import javax.sql.DataSource
 
@@ -59,17 +62,22 @@ class IngestServiceTest : IntegrationTest() {
 			id = UUID.randomUUID(),
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
-			overordnetArrangorId = null,
-			deltakerlister = listOf(UUID.randomUUID(), UUID.randomUUID())
+			overordnetArrangorId = null
 		).also { ingestService.handleArrangor(it) }
 
 		val arrangorTwo = ArrangorDto(
 			id = UUID.randomUUID(),
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
-			overordnetArrangorId = null,
-			deltakerlister = listOf(UUID.randomUUID(), UUID.randomUUID())
+			overordnetArrangorId = null
 		).also { ingestService.handleArrangor(it) }
+		val gjennomforinger = listOf(
+			getGjennomforing(arrangor.organisasjonsnummer),
+			getGjennomforing(arrangor.organisasjonsnummer),
+			getGjennomforing(arrangorTwo.organisasjonsnummer),
+			getGjennomforing(arrangorTwo.organisasjonsnummer)
+		)
+		gjennomforinger.forEach { ingestService.handleGjennomforing(it) }
 
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
@@ -85,20 +93,34 @@ class IngestServiceTest : IntegrationTest() {
 			arrangorer = listOf(
 				TilknyttetArrangor(
 					arrangorId = arrangor.id,
+					arrangor = Arrangor(
+						id = arrangor.id,
+						navn = arrangor.navn,
+						organisasjonsnummer = arrangor.organisasjonsnummer,
+						overordnetArrangorId = null
+					),
+					overordnetArrangor = null,
 					roller = listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER),
 					veileder = listOf(
 						Veileder(deltakerId = UUID.randomUUID(), type = VeilederType.VEILEDER),
 						Veileder(deltakerId = UUID.randomUUID(), type = VeilederType.MEDVEILEDER)
 					),
-					koordinator = arrangor.deltakerlister
+					koordinator = listOf(gjennomforinger[0].id, gjennomforinger[1].id)
 				),
 				TilknyttetArrangor(
 					arrangorId = arrangorTwo.id,
+					arrangor = Arrangor(
+						id = arrangorTwo.id,
+						navn = arrangorTwo.navn,
+						organisasjonsnummer = arrangorTwo.organisasjonsnummer,
+						overordnetArrangorId = null
+					),
+					overordnetArrangor = null,
 					roller = listOf(AnsattRolle.VEILEDER),
 					veileder = listOf(
 						Veileder(deltakerId = UUID.randomUUID(), type = VeilederType.MEDVEILEDER)
 					),
-					koordinator = arrangorTwo.deltakerlister
+					koordinator = listOf(gjennomforinger[2].id, gjennomforinger[3].id)
 				)
 			)
 		)
@@ -113,5 +135,22 @@ class IngestServiceTest : IntegrationTest() {
 		koordinator.size shouldBe 4
 		veileder.size shouldBe 3
 		roller.size shouldBe 3
+	}
+
+	fun getGjennomforing(orgnummer: String): MulighetsrommetGjennomforingDto {
+		val id = UUID.randomUUID()
+		return MulighetsrommetGjennomforingDto(
+			id = id,
+			tiltakstype = MulighetsrommetGjennomforingDto.Tiltakstype(
+				id = UUID.randomUUID(),
+				navn = "Oppfølging",
+				arenaKode = "INDOPPFAG"
+			),
+			navn = "Gjennomføring $id",
+			startDato = LocalDate.now().minusDays(5),
+			sluttDato = null,
+			status = MulighetsrommetGjennomforingDto.Status.GJENNOMFORES,
+			virksomhetsnummer = orgnummer
+		)
 	}
 }

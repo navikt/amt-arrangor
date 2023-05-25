@@ -55,7 +55,7 @@ class IngestService(
 			}
 		}
 
-		val inserted = arrangorRepository.insertOrUpdate(
+		arrangorRepository.insertOrUpdate(
 			ArrangorRepository.ArrangorDbo(
 				id = arrangor.id,
 				navn = arrangor.navn,
@@ -64,7 +64,6 @@ class IngestService(
 			)
 		)
 
-		arrangorService.addDeltakerlister(inserted.id, arrangor.deltakerlister.toSet())
 		logger.info("Håndterte arrangør med id ${arrangor.id}")
 		metricsService.incConsumedArrangor()
 	}

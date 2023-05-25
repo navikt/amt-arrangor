@@ -100,12 +100,11 @@ class ArrangorRepository(
 		val organisasjonsnummer: String,
 		val overordnetArrangorId: UUID?
 	) {
-		fun toDomain(deltakerlister: Set<UUID>): Arrangor = Arrangor(
+		fun toDomain(): Arrangor = Arrangor(
 			id = id,
 			navn = navn,
 			organisasjonsnummer = organisasjonsnummer,
-			overordnetArrangorId = overordnetArrangorId,
-			deltakerlister = deltakerlister
+			overordnetArrangorId = overordnetArrangorId
 		)
 	}
 }

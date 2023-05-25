@@ -67,13 +67,11 @@ class KafkaListenerTest : IntegrationTest() {
 		id: UUID = UUID.randomUUID(),
 		navn: String = "navn",
 		organisasjonsnummer: String = "123",
-		overordnetArrangorId: UUID? = null,
-		deltakerlister: List<UUID> = listOf(UUID.randomUUID())
+		overordnetArrangorId: UUID? = null
 	) = ArrangorDto(
 		id = id,
 		navn = navn,
 		organisasjonsnummer = organisasjonsnummer,
-		overordnetArrangorId = overordnetArrangorId,
-		deltakerlister = deltakerlister
+		overordnetArrangorId = overordnetArrangorId
 	)
 }
