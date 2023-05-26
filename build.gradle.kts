@@ -1,9 +1,9 @@
 plugins {
-    id("org.springframework.boot") version "3.0.5"
+    id("org.springframework.boot") version "3.1.0"
     id("io.spring.dependency-management") version "1.1.0"
-    id("org.jlleitschuh.gradle.ktlint") version "11.3.1"
-    kotlin("jvm") version "1.8.0"
-    kotlin("plugin.spring") version "1.7.22"
+    id("org.jlleitschuh.gradle.ktlint") version "11.3.2"
+    kotlin("jvm") version "1.8.21"
+    kotlin("plugin.spring") version "1.8.21"
 }
 
 group = "no.nav.amt-arrangor"
@@ -17,12 +17,12 @@ repositories {
 
 val logstashEncoderVersion = "7.3"
 val kafkaClientsVersion = "3.4.0"
-val shedlockVersion = "5.2.0"
-val okHttpVersion = "4.10.0"
-val tokenSupportVersion = "3.0.10"
+val shedlockVersion = "5.3.0"
+val okHttpVersion = "4.11.0"
+val tokenSupportVersion = "3.1.0"
 val arrowVersion = "1.2.0-RC"
-val kotestVersion = "5.5.5"
-val testcontainersVersion = "1.17.6"
+val kotestVersion = "5.6.2"
+val testcontainersVersion = "1.18.1"
 val mockkVersion = "1.13.5"
 
 val commonVersion = "3.2023.04.18_10.07-0576b4e09008"
