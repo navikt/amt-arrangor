@@ -5,6 +5,8 @@ on:
       - main
 jobs:
   test:
+    permissions:
+      contents: "write"
     name: Run tests
     runs-on: ubuntu-latest
     steps:
@@ -19,3 +21,8 @@ jobs:
         uses: gradle/gradle-build-action@v2
       - name: Run tests
         run: ./gradlew check
+      - name: Dependency submission (for dependabot)
+        uses: mikepenz/gradle-dependency-submission@v0.8.6
+        with:
+          fail-on-error: true
+          gradle-dependency-path: "build.gradle.kts"
