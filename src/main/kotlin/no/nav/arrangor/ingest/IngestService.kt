@@ -119,7 +119,9 @@ class IngestService(
 
 	fun handleGjennomforing(gjennomforing: MulighetsrommetGjennomforingDto?) {
 		if (gjennomforing == null) return
-
+		if (IgnoredDeltakerlister.deltakerlisteIds.contains(gjennomforing.id)) {
+			return
+		}
 		val arrangor = arrangorService.get(gjennomforing.virksomhetsnummer)
 		arrangorService.addDeltakerlister(arrangor.id, setOf(gjennomforing.id))
 		logger.info("Konsumerte gjennomføring med id ${gjennomforing.id}")
