@@ -2,9 +2,11 @@ package no.nav.arrangor.ansatt
 
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.VeilederType
+import no.nav.arrangor.ingest.IgnoredDeltakerlister
 import no.nav.arrangor.utils.Issuer
 import no.nav.security.token.support.core.api.ProtectedWithClaims
 import no.nav.security.token.support.core.context.TokenValidationContextHolder
+import org.slf4j.MDC
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -39,6 +41,7 @@ class AnsattController(
 	fun setKoordinatorForDeltakerliste(
 		@PathVariable("deltakerlisteId") deltakerlisteId: UUID
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
+		if (IgnoredDeltakerlister.deltakerlisteIds.contains(deltakerlisteId)) throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Deltakerliste er blokkert")
 		ansattService.setKoordinatorForDeltakerliste(personident, deltakerlisteId)
 	}
 
@@ -70,10 +73,15 @@ class AnsattController(
 			throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized, valid token is missing")
 		}
 
-		return token.jwtTokenClaims["pid"]?.toString() ?: throw ResponseStatusException(
-			HttpStatus.UNAUTHORIZED,
-			"PID is missing or is not a string"
-		)
+		return token.jwtTokenClaims["pid"]?.toString()
+			?.also {
+				ansattService.getAnsattIdForPersonident(it)
+					?.let { id -> MDC.put("ansatt-id", id.toString()) }
+			}
+			?: throw ResponseStatusException(
+				HttpStatus.UNAUTHORIZED,
+				"PID is missing or is not a string"
+			)
 	}
 
 	data class SetVeilederForDeltakerRequestBody(
