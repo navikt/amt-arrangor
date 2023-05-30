@@ -77,7 +77,7 @@ class ArrangorService(
 			Virksomhet(oar.organisasjonsnummer, oar.navn, overordnet?.organisasjonsnummer, overordnet?.navn)
 		}
 
-		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrThrow()
+		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(getDefaultVirksomhet(orgNr))
 
 		if (oldVirksomhet != virksomhet) {
 			val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
@@ -103,5 +103,15 @@ class ArrangorService(
 		}
 
 		return arrangor
+	}
+
+	private fun getDefaultVirksomhet(organisasjonsnummer: String): Virksomhet {
+		logger.warn("Kunne ikke hente virksomhet for orgnummer $organisasjonsnummer, bruker defaultverdier")
+		return Virksomhet(
+			organisasjonsnummer = organisasjonsnummer,
+			navn = "Ukjent virksomhet",
+			overordnetEnhetOrganisasjonsnummer = null,
+			overordnetEnhetNavn = null
+		)
 	}
 }
