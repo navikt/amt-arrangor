@@ -40,6 +40,10 @@ class AnsattService(
 		?.let { getAnsatt(it) }
 		?: opprettAnsatt(personident)
 
+	fun getAnsattIdForPersonident(personident: String): UUID? {
+		return ansattRepository.get(personident)?.id
+	}
+
 	fun setKoordinatorForDeltakerliste(personident: String, deltakerlisteId: UUID): Ansatt {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 
