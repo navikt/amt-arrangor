@@ -29,15 +29,14 @@ class ArrangorService(
 	fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
 		.let { it?.toDomain() }
 
-	fun get(orgNr: String): Arrangor = (
+	fun getOrUpsert(orgNr: String): Arrangor = (
 		arrangorRepository.get(orgNr)
-			?: leggTilOppdaterArrangor(orgNr)
-		)
-		.let { it.toDomain() }
+			?: upsertArrangor(orgNr)
+		).toDomain()
 
 	fun getArrangorMedOverordnetArrangor(orgNr: String): ArrangorMedOverordnetArrangor {
 		val arrangor = arrangorRepository.get(orgNr)
-			?: leggTilOppdaterArrangor(orgNr)
+			?: upsertArrangor(orgNr)
 		val overordnetArrangor = arrangor.overordnetArrangorId?.let {
 			get(it)
 		}
@@ -67,13 +66,10 @@ class ArrangorService(
 
 	fun oppdaterArrangorer(limit: Int = 50, synchronizedBefore: LocalDateTime = LocalDateTime.now().minusDays(1)) =
 		arrangorRepository.getToSynchronize(limit, synchronizedBefore)
-			.map { oppdaterArrangor(it) }
+			.map { upsertArrangor(it.organisasjonsnummer) }
 			.also { logger.info("Oppdaterte ${it.size} arrangører") }
 
-	fun oppdaterArrangor(arrangor: ArrangorRepository.ArrangorDbo): ArrangorRepository.ArrangorDbo =
-		leggTilOppdaterArrangor(arrangor.organisasjonsnummer)
-
-	private fun leggTilOppdaterArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
+	private fun upsertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
 		val arrangor = arrangorRepository.get(orgNr)
 
 		val oldVirksomhet = arrangor?.let { oar ->
@@ -81,7 +77,7 @@ class ArrangorService(
 			Virksomhet(oar.organisasjonsnummer, oar.navn, overordnet?.organisasjonsnummer, overordnet?.navn)
 		}
 
-		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrThrow()
+		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(getDefaultVirksomhet(orgNr))
 
 		if (oldVirksomhet != virksomhet) {
 			val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
@@ -107,5 +103,15 @@ class ArrangorService(
 		}
 
 		return arrangor
+	}
+
+	private fun getDefaultVirksomhet(organisasjonsnummer: String): Virksomhet {
+		logger.warn("Kunne ikke hente virksomhet for orgnummer $organisasjonsnummer, bruker defaultverdier")
+		return Virksomhet(
+			organisasjonsnummer = organisasjonsnummer,
+			navn = "Ukjent virksomhet",
+			overordnetEnhetOrganisasjonsnummer = null,
+			overordnetEnhetNavn = null
+		)
 	}
 }

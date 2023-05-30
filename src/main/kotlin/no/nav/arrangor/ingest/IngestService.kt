@@ -83,11 +83,12 @@ class IngestService(
 		)
 
 		ansatt.arrangorer.forEach { arrangor ->
-			val organisasjonsnummer = arrangorRepository.getOrganiasjonsnummerForId(arrangor.arrangorId)
+			val organisasjonsnummer = arrangor.arrangor?.organisasjonsnummer?.let { arrangorService.getOrUpsert(it).organisasjonsnummer }
+				?: arrangorRepository.getOrganiasjonsnummerForId(arrangor.arrangorId)
 
 			if (organisasjonsnummer == null) {
-				logger.warn("arrangør ${arrangor.arrangorId} er ikke lagret enda")
-				return
+				logger.error("arrangør ${arrangor.arrangorId} er ikke lagret enda og kunne ikke opprettes")
+				throw IllegalStateException("arrangør ${arrangor.arrangorId} er ikke lagret enda og kunne ikke opprettes")
 			}
 
 			val gamleRoller = rolleRepository.getAktiveRoller(ansatt.id)
@@ -122,7 +123,7 @@ class IngestService(
 		if (IgnoredDeltakerlister.deltakerlisteIds.contains(gjennomforing.id)) {
 			return
 		}
-		val arrangor = arrangorService.get(gjennomforing.virksomhetsnummer)
+		val arrangor = arrangorService.getOrUpsert(gjennomforing.virksomhetsnummer)
 		arrangorService.addDeltakerlister(arrangor.id, setOf(gjennomforing.id))
 		logger.info("Konsumerte gjennomføring med id ${gjennomforing.id}")
 		metricsService.incConsumedGjennomforing()

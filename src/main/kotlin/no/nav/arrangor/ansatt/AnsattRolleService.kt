@@ -2,6 +2,7 @@ package no.nav.arrangor.ansatt
 
 import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.repositories.RolleRepository
+import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.altinn.AltinnAclClient
 import no.nav.arrangor.client.altinn.AltinnRolle
 import no.nav.arrangor.domain.AnsattRolle
@@ -14,13 +15,26 @@ import java.util.UUID
 class AnsattRolleService(
 	private val rolleRepository: RolleRepository,
 	private val altinnClient: AltinnAclClient,
-	private val metricsService: MetricsService
+	private val metricsService: MetricsService,
+	private val arrangorService: ArrangorService
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 
+	fun getRollerFraAltinn(personIdent: String): List<AltinnRolle> {
+		return altinnClient.hentRoller(personIdent).getOrThrow()
+	}
+
 	fun getRoller(ansattId: UUID): List<RolleRepository.RolleDbo> {
 		return rolleRepository.getAktiveRoller(ansattId)
+	}
+
+	fun lagreRollerForNyAnsatt(ansattId: UUID, roller: List<AltinnRolle>) {
+		val unikeOrgnummer = roller.map { it.organisasjonsnummer }.distinct()
+		unikeOrgnummer.forEach { arrangorService.getOrUpsert(it) }
+		val orgRoller = altinnToOrgRolle(roller)
+		rolleRepository.leggTilRoller(orgRoller.map { it.toInput(ansattId) })
+			.also { logLagtTil(ansattId, orgRoller) }
 	}
 
 	fun oppdaterRoller(ansattId: UUID, personident: String): DataUpdateWrapper<List<RolleRepository.RolleDbo>> {
@@ -44,6 +58,8 @@ class AnsattRolleService(
 		rolleRepository.deaktiverRoller(rollerSomSkalSlettes.map { it.id })
 			.also { logFjernet(ansattId, rollerSomSkalSlettes) }
 
+		val unikeOrgnummer = rollerSomSkalLeggesTil.map { it.organisasjonsnummer }.distinct()
+		unikeOrgnummer.forEach { arrangorService.getOrUpsert(it) }
 		rolleRepository.leggTilRoller(rollerSomSkalLeggesTil.map { it.toInput(ansattId) })
 			.also { logLagtTil(ansattId, rollerSomSkalLeggesTil) }
 

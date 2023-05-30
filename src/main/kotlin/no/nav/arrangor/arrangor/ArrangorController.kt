@@ -21,5 +21,5 @@ class ArrangorController(
 		?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 
 	@GetMapping("/organisasjonsnummer/{orgNr}")
-	fun getByOrgNr(@PathVariable("orgNr") orgNr: String): Arrangor? = arrangorService.get(orgNr)
+	fun getByOrgNr(@PathVariable("orgNr") orgNr: String): Arrangor? = arrangorService.getOrUpsert(orgNr)
 }

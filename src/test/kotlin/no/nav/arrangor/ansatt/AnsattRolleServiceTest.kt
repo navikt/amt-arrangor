@@ -2,11 +2,13 @@ package no.nav.arrangor.ansatt
 
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.ansatt.repositories.AnsattRepository
 import no.nav.arrangor.ansatt.repositories.RolleRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.altinn.AltinnAclClient
+import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
@@ -27,6 +29,9 @@ class AnsattRolleServiceTest : IntegrationTest() {
 
 	@Autowired
 	lateinit var rolleRepository: RolleRepository
+
+	@Autowired
+	lateinit var arrangorRepository: ArrangorRepository
 
 	@Autowired
 	lateinit var dataSource: DataSource
@@ -82,6 +87,41 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		val rollerArrangorTwo = roller.filter { it.arrangorId == arrangorTwo.id }
 		rollerArrangorTwo.size shouldBe 2
 		rollerArrangorTwo.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
+	}
+
+	@Test
+	fun `oppdaterRoller - nye roller, ny arrangor - skal lagre roller og ny arrangor`() {
+		val nyArrangorOrgnummer = "123456789"
+		mockAltinnServer.addRoller(
+			ansatt.personident,
+			AltinnAclClient.ResponseWrapper(
+				listOf(
+					AltinnAclClient.ResponseEntry(nyArrangorOrgnummer, listOf(KOORDINATOR))
+				)
+			)
+		)
+		mockAmtEnhetsregiserServer.addVirksomhet(
+			Virksomhet(
+				organisasjonsnummer = nyArrangorOrgnummer,
+				navn = "Ny Arrangør AS",
+				overordnetEnhetOrganisasjonsnummer = "456",
+				overordnetEnhetNavn = "overordnetArrangor"
+			)
+		)
+
+		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+			.also { it.isUpdated shouldBe true }
+			.data
+
+		roller.size shouldBe 1
+
+		val rolle = roller.first()
+		rolle.ansattId shouldBe ansatt.id
+		rolle.rolle shouldBe AnsattRolle.KOORDINATOR
+		rolle.organisasjonsnummer shouldBe nyArrangorOrgnummer
+		rolle.gyldigTil shouldBe null
+
+		arrangorRepository.get(nyArrangorOrgnummer) shouldNotBe null
 	}
 
 	@Test
