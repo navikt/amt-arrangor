@@ -62,14 +62,6 @@ class ArrangorRepository(
 		rowMapper
 	).firstOrNull()
 
-	fun getIdsForOrganisasjonsnummer(orgiansasjonsnummer: List<String>): Map<String, UUID> {
-		return template.query(
-			"SELECT * from arrangor where organisasjonsnummer in (:orgiansasjonsnummer)",
-			sqlParameters("orgiansasjonsnummer" to orgiansasjonsnummer),
-			rowMapper
-		).associate { it.organisasjonsnummer to it.id }
-	}
-
 	fun getOrganiasjonsnummerForId(id: UUID): String? = template.query(
 		"SELECT * FROM arrangor where id = :id",
 		sqlParameters("id" to id),

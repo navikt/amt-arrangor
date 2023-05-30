@@ -28,17 +28,20 @@ class AnsattService(
 	private val rolleService: AnsattRolleService,
 	private val publishService: PublishService,
 	private val metricsService: MetricsService,
-	private val arrangorService: ArrangorService
+	private val arrangorService: ArrangorService,
+	private val ansattRolleService: AnsattRolleService
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	fun get(id: UUID): Ansatt? = ansattRepository.get(id)
-		?.let { getAnsatt(it) }
+		?.let { getAndMaybeUpdateAnsatt(it) }
 
-	fun get(personident: String): Ansatt? = ansattRepository.get(personident)
-		?.let { getAnsatt(it) }
-		?: opprettAnsatt(personident)
+	fun get(personident: String): Ansatt? {
+		return ansattRepository.get(personident)
+			?.let { getAndMaybeUpdateAnsatt(it) }
+			?: opprettAnsatt(personident)
+	}
 
 	fun setKoordinatorForDeltakerliste(personident: String, deltakerlisteId: UUID): Ansatt {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
@@ -46,12 +49,12 @@ class AnsattService(
 		val currentDeltakerlister = koordinatorDeltakerlisteRepository.getAktive(ansattDbo.id)
 
 		if (currentDeltakerlister.find { it.deltakerlisteId == deltakerlisteId } != null) {
-			return getAnsatt(ansattDbo)
+			return getAndMaybeUpdateAnsatt(ansattDbo)
 		}
 
 		koordinatorDeltakerlisteRepository.leggTilKoordinatorDeltakerlister(ansattDbo.id, listOf(deltakerlisteId))
 
-		return getAnsatt(ansattDbo)
+		return getAndMaybeUpdateAnsatt(ansattDbo)
 			.also { publishService.publishAnsatt(it) }
 			.also { metricsService.incLagtTilSomKoordinator() }
 			.also { logger.info("Ansatt ${ansattDbo.id} ble koordinator for deltakerliste $deltakerlisteId") }
@@ -65,13 +68,13 @@ class AnsattService(
 		currentDeltakerlister.find { it.deltakerlisteId == deltakerlisteId }?.let { it ->
 			koordinatorDeltakerlisteRepository.deaktiverKoordinatorDeltakerliste(listOf(it.id))
 
-			return getAnsatt(ansattDbo)
+			return getAndMaybeUpdateAnsatt(ansattDbo)
 				.also { ansatt -> publishService.publishAnsatt(ansatt) }
 				.also { metricsService.incFjernetSomKoodrinator() }
 				.also { logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId") }
 		}
 
-		return getAnsatt(ansattDbo)
+		return getAndMaybeUpdateAnsatt(ansattDbo)
 	}
 
 	fun setVeileder(personident: String, arrangorId: UUID, deltakerId: UUID, type: VeilederType): Ansatt {
@@ -87,13 +90,13 @@ class AnsattService(
 					listOf(VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, arrangorId, type))
 				)
 
-				return getAnsatt(ansattDbo)
+				return getAndMaybeUpdateAnsatt(ansattDbo)
 					.also { ansatt -> publishService.publishAnsatt(ansatt) }
 					.also { metricsService.incLagtTilSomVeileder() }
 					.also { _ -> logger.info("Ansatt ${ansattDbo.id} byttet fra ${it.veilederType} til $type for deltaker $deltakerId") }
 			}
 
-			return getAnsatt(ansattDbo)
+			return getAndMaybeUpdateAnsatt(ansattDbo)
 		}
 
 		veilederDeltakerRepository.leggTil(
@@ -103,7 +106,7 @@ class AnsattService(
 			)
 		)
 
-		return getAnsatt(ansattDbo)
+		return getAndMaybeUpdateAnsatt(ansattDbo)
 			.also { publishService.publishAnsatt(it) }
 			.also { metricsService.incLagtTilSomVeileder() }
 			.also { logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId") }
@@ -116,38 +119,44 @@ class AnsattService(
 
 		currentVeilederFor.find { it.deltakerId == deltakerId }?.let {
 			veilederDeltakerRepository.deaktiver(listOf(it.id))
-			return getAnsatt(ansattDbo)
+			return getAndMaybeUpdateAnsatt(ansattDbo)
 				.also { publishService.publishAnsatt(it) }
 				.also { metricsService.incFjernetSomVeileder() }
 				.also { _ -> logger.info("Ansatt ${ansattDbo.id} mistet veilederrolle for $deltakerId") }
 		}
 
-		return getAnsatt(ansattDbo)
+		return getAndMaybeUpdateAnsatt(ansattDbo)
 	}
 
-	fun opprettAnsatt(personIdent: String): Ansatt? = personClient.hentPersonalia(personIdent).getOrThrow()
-		.let {
-			oppdaterAnsatt(
-				ansattRepository.insertOrUpdate(
-					AnsattRepository.AnsattDbo(
-						personident = personIdent,
-						personId = it.id,
-						fornavn = it.fornavn,
-						mellomnavn = it.mellomnavn,
-						etternavn = it.etternavn
-					)
-				)
-			)
+	fun opprettAnsatt(personIdent: String): Ansatt? {
+		val altinnRoller = ansattRolleService.getRollerFraAltinn(personIdent)
+		if (altinnRoller.isEmpty()) {
+			logger.info("Bruker uten rettigheter i Altinn har logget seg inn")
+			return null
 		}
-		.also { metricsService.incEndretAnsattPersonalia() }
-		.also { logger.info("Opprettet ansatt ${it.id}") }
+		val person = personClient.hentPersonalia(personIdent).getOrThrow()
+		val ansattDbo = ansattRepository.insertOrUpdate(
+			AnsattRepository.AnsattDbo(
+				personident = personIdent,
+				personId = person.id,
+				fornavn = person.fornavn,
+				mellomnavn = person.mellomnavn,
+				etternavn = person.etternavn
+			)
+		)
+		ansattRolleService.lagreRollerForNyAnsatt(ansattDbo.id, altinnRoller)
+
+		logger.info("Opprettet ansatt og lagret roller for ansattId ${ansattDbo.id}")
+
+		return get(ansattDbo.id).also { it?.let { publishService.publishAnsatt(it) } }
+	}
 
 	fun oppdaterAnsatte() = ansattRepository.getToSynchronize(
 		maxSize = 50,
 		synchronizedBefore = LocalDateTime.now().minusDays(7)
 	).forEach { oppdaterAnsatt(it) }
 
-	private fun getAnsatt(ansattDbo: AnsattRepository.AnsattDbo): Ansatt {
+	private fun getAndMaybeUpdateAnsatt(ansattDbo: AnsattRepository.AnsattDbo): Ansatt {
 		val shouldSynchronize = ansattDbo.lastSynchronized.isBefore(LocalDateTime.now().minusHours(1))
 
 		return if (shouldSynchronize) {
