@@ -58,12 +58,12 @@ class AnsattRolleService(
 		rolleRepository.deaktiverRoller(rollerSomSkalSlettes.map { it.id })
 			.also { logFjernet(ansattId, rollerSomSkalSlettes) }
 
-		val unikeOrgnummer = rollerSomSkalLeggesTil.map { it.organisasjonsnummer }.distinct()
-		unikeOrgnummer.forEach { arrangorService.getOrUpsert(it) }
+		// val unikeOrgnummer = rollerSomSkalLeggesTil.map { it.organisasjonsnummer }.distinct()
+		// unikeOrgnummer.forEach { arrangorService.getOrUpsert(it) } Legges til igjen når amt-arrangør er master!
 		rolleRepository.leggTilRoller(rollerSomSkalLeggesTil.map { it.toInput(ansattId) })
 			.also { logLagtTil(ansattId, rollerSomSkalLeggesTil) }
 
-		return rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty()
+		return (rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty())
 			.also { if (it) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
 	}
 

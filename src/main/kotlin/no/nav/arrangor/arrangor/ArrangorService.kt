@@ -29,6 +29,9 @@ class ArrangorService(
 	fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
 		.let { it?.toDomain() }
 
+	fun get(orgNr: String): Arrangor? =
+		arrangorRepository.get(orgNr)?.toDomain()
+
 	fun getOrUpsert(orgNr: String): Arrangor = (
 		arrangorRepository.get(orgNr)
 			?: upsertArrangor(orgNr)
