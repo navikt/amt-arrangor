@@ -9,7 +9,6 @@ import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.ingest.PublishService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.time.LocalDateTime
 import java.util.UUID
 
 /*
@@ -66,11 +65,6 @@ class ArrangorService(
 
 	fun addDeltakerlister(arrangorId: UUID, deltakerlisteIds: Set<UUID>) =
 		deltakerlisteRepository.addUpdateDeltakerlister(arrangorId, deltakerlisteIds)
-
-	fun oppdaterArrangorer(limit: Int = 50, synchronizedBefore: LocalDateTime = LocalDateTime.now().minusDays(1)) =
-		arrangorRepository.getToSynchronize(limit, synchronizedBefore)
-			.map { upsertArrangor(it.organisasjonsnummer) }
-			.also { logger.info("Oppdaterte ${it.size} arrangører") }
 
 	private fun upsertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
 		val arrangor = arrangorRepository.get(orgNr)
