@@ -2,13 +2,11 @@ package no.nav.arrangor.ansatt
 
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.ansatt.repositories.AnsattRepository
 import no.nav.arrangor.ansatt.repositories.RolleRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.altinn.AltinnAclClient
-import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
@@ -89,7 +87,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		rollerArrangorTwo.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
 	}
 
-	@Test
+	/*@Test Kommentert ut frem til amt-arrangør er master
 	fun `oppdaterRoller - nye roller, ny arrangor - skal lagre roller og ny arrangor`() {
 		val nyArrangorOrgnummer = "123456789"
 		mockAltinnServer.addRoller(
@@ -122,7 +120,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		rolle.gyldigTil shouldBe null
 
 		arrangorRepository.get(nyArrangorOrgnummer) shouldNotBe null
-	}
+	}*/
 
 	@Test
 	fun `oppdaterRoller - likt i altinn og database - ingen endringer`() {
