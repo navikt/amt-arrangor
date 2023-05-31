@@ -63,7 +63,7 @@ class AnsattRolleService(
 		rolleRepository.leggTilRoller(rollerSomSkalLeggesTil.map { it.toInput(ansattId) })
 			.also { logLagtTil(ansattId, rollerSomSkalLeggesTil) }
 
-		return rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty()
+		return (rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty())
 			.also { if (it) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
 	}
 
