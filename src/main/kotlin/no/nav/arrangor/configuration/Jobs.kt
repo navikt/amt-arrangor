@@ -14,10 +14,10 @@ class Jobs(
 	private val ansattService: AnsattService
 ) {
 	@Scheduled(cron = "@hourly")
-	@SchedulerLock(name = "oppdater_ansatte", lockAtMostFor = "120m")
-	fun updateAnsatte() {
+	@SchedulerLock(name = "oppdater_roller", lockAtMostFor = "120m")
+	fun updateRoller() {
 		if (leaderElection.isLeader()) {
-			JobRunner.run("Oppdater ansatte") { ansattService.oppdaterAnsatte() }
+			JobRunner.run("Oppdater roller") { ansattService.oppdaterAnsattesRoller() }
 		}
 	}
 }

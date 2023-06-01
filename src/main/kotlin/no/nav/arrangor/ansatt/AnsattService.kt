@@ -13,7 +13,6 @@ import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.ingest.PublishService
-import no.nav.arrangor.utils.DataUpdateWrapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -155,55 +154,32 @@ class AnsattService(
 		return get(ansattDbo.id).also { it?.let { publishService.publishAnsatt(it) } }
 	}
 
-	fun oppdaterAnsatte() = ansattRepository.getToSynchronize(
+	fun oppdaterAnsattesRoller() = ansattRepository.getToSynchronize(
 		maxSize = 50,
 		synchronizedBefore = LocalDateTime.now().minusDays(7)
-	).forEach { oppdaterAnsatt(it) }
+	).forEach { oppdaterRoller(it) }
 
 	private fun getAndMaybeUpdateAnsatt(ansattDbo: AnsattRepository.AnsattDbo): Ansatt {
 		val shouldSynchronize = ansattDbo.lastSynchronized.isBefore(LocalDateTime.now().minusHours(1))
 
 		return if (shouldSynchronize) {
-			oppdaterAnsatt(ansattDbo)
+			oppdaterRoller(ansattDbo)
 		} else {
 			val roller = rolleService.getRoller(ansattDbo.id)
 			mapToAnsatt(ansattDbo, roller)
 		}
 	}
 
-	fun oppdaterAnsatt(ansattDbo: AnsattRepository.AnsattDbo): Ansatt {
+	fun oppdaterRoller(ansattDbo: AnsattRepository.AnsattDbo): Ansatt {
 		var updated = false
 
-		val nyAnsattDbo = oppdaterAnsattDetaljer(ansattDbo)
+		val roller = rolleService.oppdaterRoller(ansattDbo.id, ansattDbo.personident)
 			.also { if (it.isUpdated) updated = true }
 			.data
 
-		val roller = rolleService.oppdaterRoller(nyAnsattDbo.id, nyAnsattDbo.personident)
-			.also { if (it.isUpdated) updated = true }
-			.data
-
-		return mapToAnsatt(nyAnsattDbo, roller)
+		return mapToAnsatt(ansattDbo, roller)
 			.also { ansattRepository.setSynchronized(it.id) }
 			.also { if (updated) publishService.publishAnsatt(it) }
-	}
-
-	private fun oppdaterAnsattDetaljer(oldData: AnsattRepository.AnsattDbo): DataUpdateWrapper<AnsattRepository.AnsattDbo> {
-		val nyPersonalia = personClient.hentPersonalia(oldData.personident).getOrThrow()
-		if (oldData.toPersonalia().navn != nyPersonalia.navn()) {
-			logger.info("Ansatt ${oldData.id} har oppdatert personalia")
-			val stored = ansattRepository.insertOrUpdate(
-				oldData.copy(
-					fornavn = nyPersonalia.fornavn,
-					mellomnavn = nyPersonalia.mellomnavn,
-					etternavn = nyPersonalia.etternavn
-				)
-			)
-
-			return DataUpdateWrapper(true, stored)
-				.also { metricsService.incEndretAnsattPersonalia() }
-		}
-
-		return DataUpdateWrapper(false, oldData)
 	}
 
 	private fun mapToAnsatt(ansatt: AnsattRepository.AnsattDbo, roller: List<RolleRepository.RolleDbo>): Ansatt {
