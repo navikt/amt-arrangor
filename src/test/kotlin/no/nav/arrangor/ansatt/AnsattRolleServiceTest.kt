@@ -4,10 +4,14 @@ import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.ansatt.repositories.AnsattRepository
+import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
 import no.nav.arrangor.ansatt.repositories.RolleRepository
+import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.altinn.AltinnAclClient
+import no.nav.arrangor.deltakerliste.DeltakerlisteRepository
 import no.nav.arrangor.domain.AnsattRolle
+import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
 import org.junit.jupiter.api.AfterEach
@@ -15,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import java.util.UUID
 import javax.sql.DataSource
 
 const val KOORDINATOR = "KOORDINATOR"
@@ -29,7 +34,13 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	lateinit var rolleRepository: RolleRepository
 
 	@Autowired
-	lateinit var arrangorRepository: ArrangorRepository
+	lateinit var veilederDeltakerRepository: VeilederDeltakerRepository
+
+	@Autowired
+	lateinit var koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository
+
+	@Autowired
+	lateinit var deltakerlisteRepository: DeltakerlisteRepository
 
 	@Autowired
 	lateinit var dataSource: DataSource
@@ -161,5 +172,30 @@ class AnsattRolleServiceTest : IntegrationTest() {
 			.data
 
 		roller.isEmpty() shouldBe true
+	}
+
+	@Test
+	fun `oppdaterRoller - mister tilgang til arrangor og er veileder og har lagt til deltakerlister - fjerner roller og tilganger`() {
+		rolleRepository.leggTilRoller(
+			listOf(
+				RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR),
+				RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.VEILEDER)
+			)
+		)
+		val deltakerlisteId = UUID.randomUUID()
+		deltakerlisteRepository.upsertDeltakerliste(arrangorOne.id, deltakerlisteId)
+		koordinatorDeltakerlisteRepository.leggTilKoordinatorDeltakerlister(ansatt.id, listOf(deltakerlisteId))
+		val deltakerId = UUID.randomUUID()
+		veilederDeltakerRepository.leggTil(ansatt.id, listOf(VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, arrangorOne.id, VeilederType.VEILEDER)))
+
+		mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
+
+		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+			.also { it.isUpdated shouldBe true }
+			.data
+
+		roller.isEmpty() shouldBe true
+		koordinatorDeltakerlisteRepository.getAktive(ansatt.id) shouldBe emptyList()
+		veilederDeltakerRepository.getAktive(ansatt.id) shouldBe emptyList()
 	}
 }

@@ -124,7 +124,7 @@ class IngestService(
 		}
 		val arrangor = arrangorService.get(gjennomforing.virksomhetsnummer)
 			?: throw IllegalStateException("Har mottatt gjennomføring med ukjent arrangør. Orgnummer ${gjennomforing.virksomhetsnummer}, gjennomføring ${gjennomforing.id}")
-		arrangorService.addDeltakerlister(arrangor.id, setOf(gjennomforing.id))
+		arrangorService.addDeltakerliste(arrangor.id, gjennomforing.id)
 		logger.info("Konsumerte gjennomføring med id ${gjennomforing.id}")
 		metricsService.incConsumedGjennomforing()
 	}

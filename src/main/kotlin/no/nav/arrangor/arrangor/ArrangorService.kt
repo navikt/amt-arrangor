@@ -63,8 +63,8 @@ class ArrangorService(
 		)
 	}
 
-	fun addDeltakerlister(arrangorId: UUID, deltakerlisteIds: Set<UUID>) =
-		deltakerlisteRepository.addUpdateDeltakerlister(arrangorId, deltakerlisteIds)
+	fun addDeltakerliste(arrangorId: UUID, deltakerlisteId: UUID) =
+		deltakerlisteRepository.upsertDeltakerliste(arrangorId, deltakerlisteId)
 
 	private fun upsertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
 		val arrangor = arrangorRepository.get(orgNr)

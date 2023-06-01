@@ -53,6 +53,19 @@ class KoordinatorDeltakerlisteRepository(
 		}
 	}
 
+	fun deaktiverKoordinatorDeltakerliste(ansattId: UUID, arrangorId: UUID) {
+		template.update(
+			"""
+				UPDATE koordinator_deltakerliste
+				SET gyldig_til = CURRENT_TIMESTAMP
+				WHERE ansatt_id = :ansatt_id
+				  AND deltakerliste_id IN (SELECT id FROM deltakerliste WHERE arrangor_id = :arrangor_id)
+				  AND gyldig_til IS NULL
+			""".trimIndent(),
+			sqlParameters("ansatt_id" to ansattId, "arrangor_id" to arrangorId)
+		)
+	}
+
 	fun getAktive(ansattId: UUID): List<KoordinatorDeltakerlisteDbo> {
 		val sql = """
 			SELECT koordinator_deltakerliste.*,
