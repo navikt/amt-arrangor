@@ -10,7 +10,7 @@ class DeltakerlisteRepository(
 	private val template: NamedParameterJdbcTemplate
 ) {
 
-	fun addUpdateDeltakerlister(arrangorId: UUID, deltakerlisteIds: Set<UUID>) {
+	fun upsertDeltakerliste(arrangorId: UUID, deltakerlisteId: UUID) {
 		val sql = """
 		INSERT INTO deltakerliste(id, arrangor_id)
 		    VALUES (:id, :arrangor_id)
@@ -18,9 +18,9 @@ class DeltakerlisteRepository(
 									   modified_at = current_timestamp
 		""".trimIndent()
 
-		template.batchUpdate(
+		template.update(
 			sql,
-			deltakerlisteIds.map { sqlParameters("id" to it, "arrangor_id" to arrangorId) }.toTypedArray()
+			sqlParameters("id" to deltakerlisteId, "arrangor_id" to arrangorId)
 		)
 	}
 

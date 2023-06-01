@@ -1,7 +1,9 @@
 package no.nav.arrangor.ansatt
 
 import no.nav.arrangor.MetricsService
+import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
 import no.nav.arrangor.ansatt.repositories.RolleRepository
+import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.altinn.AltinnAclClient
 import no.nav.arrangor.client.altinn.AltinnRolle
@@ -16,7 +18,9 @@ class AnsattRolleService(
 	private val rolleRepository: RolleRepository,
 	private val altinnClient: AltinnAclClient,
 	private val metricsService: MetricsService,
-	private val arrangorService: ArrangorService
+	private val arrangorService: ArrangorService,
+	private val veilederDeltakerRepository: VeilederDeltakerRepository,
+	private val koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -55,8 +59,9 @@ class AnsattRolleService(
 		val rollerSomSkalLeggesTil =
 			nyeRoller.filter { gamleRoller.find { gammelRolle -> gammelRolle.rolle == it.rolle && gammelRolle.organisasjonsnummer == it.organisasjonsnummer } == null }
 
-		rolleRepository.deaktiverRoller(rollerSomSkalSlettes.map { it.id })
-			.also { logFjernet(ansattId, rollerSomSkalSlettes) }
+		if (rollerSomSkalSlettes.isNotEmpty()) {
+			deaktiverRollerOgTilganger(ansattId, rollerSomSkalSlettes)
+		}
 
 		// val unikeOrgnummer = rollerSomSkalLeggesTil.map { it.organisasjonsnummer }.distinct()
 		// unikeOrgnummer.forEach { arrangorService.getOrUpsert(it) } Legges til igjen når amt-arrangør er master!
@@ -65,6 +70,25 @@ class AnsattRolleService(
 
 		return (rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty())
 			.also { if (it) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
+	}
+
+	private fun deaktiverRollerOgTilganger(ansattId: UUID, rollerSomSkalSlettes: List<OrgRolle>) {
+		val unikeOrgnummer = rollerSomSkalSlettes.map { it.organisasjonsnummer }.distinct()
+		val arrangorer = unikeOrgnummer.mapNotNull { arrangorService.get(it) }
+		val koordinatorsDeltakerlister = rollerSomSkalSlettes.find { it.rolle == AnsattRolle.KOORDINATOR }?.let {
+			koordinatorDeltakerlisteRepository.getAktive(ansattId)
+		}
+		rollerSomSkalSlettes.forEach { orgRolle ->
+			val arrangorId = arrangorer.find { it.organisasjonsnummer == orgRolle.organisasjonsnummer }?.id
+				?: throw IllegalStateException("Ansatt $ansattId har rolle hos organisasjon ${orgRolle.organisasjonsnummer} som ikke finnes")
+			if (orgRolle.rolle == AnsattRolle.VEILEDER) {
+				veilederDeltakerRepository.deaktiver(ansattId = ansattId, arrangorId = arrangorId)
+			} else if (orgRolle.rolle == AnsattRolle.KOORDINATOR && !koordinatorsDeltakerlister.isNullOrEmpty()) {
+				koordinatorDeltakerlisteRepository.deaktiverKoordinatorDeltakerliste(ansattId = ansattId, arrangorId = arrangorId)
+			}
+		}
+		rolleRepository.deaktiverRoller(rollerSomSkalSlettes.map { it.id })
+			.also { logFjernet(ansattId, rollerSomSkalSlettes) }
 	}
 
 	private fun logFjernet(ansattId: UUID, fjernet: List<OrgRolle>) = fjernet.forEach {

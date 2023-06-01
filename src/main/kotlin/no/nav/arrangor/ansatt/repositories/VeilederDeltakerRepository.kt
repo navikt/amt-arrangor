@@ -57,6 +57,19 @@ class VeilederDeltakerRepository(
 		}
 	}
 
+	fun deaktiver(ansattId: UUID, arrangorId: UUID) {
+		template.update(
+			"""
+				UPDATE veileder_deltaker
+				SET gyldig_til = CURRENT_TIMESTAMP
+				WHERE ansatt_id = :ansatt_id
+				  AND arrangor_id = :arrangor_id
+				  AND gyldig_til IS NULL
+			""".trimIndent(),
+			sqlParameters("ansatt_id" to ansattId, "arrangor_id" to arrangorId)
+		)
+	}
+
 	fun getAktive(ansattId: UUID): List<VeilederDeltakerDbo> {
 		return template.query(
 			"SELECT * FROM veileder_deltaker WHERE ansatt_id = :ansatt_id AND gyldig_til IS NULL",

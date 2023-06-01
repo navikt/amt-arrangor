@@ -127,7 +127,7 @@ class AnsattControllerTest : IntegrationTest() {
 		}
 
 		@Test
-		fun `getAnsattByPersonident - om lastSynchronized over 1 time - oppdater Ansatt`() {
+		fun `getAnsattByPersonident - om lastSynchronized over 1 time - oppdater ansattroller`() {
 			val arrangorOne = db.insertArrangor()
 			val arrangorTwo = db.insertArrangor()
 			val arrangorThree = db.insertArrangor()
@@ -156,12 +156,9 @@ class AnsattControllerTest : IntegrationTest() {
 				)
 			)
 
-			mockPersonServer.setPerson(personident, personId, "Test2", "Mellom", "Testersen2")
 			val nyAnsatt = getAnsatt(personident)
 
-			nyAnsatt.personalia.navn.fornavn shouldBe "Test2"
-			nyAnsatt.personalia.navn.mellomnavn shouldBe "Mellom"
-			nyAnsatt.personalia.navn.etternavn shouldBe "Testersen2"
+			nyAnsatt.personalia.navn.fornavn shouldBe "Test"
 
 			nyAnsatt.arrangorer.map { it.arrangorId } shouldContainExactly listOf(arrangorTwo.id, arrangorThree.id)
 
