@@ -1,7 +1,11 @@
 package no.nav.arrangor.testutils
 
-import no.nav.arrangor.ansatt.repositories.AnsattRepository
+import no.nav.arrangor.ansatt.repository.AnsattDbo
+import no.nav.arrangor.ansatt.repository.AnsattRepository
+import no.nav.arrangor.ansatt.repository.ArrangorDbo
+import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
+import no.nav.arrangor.domain.AnsattRolle
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -15,12 +19,13 @@ class DbTestData(
 
 	fun insertAnsatt(
 		personident: String = UUID.randomUUID().toString(),
-		personId: UUID? = null,
+		personId: UUID = UUID.randomUUID(),
 		fornavn: String = UUID.randomUUID().toString(),
 		mellomnavn: String = UUID.randomUUID().toString(),
 		etternavn: String = UUID.randomUUID().toString(),
+		arrangorer: List<ArrangorDbo> = listOf(ArrangorDbo(UUID.randomUUID(), listOf(RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), emptyList())),
 		lastSynchronized: LocalDateTime = LocalDateTime.now()
-	): AnsattRepository.AnsattDbo = ansatt(personident, personId, fornavn, mellomnavn, etternavn, lastSynchronized)
+	): AnsattDbo = ansatt(personident, personId, fornavn, mellomnavn, etternavn, arrangorer, lastSynchronized)
 		.let { ansattRepository.insertOrUpdate(it) }
 
 	fun insertArrangor(
@@ -32,17 +37,20 @@ class DbTestData(
 
 	fun ansatt(
 		personident: String = UUID.randomUUID().toString(),
-		personId: UUID? = null,
+		personId: UUID = UUID.randomUUID(),
 		fornavn: String = UUID.randomUUID().toString(),
 		mellomnavn: String = UUID.randomUUID().toString(),
 		etternavn: String = UUID.randomUUID().toString(),
+		arrangorer: List<ArrangorDbo> = listOf(ArrangorDbo(UUID.randomUUID(), listOf(RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), emptyList())),
 		lastSynchronized: LocalDateTime = LocalDateTime.now()
-	): AnsattRepository.AnsattDbo = AnsattRepository.AnsattDbo(
+	): AnsattDbo = AnsattDbo(
+		id = UUID.randomUUID(),
 		personident = personident,
 		personId = personId,
 		fornavn = fornavn,
 		mellomnavn = mellomnavn,
 		etternavn = etternavn,
+		arrangorer = arrangorer,
 		lastSynchronized = lastSynchronized
 	)
 

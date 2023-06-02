@@ -3,7 +3,7 @@ package no.nav.arrangor.ansatt
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import no.nav.arrangor.IntegrationTest
-import no.nav.arrangor.ansatt.repositories.AnsattRepository
+import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.AnsattRolle.KOORDINATOR
@@ -63,13 +63,13 @@ class AnsattControllerTest : IntegrationTest() {
 
 		@Test
 		fun `setKoordinatorForDeltakerliste - no token - unauthorized`() {
-			sendRequest("POST", "/api/ansatt/koordinator/${UUID.randomUUID()}", "".toJsonRequestBody())
+			sendRequest("POST", "/api/ansatt/koordinator/${UUID.randomUUID()}/${UUID.randomUUID()}", "".toJsonRequestBody())
 				.also { it.code shouldBe 401 }
 		}
 
 		@Test
 		fun `fjernKoordinatorForDeltakerliste - no token - unauthorized`() {
-			sendRequest("DELETE", "/api/ansatt/koordinator/${UUID.randomUUID()}")
+			sendRequest("DELETE", "/api/ansatt/koordinator/${UUID.randomUUID()}/${UUID.randomUUID()}")
 				.also { it.code shouldBe 401 }
 		}
 
@@ -91,7 +91,7 @@ class AnsattControllerTest : IntegrationTest() {
 
 		@Test
 		fun `fjernVeilederForDeltaker - no token - unauthorized`() {
-			sendRequest("DELETE", "/api/ansatt/veileder/${UUID.randomUUID()}")
+			sendRequest("DELETE", "/api/ansatt/veileder/${UUID.randomUUID()}/${UUID.randomUUID()}/VEILEDER")
 				.also { it.code shouldBe 401 }
 		}
 	}

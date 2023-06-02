@@ -12,7 +12,7 @@ class KafkaListener(
 ) {
 
 	@KafkaListener(
-		topics = [ARRANGOR_TOPIC, ANSATT_TOPIC, MULIGHETSROMMET_TOPIC],
+		topics = [ARRANGOR_TOPIC, ANSATT_TOPIC], // Fjern ansatt-topicen før vi deployer i noe miljø, så kommer arrangørene inn først.
 		properties = ["auto.offset.reset = earliest"],
 		containerFactory = "kafkaListenerContainerFactory"
 	)
@@ -20,7 +20,6 @@ class KafkaListener(
 		when (record.topic()) {
 			ARRANGOR_TOPIC -> ingestService.handleArrangor(record.value()?.let { JsonUtils.fromJson(it) })
 			ANSATT_TOPIC -> ingestService.handleAnsatt(record.value()?.let { JsonUtils.fromJson(it) })
-			MULIGHETSROMMET_TOPIC -> ingestService.handleGjennomforing(record.value()?.let { JsonUtils.fromJson(it) })
 			else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
 		}
 		ack.acknowledge()

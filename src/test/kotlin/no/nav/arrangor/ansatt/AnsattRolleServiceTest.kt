@@ -2,14 +2,16 @@ package no.nav.arrangor.ansatt
 
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
-import no.nav.arrangor.ansatt.repositories.AnsattRepository
-import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
-import no.nav.arrangor.ansatt.repositories.RolleRepository
-import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
+import no.nav.arrangor.ansatt.repository.AnsattDbo
+import no.nav.arrangor.ansatt.repository.AnsattRepository
+import no.nav.arrangor.ansatt.repository.ArrangorDbo
+import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
+import no.nav.arrangor.ansatt.repository.RolleDbo
+import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.altinn.AltinnAclClient
-import no.nav.arrangor.deltakerliste.DeltakerlisteRepository
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.testutils.DbTestData
@@ -31,23 +33,14 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	lateinit var rolleService: AnsattRolleService
 
 	@Autowired
-	lateinit var rolleRepository: RolleRepository
-
-	@Autowired
-	lateinit var veilederDeltakerRepository: VeilederDeltakerRepository
-
-	@Autowired
-	lateinit var koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository
-
-	@Autowired
-	lateinit var deltakerlisteRepository: DeltakerlisteRepository
+	lateinit var ansattRepository: AnsattRepository
 
 	@Autowired
 	lateinit var dataSource: DataSource
 
 	lateinit var db: DbTestData
 
-	lateinit var ansatt: AnsattRepository.AnsattDbo
+	lateinit var ansatt: AnsattDbo
 
 	lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
 	lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
@@ -81,21 +74,20 @@ class AnsattRolleServiceTest : IntegrationTest() {
 			)
 		)
 
-		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
 			.also { it.isUpdated shouldBe true }
 			.data
 
-		roller.size shouldBe 3
+		ansattDbo.arrangorer.size shouldBe 2
 
-		val rollerArrangorOne = roller.filter { it.arrangorId == arrangorOne.id }
-		rollerArrangorOne.size shouldBe 1
-		rollerArrangorOne[0].ansattId shouldBe ansatt.id
-		rollerArrangorOne[0].rolle shouldBe AnsattRolle.KOORDINATOR
-		rollerArrangorOne[0].gyldigTil shouldBe null
+		val arrangorOne = ansattDbo.arrangorer.find { it.arrangorId == arrangorOne.id }
+		arrangorOne!!.roller.size shouldBe 1
+		arrangorOne.roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+		arrangorOne.roller[0].gyldigTil shouldBe null
 
-		val rollerArrangorTwo = roller.filter { it.arrangorId == arrangorTwo.id }
-		rollerArrangorTwo.size shouldBe 2
-		rollerArrangorTwo.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
+		val arrangorTwo = ansattDbo.arrangorer.find { it.arrangorId == arrangorTwo.id }
+		arrangorTwo!!.roller.size shouldBe 2
+		arrangorTwo.roller.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
 	}
 
 	/*@Test Kommentert ut frem til amt-arrangør er master
@@ -135,9 +127,16 @@ class AnsattRolleServiceTest : IntegrationTest() {
 
 	@Test
 	fun `oppdaterRoller - likt i altinn og database - ingen endringer`() {
-		rolleRepository.leggTilRoller(
-			listOf(
-				RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR)
+		ansattRepository.insertOrUpdate(
+			ansatt.copy(
+				arrangorer = listOf(
+					ArrangorDbo(
+						arrangorId = arrangorOne.id,
+						roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+						veileder = emptyList(),
+						koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID()))
+					)
+				)
 			)
 		)
 
@@ -148,54 +147,71 @@ class AnsattRolleServiceTest : IntegrationTest() {
 			)
 		)
 
-		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
 			.also { it.isUpdated shouldBe false }
 			.data
 
-		roller.size shouldBe 1
-		roller[0].arrangorId shouldBe arrangorOne.id
-		roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+		ansattDbo.arrangorer.size shouldBe 1
+		ansattDbo.arrangorer[0].arrangorId shouldBe arrangorOne.id
+		ansattDbo.arrangorer[0].roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+		ansattDbo.arrangorer[0].roller[0].gyldigTil shouldBe null
+		ansattDbo.arrangorer[0].koordinator[0].gyldigTil shouldBe null
 	}
 
 	@Test
 	fun `oppdaterRoller - i database, men ingen i altinn - fjerner roller`() {
-		rolleRepository.leggTilRoller(
-			listOf(
-				RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR)
+		ansattRepository.insertOrUpdate(
+			ansatt.copy(
+				arrangorer = listOf(
+					ArrangorDbo(
+						arrangorId = arrangorOne.id,
+						roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+						veileder = emptyList(),
+						koordinator = emptyList()
+					)
+				)
 			)
 		)
 
 		mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
 
-		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
 			.also { it.isUpdated shouldBe true }
 			.data
 
-		roller.isEmpty() shouldBe true
+		ansattDbo.arrangorer.size shouldBe 1
+		ansattDbo.arrangorer[0].arrangorId shouldBe arrangorOne.id
+		ansattDbo.arrangorer[0].roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+		ansattDbo.arrangorer[0].roller[0].gyldigTil shouldNotBe null
 	}
 
 	@Test
 	fun `oppdaterRoller - mister tilgang til arrangor og er veileder og har lagt til deltakerlister - fjerner roller og tilganger`() {
-		rolleRepository.leggTilRoller(
-			listOf(
-				RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.KOORDINATOR),
-				RolleRepository.RolleInput(ansatt.id, arrangorOne.organisasjonsnummer, AnsattRolle.VEILEDER)
+		val deltakerId = UUID.randomUUID()
+		ansattRepository.insertOrUpdate(
+			ansatt.copy(
+				arrangorer = listOf(
+					ArrangorDbo(
+						arrangorId = arrangorOne.id,
+						roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR), RolleDbo(AnsattRolle.VEILEDER)),
+						veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.VEILEDER)),
+						koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID()))
+					)
+				)
 			)
 		)
-		val deltakerlisteId = UUID.randomUUID()
-		deltakerlisteRepository.upsertDeltakerliste(arrangorOne.id, deltakerlisteId)
-		koordinatorDeltakerlisteRepository.leggTilKoordinatorDeltakerlister(ansatt.id, listOf(deltakerlisteId))
-		val deltakerId = UUID.randomUUID()
-		veilederDeltakerRepository.leggTil(ansatt.id, listOf(VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, arrangorOne.id, VeilederType.VEILEDER)))
 
 		mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
 
-		val roller = rolleService.oppdaterRoller(ansatt.id, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
 			.also { it.isUpdated shouldBe true }
 			.data
 
-		roller.isEmpty() shouldBe true
-		koordinatorDeltakerlisteRepository.getAktive(ansatt.id) shouldBe emptyList()
-		veilederDeltakerRepository.getAktive(ansatt.id) shouldBe emptyList()
+		ansattDbo.arrangorer.size shouldBe 1
+		ansattDbo.arrangorer[0].arrangorId shouldBe arrangorOne.id
+		ansattDbo.arrangorer[0].roller.size shouldBe 2
+		ansattDbo.arrangorer[0].roller.filter { it.erGyldig() }.size shouldBe 0
+		ansattDbo.arrangorer[0].veileder[0].gyldigTil shouldNotBe null
+		ansattDbo.arrangorer[0].koordinator[0].gyldigTil shouldNotBe null
 	}
 }

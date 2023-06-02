@@ -18,12 +18,10 @@ class MetricsService(
 	private val fjernetSomVeileder = registry.counter("amt_arrangor_fjernet_til_som_veilederr")
 
 	private val publishedAnsatte = registry.counter("amt_arrangor_publiserte_ansatte")
-	private val endredeAnsattPersonalia = registry.counter("amt_arrangor_ansatt_endret_personalia")
 	private val endredeAnsattRoller = registry.counter("amt_arrangor_ansatt_endret_roller")
 
 	private val consumedArrangor = registry.counter("amt_arrangor_consumed_arrangor")
 	private val consumedAnsatt = registry.counter("amt_arrangor_consumed_ansatt")
-	private val consumedGjennomforing = registry.counter("amt_arrangor_consumed_gjennomforing")
 	private val consumerFailed = registry.counter("amt_arrangor_consume_failed")
 
 	fun incEndredeArrangorer(count: Int = 1) = endredeArrangorer.increment(count.toDouble())
@@ -36,11 +34,9 @@ class MetricsService(
 	fun incFjernetSomVeileder(count: Int = 1) = fjernetSomVeileder.increment(count.toDouble())
 
 	fun incPubliserteAnsatte(count: Int = 1) = publishedAnsatte.increment(count.toDouble())
-	fun incEndretAnsattPersonalia(count: Int = 1) = endredeAnsattPersonalia.increment(count.toDouble())
 	fun incEndretAnsattRolle(count: Int = 1) = endredeAnsattRoller.increment(count.toDouble())
 
 	fun incConsumedArrangor(count: Int = 1) = consumedArrangor.increment(count.toDouble())
 	fun incConsumedAnsatt(count: Int = 1) = consumedAnsatt.increment(count.toDouble())
-	fun incConsumedGjennomforing(count: Int = 1) = consumedGjennomforing.increment(count.toDouble())
 	fun incConsumerFaild(count: Int = 1) = consumerFailed.increment(count.toDouble())
 }
