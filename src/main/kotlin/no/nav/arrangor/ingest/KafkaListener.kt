@@ -12,7 +12,7 @@ class KafkaListener(
 ) {
 
 	@KafkaListener(
-		topics = [ARRANGOR_TOPIC, ANSATT_TOPIC], // Fjern ansatt-topicen før vi deployer i noe miljø, så kommer arrangørene inn først.
+		topics = [ARRANGOR_TOPIC], // Leser kun arrangørene først for å få lest inn arrangører med samme id som i amt-tiltak
 		properties = ["auto.offset.reset = earliest"],
 		containerFactory = "kafkaListenerContainerFactory"
 	)
