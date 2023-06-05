@@ -6,7 +6,6 @@ import no.nav.arrangor.utils.sqlParameters
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Repository
@@ -56,35 +55,33 @@ class ArrangorRepository(
 		rowMapper
 	).firstOrNull()
 
+	fun getArrangorerMedIder(ids: List<UUID>): List<ArrangorDbo> {
+		if (ids.isEmpty()) {
+			return emptyList()
+		}
+		return template.query(
+			"SELECT * FROM arrangor WHERE id IN (:ids)",
+			sqlParameters("ids" to ids),
+			rowMapper
+		)
+	}
+
+	fun getArrangorerMedOrgnumre(orgnumre: List<String>): List<ArrangorDbo> {
+		if (orgnumre.isEmpty()) {
+			return emptyList()
+		}
+		return template.query(
+			"SELECT * FROM arrangor WHERE organisasjonsnummer IN (:orgnumre)",
+			sqlParameters("orgnumre" to orgnumre),
+			rowMapper
+		)
+	}
+
 	fun get(orgNr: String): ArrangorDbo? = template.query(
 		"SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
 		sqlParameters("organisasjonsnummer" to orgNr),
 		rowMapper
 	).firstOrNull()
-
-	fun getOrganiasjonsnummerForId(id: UUID): String? = template.query(
-		"SELECT * FROM arrangor where id = :id",
-		sqlParameters("id" to id),
-		rowMapper
-	).firstOrNull()
-		?.organisasjonsnummer
-
-	fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<ArrangorDbo> {
-		val sql = """
-		SELECT *
-		FROM arrangor
-		WHERE last_synchronized < :synchronized_before
-		ORDER BY last_synchronized asc
-		limit :limit
-		""".trimIndent()
-
-		val parameters = sqlParameters(
-			"limit" to maxSize,
-			"synchronized_before" to synchronizedBefore
-		)
-
-		return template.query(sql, parameters, rowMapper)
-	}
 
 	data class ArrangorDbo(
 		val id: UUID = UUID.randomUUID(),

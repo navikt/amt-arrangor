@@ -37,33 +37,37 @@ class AnsattController(
 				?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
 		}
 
-	@PostMapping("koordinator/{deltakerlisteId}")
+	@PostMapping("koordinator/{arrangorId}/{deltakerlisteId}")
 	fun setKoordinatorForDeltakerliste(
-		@PathVariable("deltakerlisteId") deltakerlisteId: UUID
+		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
+		@PathVariable("arrangorId") arrangorId: UUID
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
 		if (IgnoredDeltakerlister.deltakerlisteIds.contains(deltakerlisteId)) throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Deltakerliste er blokkert")
-		ansattService.setKoordinatorForDeltakerliste(personident, deltakerlisteId)
+		ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
 	}
 
-	@DeleteMapping("koordinator/{deltakerlisteId}")
+	@DeleteMapping("koordinator/{arrangorId}/{deltakerlisteId}")
 	fun fjernKoordinatorForDeltakerliste(
-		@PathVariable("deltakerlisteId") deltakerlisteId: UUID
+		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
+		@PathVariable("arrangorId") arrangorId: UUID
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.fjernKoordinatorForDeltakerliste(personident, deltakerlisteId)
+		ansattService.fjernKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
 	}
 
 	@PostMapping("veileder")
 	fun setVeileder(
 		@RequestBody body: SetVeilederForDeltakerRequestBody
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.setVeileder(personident, body.deltakerId, body.arrangorId, body.type)
+		ansattService.setVeileder(personident = personident, deltakerId = body.deltakerId, arrangorId = body.arrangorId, type = body.type)
 	}
 
-	@DeleteMapping("veileder/{deltakerId}")
+	@DeleteMapping("veileder/{arrangorId}/{deltakerId}/{type}")
 	fun fjernVeilederForDeltaker(
-		@PathVariable("deltakerId") deltakerId: UUID
+		@PathVariable("deltakerId") deltakerId: UUID,
+		@PathVariable("arrangorId") arrangorId: UUID,
+		@PathVariable("type") type: VeilederType
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.fjernVeileder(personident, deltakerId)
+		ansattService.fjernVeileder(personident = personident, deltakerId = deltakerId, arrangorId = arrangorId, type = type)
 	}
 
 	private fun hentPersonligIdentTilInnloggetBruker(): String {

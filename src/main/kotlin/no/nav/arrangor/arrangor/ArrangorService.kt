@@ -4,7 +4,6 @@ import no.nav.arrangor.MetricsService
 import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.client.enhetsregister.Virksomhet
-import no.nav.arrangor.deltakerliste.DeltakerlisteRepository
 import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.ingest.PublishService
 import org.slf4j.LoggerFactory
@@ -17,7 +16,6 @@ import java.util.UUID
 @Service
 class ArrangorService(
 	private val arrangorRepository: ArrangorRepository,
-	private val deltakerlisteRepository: DeltakerlisteRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val publishService: PublishService,
 	private val metricsService: MetricsService
@@ -27,6 +25,9 @@ class ArrangorService(
 
 	fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
 		.let { it?.toDomain() }
+
+	fun get(orgnumre: List<String>): List<Arrangor> = arrangorRepository.getArrangorerMedOrgnumre(orgnumre)
+		.map { it.toDomain() }
 
 	fun get(orgNr: String): Arrangor? =
 		arrangorRepository.get(orgNr)?.toDomain()
@@ -50,21 +51,30 @@ class ArrangorService(
 		)
 	}
 
-	fun getArrangorMedOverordnetArrangorForArrangorId(arrangorId: UUID): ArrangorMedOverordnetArrangor {
-		val arrangor = arrangorRepository.get(arrangorId) ?: throw IllegalStateException("Fant ikke arrangør med id $arrangorId")
-		val overordnetArrangor = arrangor.overordnetArrangorId?.let {
-			get(it)
-		}
-		return ArrangorMedOverordnetArrangor(
-			id = arrangor.id,
-			navn = arrangor.navn,
-			organisasjonsnummer = arrangor.organisasjonsnummer,
-			overordnetArrangor = overordnetArrangor
-		)
-	}
+	fun getArrangorerMedOverordnetArrangorForArrangorIder(arrangorIder: List<UUID>): List<ArrangorMedOverordnetArrangor> {
+		val arrangorer = arrangorRepository.getArrangorerMedIder(arrangorIder)
+		val unikeOverordnedeArrangorIder = arrangorer.mapNotNull { it.overordnetArrangorId }.distinct()
+		val overordnedeArrangorer = arrangorRepository.getArrangorerMedIder(unikeOverordnedeArrangorIder)
 
-	fun addDeltakerliste(arrangorId: UUID, deltakerlisteId: UUID) =
-		deltakerlisteRepository.upsertDeltakerliste(arrangorId, deltakerlisteId)
+		return arrangorer.map { arrangorDbo ->
+			ArrangorMedOverordnetArrangor(
+				id = arrangorDbo.id,
+				navn = arrangorDbo.navn,
+				organisasjonsnummer = arrangorDbo.organisasjonsnummer,
+				overordnetArrangor = arrangorDbo.overordnetArrangorId?.let { overordnetArrangorId ->
+					val overordnetArrangor = overordnedeArrangorer.find { overordnetArrangorId == it.id }
+					overordnetArrangor?.let {
+						Arrangor(
+							id = it.id,
+							navn = it.navn,
+							organisasjonsnummer = it.organisasjonsnummer,
+							overordnetArrangorId = it.overordnetArrangorId
+						)
+					}
+				}
+			)
+		}
+	}
 
 	private fun upsertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
 		val arrangor = arrangorRepository.get(orgNr)

@@ -1,13 +1,16 @@
 package no.nav.arrangor.ansatt
 
 import no.nav.arrangor.MetricsService
-import no.nav.arrangor.ansatt.repositories.AnsattRepository
-import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
-import no.nav.arrangor.ansatt.repositories.RolleRepository
-import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
+import no.nav.arrangor.ansatt.repository.AnsattDbo
+import no.nav.arrangor.ansatt.repository.AnsattRepository
+import no.nav.arrangor.ansatt.repository.ArrangorDbo
+import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
+import no.nav.arrangor.ansatt.repository.RolleDbo
+import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.person.PersonClient
 import no.nav.arrangor.domain.Ansatt
+import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
@@ -16,19 +19,17 @@ import no.nav.arrangor.ingest.PublishService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.util.UUID
 
 @Service
 class AnsattService(
 	private val personClient: PersonClient,
 	private val ansattRepository: AnsattRepository,
-	private val koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository,
-	private val veilederDeltakerRepository: VeilederDeltakerRepository,
 	private val rolleService: AnsattRolleService,
 	private val publishService: PublishService,
 	private val metricsService: MetricsService,
-	private val arrangorService: ArrangorService,
-	private val ansattRolleService: AnsattRolleService
+	private val arrangorService: ArrangorService
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -46,32 +47,56 @@ class AnsattService(
 		return ansattRepository.get(personident)?.id
 	}
 
-	fun setKoordinatorForDeltakerliste(personident: String, deltakerlisteId: UUID): Ansatt {
+	// all funksjonalitet for å legge til/fjerne deltakerlister og deltakere må gjenngås mer nøye før den tas i bruk
+	fun setKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
-
-		val currentDeltakerlister = koordinatorDeltakerlisteRepository.getAktive(ansattDbo.id)
-
-		if (currentDeltakerlister.find { it.deltakerlisteId == deltakerlisteId } != null) {
-			return getAndMaybeUpdateAnsatt(ansattDbo)
+		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
+			?: throw IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId")
+		if (arrangor.roller.find { it.erGyldig() && it.rolle == AnsattRolle.KOORDINATOR } == null) {
+			throw IllegalArgumentException("Ansatt har ikke koordinatortilgang for arrangør med id $arrangorId")
 		}
 
-		koordinatorDeltakerlisteRepository.leggTilKoordinatorDeltakerlister(ansattDbo.id, listOf(deltakerlisteId))
+		val eksisterendeDeltakerliste = arrangor.koordinator.find { it.deltakerlisteId == deltakerlisteId }
+		if (eksisterendeDeltakerliste != null && eksisterendeDeltakerliste.erGyldig()) {
+			logger.info("Deltakerliste med id $deltakerlisteId er allerede lagt til")
+			return getAndMaybeUpdateAnsatt(ansattDbo)
+		}
+		val oppdatertAnsattDbo = if (eksisterendeDeltakerliste != null && !eksisterendeDeltakerliste.erGyldig()) {
+			eksisterendeDeltakerliste.gyldigTil = null
+			ansattDbo
+		} else {
+			val oppdatertDeltakerlisterForArrangor = mutableListOf<KoordinatorsDeltakerlisteDbo>()
+			oppdatertDeltakerlisterForArrangor.addAll(arrangor.koordinator)
+			oppdatertDeltakerlisterForArrangor.add(KoordinatorsDeltakerlisteDbo(deltakerlisteId))
+			val oppdatertArrangor = arrangor.copy(koordinator = oppdatertDeltakerlisterForArrangor)
+			val oppdaterteArrangorer = mutableListOf<ArrangorDbo>()
+			ansattDbo.arrangorer.forEach {
+				if (it.arrangorId != arrangorId) {
+					oppdaterteArrangorer.add(it)
+				}
+			}
+			oppdaterteArrangorer.add(oppdatertArrangor)
+			ansattDbo.copy(arrangorer = oppdaterteArrangorer)
+		}
 
-		return getAndMaybeUpdateAnsatt(ansattDbo)
-			.also { publishService.publishAnsatt(it) }
+		return mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
+			.also { ansatt -> publishService.publishAnsatt(ansatt) }
 			.also { metricsService.incLagtTilSomKoordinator() }
 			.also { logger.info("Ansatt ${ansattDbo.id} ble koordinator for deltakerliste $deltakerlisteId") }
 	}
 
-	fun fjernKoordinatorForDeltakerliste(personident: String, deltakerlisteId: UUID): Ansatt {
+	fun fjernKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
+		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
+			?: throw IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId")
+		if (arrangor.roller.find { it.erGyldig() && it.rolle == AnsattRolle.KOORDINATOR } == null) {
+			throw IllegalArgumentException("Ansatt har ikke koordinatortilgang for arrangør med id $arrangorId")
+		}
 
-		val currentDeltakerlister = koordinatorDeltakerlisteRepository.getAktive(ansattDbo.id)
+		arrangor.koordinator.find { it.deltakerlisteId == deltakerlisteId && it.erGyldig() }?.let {
+			it.gyldigTil = ZonedDateTime.now()
 
-		currentDeltakerlister.find { it.deltakerlisteId == deltakerlisteId }?.let { it ->
-			koordinatorDeltakerlisteRepository.deaktiverKoordinatorDeltakerliste(listOf(it.id))
-
-			return getAndMaybeUpdateAnsatt(ansattDbo)
+			return mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
 				.also { ansatt -> publishService.publishAnsatt(ansatt) }
 				.also { metricsService.incFjernetSomKoodrinator() }
 				.also { logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId") }
@@ -82,76 +107,135 @@ class AnsattService(
 
 	fun setVeileder(personident: String, arrangorId: UUID, deltakerId: UUID, type: VeilederType): Ansatt {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
-
-		val currentVeilederFor = veilederDeltakerRepository.getAktive(ansattDbo.id)
-
-		currentVeilederFor.find { it.deltakerId == deltakerId }?.let {
-			if (it.veilederType != type) {
-				veilederDeltakerRepository.deaktiver(listOf(it.id))
-				veilederDeltakerRepository.leggTil(
-					ansattDbo.id,
-					listOf(VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, arrangorId, type))
-				)
-
-				return getAndMaybeUpdateAnsatt(ansattDbo)
-					.also { ansatt -> publishService.publishAnsatt(ansatt) }
-					.also { metricsService.incLagtTilSomVeileder() }
-					.also { _ -> logger.info("Ansatt ${ansattDbo.id} byttet fra ${it.veilederType} til $type for deltaker $deltakerId") }
-			}
-
-			return getAndMaybeUpdateAnsatt(ansattDbo)
+		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
+			?: throw IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId")
+		if (arrangor.roller.find { it.erGyldig() && it.rolle == AnsattRolle.VEILEDER } == null) {
+			throw IllegalArgumentException("Ansatt har ikke veiledertilgang for arrangør med id $arrangorId")
 		}
 
-		veilederDeltakerRepository.leggTil(
-			ansattDbo.id,
-			listOf(
-				VeilederDeltakerRepository.VeilederDeltakerInput(deltakerId, arrangorId, type)
-			)
-		)
+		val eksisterendeVeilederRelasjon = arrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type }
+		if (eksisterendeVeilederRelasjon != null && eksisterendeVeilederRelasjon.erGyldig()) {
+			logger.info("Ansatt er allerede veileder for deltaker med id $deltakerId")
+			return getAndMaybeUpdateAnsatt(ansattDbo)
+		}
+		val oppdatertAnsattDbo = if (eksisterendeVeilederRelasjon != null && !eksisterendeVeilederRelasjon.erGyldig()) {
+			eksisterendeVeilederRelasjon.gyldigTil = null
+			ansattDbo
+		} else {
+			val oppdatertVeilederDeltakerForArrangor = mutableListOf<VeilederDeltakerDbo>()
+			oppdatertVeilederDeltakerForArrangor.addAll(arrangor.veileder)
+			oppdatertVeilederDeltakerForArrangor.add(VeilederDeltakerDbo(deltakerId, type))
+			val oppdatertArrangor = arrangor.copy(veileder = oppdatertVeilederDeltakerForArrangor)
+			val oppdaterteArrangorer = mutableListOf<ArrangorDbo>()
+			ansattDbo.arrangorer.forEach {
+				if (it.arrangorId != arrangorId) {
+					oppdaterteArrangorer.add(it)
+				}
+			}
+			oppdaterteArrangorer.add(oppdatertArrangor)
+			ansattDbo.copy(arrangorer = oppdaterteArrangorer)
+		}
 
-		return getAndMaybeUpdateAnsatt(ansattDbo)
-			.also { publishService.publishAnsatt(it) }
+		return mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
+			.also { ansatt -> publishService.publishAnsatt(ansatt) }
 			.also { metricsService.incLagtTilSomVeileder() }
 			.also { logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId") }
 	}
 
-	fun fjernVeileder(personident: String, deltakerId: UUID): Ansatt {
+	fun fjernVeileder(personident: String, arrangorId: UUID, deltakerId: UUID, type: VeilederType): Ansatt {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
+		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
+			?: throw IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId")
+		if (arrangor.roller.find { it.erGyldig() && it.rolle == AnsattRolle.VEILEDER } == null) {
+			throw IllegalArgumentException("Ansatt har ikke veiledertilgang for arrangør med id $arrangorId")
+		}
 
-		val currentVeilederFor = veilederDeltakerRepository.getAktive(ansattDbo.id)
+		arrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type && it.erGyldig() }?.let {
+			it.gyldigTil = ZonedDateTime.now()
 
-		currentVeilederFor.find { it.deltakerId == deltakerId }?.let {
-			veilederDeltakerRepository.deaktiver(listOf(it.id))
-			return getAndMaybeUpdateAnsatt(ansattDbo)
-				.also { publishService.publishAnsatt(it) }
+			return mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
+				.also { ansatt -> publishService.publishAnsatt(ansatt) }
 				.also { metricsService.incFjernetSomVeileder() }
 				.also { _ -> logger.info("Ansatt ${ansattDbo.id} mistet veilederrolle for $deltakerId") }
 		}
-
 		return getAndMaybeUpdateAnsatt(ansattDbo)
 	}
 
 	fun opprettAnsatt(personIdent: String): Ansatt? {
-		val altinnRoller = ansattRolleService.getRollerFraAltinn(personIdent)
+		val altinnRoller = rolleService.getRollerFraAltinn(personIdent)
 		if (altinnRoller.isEmpty()) {
 			logger.info("Bruker uten rettigheter i Altinn har logget seg inn")
 			return null
 		}
 		val person = personClient.hentPersonalia(personIdent).getOrThrow()
+
+		val arrangorer = rolleService.mapAltinnRollerTilArrangorListeForNyAnsatt(altinnRoller)
+
 		val ansattDbo = ansattRepository.insertOrUpdate(
-			AnsattRepository.AnsattDbo(
+			AnsattDbo(
+				id = UUID.randomUUID(),
 				personident = personIdent,
 				personId = person.id,
 				fornavn = person.fornavn,
 				mellomnavn = person.mellomnavn,
-				etternavn = person.etternavn
+				etternavn = person.etternavn,
+				arrangorer = arrangorer
 			)
 		)
-		ansattRolleService.lagreRollerForNyAnsatt(ansattDbo.id, altinnRoller)
+		logger.info("Opprettet ny ansatt og lagret roller for ansattId ${ansattDbo.id}")
+		return mapToAnsatt(ansattDbo).also { publishService.publishAnsatt(it) }
+	}
 
-		logger.info("Opprettet ansatt og lagret roller for ansattId ${ansattDbo.id}")
+	fun ingestAnsatt(ansatt: Ansatt) {
+		val ansattFromDb = ansattRepository.get(ansatt.id)
 
-		return get(ansattDbo.id).also { it?.let { publishService.publishAnsatt(it) } }
+		if (ansattFromDb == null) {
+			logger.info("Ansatt med id ${ansatt.id} finnes ikke fra før, oppretter ansatt")
+			ingestNyAnsatt(ansatt)
+		} else {
+			logger.info("Ansatt med id ${ansatt.id} finnes fra før, oppdaterer ansatt")
+			val oppdatertArrangorlisteForAnsatt = rolleService.getOppdatertArrangorListeForIngestAvAnsatt(ansattFromDb, ansatt.arrangorer)
+			ansattRepository.insertOrUpdate(
+				ansattFromDb.copy(
+					personident = ansatt.personalia.personident,
+					fornavn = ansatt.personalia.navn.fornavn,
+					mellomnavn = ansatt.personalia.navn.mellomnavn,
+					etternavn = ansatt.personalia.navn.etternavn,
+					arrangorer = oppdatertArrangorlisteForAnsatt
+				)
+			)
+		}
+	}
+	private fun ingestNyAnsatt(ansatt: Ansatt) {
+		val person = personClient.hentPersonalia(ansatt.personalia.personident).getOrThrow()
+		val arrangorer = ansatt.arrangorer.map { tilknyttetArrangor ->
+			ArrangorDbo(
+				arrangorId = tilknyttetArrangor.arrangorId,
+				roller = tilknyttetArrangor.roller.map { RolleDbo(it) },
+				veileder = tilknyttetArrangor.veileder.map {
+					VeilederDeltakerDbo(
+						deltakerId = it.deltakerId,
+						veilederType = it.type
+					)
+				},
+				koordinator = tilknyttetArrangor.koordinator.map {
+					KoordinatorsDeltakerlisteDbo(
+						deltakerlisteId = it
+					)
+				}
+			)
+		}
+		ansattRepository.insertOrUpdate(
+			AnsattDbo(
+				id = ansatt.id,
+				personId = person.id,
+				personident = ansatt.personalia.personident,
+				fornavn = ansatt.personalia.navn.fornavn,
+				mellomnavn = ansatt.personalia.navn.mellomnavn,
+				etternavn = ansatt.personalia.navn.etternavn,
+				arrangorer = arrangorer
+			)
+		)
 	}
 
 	fun oppdaterAnsattesRoller() = ansattRepository.getToSynchronize(
@@ -159,62 +243,62 @@ class AnsattService(
 		synchronizedBefore = LocalDateTime.now().minusDays(7)
 	).forEach { oppdaterRoller(it) }
 
-	private fun getAndMaybeUpdateAnsatt(ansattDbo: AnsattRepository.AnsattDbo): Ansatt {
+	private fun getAndMaybeUpdateAnsatt(ansattDbo: AnsattDbo): Ansatt {
 		val shouldSynchronize = ansattDbo.lastSynchronized.isBefore(LocalDateTime.now().minusHours(1))
 
 		return if (shouldSynchronize) {
 			oppdaterRoller(ansattDbo)
 		} else {
-			val roller = rolleService.getRoller(ansattDbo.id)
-			mapToAnsatt(ansattDbo, roller)
+			mapToAnsatt(ansattDbo)
 		}
 	}
 
-	fun oppdaterRoller(ansattDbo: AnsattRepository.AnsattDbo): Ansatt {
+	fun oppdaterRoller(ansattDbo: AnsattDbo): Ansatt {
 		var updated = false
 
-		val roller = rolleService.oppdaterRoller(ansattDbo.id, ansattDbo.personident)
+		val ansattDboMedOppdaterteRoller = rolleService.getAnsattDboMedOppdaterteRoller(ansattDbo, ansattDbo.personident)
 			.also { if (it.isUpdated) updated = true }
 			.data
 
-		return mapToAnsatt(ansattDbo, roller)
-			.also { ansattRepository.setSynchronized(it.id) }
+		val oppdatertAnsattDbo = ansattRepository.insertOrUpdate(ansattDboMedOppdaterteRoller)
+
+		return mapToAnsatt(oppdatertAnsattDbo)
 			.also { if (updated) publishService.publishAnsatt(it) }
 	}
 
-	private fun mapToAnsatt(ansatt: AnsattRepository.AnsattDbo, roller: List<RolleRepository.RolleDbo>): Ansatt {
-		val arrangorIds = roller.map { it.arrangorId }.toSet()
-		val veilederFor =
-			veilederDeltakerRepository.getAktive(ansatt.id).map { Veileder(it.deltakerId, it.veilederType) }
-		val koordinatorFor = koordinatorDeltakerlisteRepository.getAktive(ansatt.id).map { it.deltakerlisteId }
-		val arrangorer = arrangorIds.map { arrangorService.getArrangorMedOverordnetArrangorForArrangorId(it) }
-
+	private fun mapToAnsatt(ansattDbo: AnsattDbo): Ansatt {
 		return Ansatt(
-			id = ansatt.id,
-			personalia = ansatt.toPersonalia(),
-			arrangorer = arrangorIds.map { arrangorId ->
-				val arrangor = arrangorer.find { it.id == arrangorId } ?: throw IllegalStateException("Mangler arrangør med id $arrangorId")
-				TilknyttetArrangor(
-					arrangorId = arrangorId,
-					arrangor = Arrangor(
-						id = arrangor.id,
-						navn = arrangor.navn,
-						organisasjonsnummer = arrangor.organisasjonsnummer,
-						overordnetArrangorId = arrangor.overordnetArrangor?.id
-					),
-					overordnetArrangor = arrangor.overordnetArrangor?.let {
-						Arrangor(
-							id = it.id,
-							navn = it.navn,
-							organisasjonsnummer = it.organisasjonsnummer,
-							overordnetArrangorId = it.overordnetArrangorId
-						)
-					},
-					roller = roller.filter { it.arrangorId == arrangorId }.map { it.rolle },
-					veileder = veilederFor,
-					koordinator = koordinatorFor
-				)
-			}
+			id = ansattDbo.id,
+			personalia = ansattDbo.toPersonalia(),
+			arrangorer = mapToTilknyttetArrangorListe(ansattDbo.arrangorer)
 		)
+	}
+
+	private fun mapToTilknyttetArrangorListe(arrangorDboListe: List<ArrangorDbo>): List<TilknyttetArrangor> {
+		if (arrangorDboListe.isEmpty()) {
+			return emptyList()
+		}
+		val unikeArrangorIder = arrangorDboListe.map { it.arrangorId }.distinct()
+		val arrangorer = arrangorService.getArrangorerMedOverordnetArrangorForArrangorIder(unikeArrangorIder)
+
+		return arrangorDboListe.mapNotNull { arrangorDbo ->
+			val arrangor = arrangorer.find { it.id == arrangorDbo.arrangorId }
+			if (arrangor == null || arrangorDbo.roller.none { it.erGyldig() }) {
+				return@mapNotNull null
+			}
+			TilknyttetArrangor(
+				arrangorId = arrangorDbo.arrangorId,
+				arrangor = Arrangor(
+					id = arrangor.id,
+					navn = arrangor.navn,
+					organisasjonsnummer = arrangor.organisasjonsnummer,
+					overordnetArrangorId = arrangor.overordnetArrangor?.id
+				),
+				overordnetArrangor = arrangor.overordnetArrangor,
+				roller = arrangorDbo.roller.filter { it.erGyldig() }.map { it.rolle },
+				veileder = arrangorDbo.veileder.filter { it.erGyldig() }.map { Veileder(deltakerId = it.deltakerId, type = it.veilederType) },
+				koordinator = arrangorDbo.koordinator.filter { it.erGyldig() }.map { it.deltakerlisteId }
+			)
+		}
 	}
 }

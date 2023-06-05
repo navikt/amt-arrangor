@@ -1,9 +1,9 @@
-package no.nav.arrangor.ansatt.repositories
+package no.nav.arrangor.ansatt.repository
 
-import no.nav.arrangor.domain.Navn
-import no.nav.arrangor.domain.Personalia
+import no.nav.arrangor.utils.JsonUtils
 import no.nav.arrangor.utils.getZonedDateTime
 import no.nav.arrangor.utils.sqlParameters
+import org.postgresql.util.PGobject
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
@@ -14,7 +14,6 @@ import java.util.UUID
 class AnsattRepository(
 	private val template: NamedParameterJdbcTemplate
 ) {
-
 	private val rowMapper = RowMapper { rs, _ ->
 		AnsattDbo(
 			id = UUID.fromString(rs.getString("id")),
@@ -23,6 +22,7 @@ class AnsattRepository(
 			fornavn = rs.getString("fornavn"),
 			mellomnavn = rs.getString("mellomnavn"),
 			etternavn = rs.getString("etternavn"),
+			arrangorer = JsonUtils.fromJson(rs.getString("arrangorer")),
 			modifiedAt = rs.getZonedDateTime("modified_at").toLocalDateTime(),
 			lastSynchronized = rs.getZonedDateTime("last_synchronized").toLocalDateTime()
 		)
@@ -30,21 +30,23 @@ class AnsattRepository(
 
 	fun insertOrUpdate(ansatt: AnsattDbo): AnsattDbo {
 		val sql = """
-		INSERT INTO ansatt(id, person_id, personident, fornavn, mellomnavn, etternavn, modified_at, last_synchronized)
+		INSERT INTO ansatt(id, person_id, personident, fornavn, mellomnavn, etternavn, arrangorer, modified_at, last_synchronized)
 		VALUES (:id,
 		        :person_id,
 		        :personident,
 		        :fornavn,
 		        :mellomnavn,
 		        :etternavn,
+				:arrangorer,
 		        :modified_at,
 		        :last_synchronized)
-		ON CONFLICT (personident) DO UPDATE SET 
+		ON CONFLICT (personident) DO UPDATE SET
 		    fornavn           = :fornavn,
 		    mellomnavn        = :mellomnavn,
 		    etternavn         = :etternavn,
+			arrangorer		  = :arrangorer,
 		    modified_at       = current_timestamp,
-		    last_synchronized = current_timestamp
+		    last_synchronized = :last_synchronized
 		RETURNING *
 		""".trimIndent()
 
@@ -52,11 +54,12 @@ class AnsattRepository(
 			sql,
 			sqlParameters(
 				"id" to ansatt.id,
-				"person_id" to (ansatt.personId ?: UUID.randomUUID()),
+				"person_id" to (ansatt.personId),
 				"personident" to ansatt.personident,
 				"fornavn" to ansatt.fornavn,
 				"mellomnavn" to ansatt.mellomnavn,
 				"etternavn" to ansatt.etternavn,
+				"arrangorer" to ansatt.arrangorer.toPGObject(),
 				"modified_at" to ansatt.modifiedAt,
 				"last_synchronized" to ansatt.lastSynchronized
 			),
@@ -76,13 +79,10 @@ class AnsattRepository(
 		rowMapper
 	).firstOrNull()
 
-	fun setSynchronized(id: UUID, timestamp: LocalDateTime = LocalDateTime.now()) =
-		setSynchronized(listOf(id), timestamp)
-
-	fun setSynchronized(ids: List<UUID>, timestamp: LocalDateTime = LocalDateTime.now()) = template.update(
-		"UPDATE ansatt SET last_synchronized = :last_synchronized WHERE id IN (:ids)",
+	fun setSynchronized(id: UUID, timestamp: LocalDateTime) = template.update(
+		"UPDATE ansatt SET last_synchronized = :last_synchronized WHERE id = :id",
 		sqlParameters(
-			"ids" to ids,
+			"id" to id,
 			"last_synchronized" to timestamp
 		)
 	)
@@ -103,22 +103,9 @@ class AnsattRepository(
 
 		return template.query(sql, parameters, rowMapper)
 	}
+}
 
-	data class AnsattDbo(
-		val id: UUID = UUID.randomUUID(),
-		val personId: UUID? = UUID.randomUUID(),
-		val personident: String,
-		val fornavn: String,
-		val mellomnavn: String?,
-		val etternavn: String,
-		val modifiedAt: LocalDateTime = LocalDateTime.now(),
-		val lastSynchronized: LocalDateTime = LocalDateTime.now()
-	) {
-
-		fun toPersonalia(): Personalia = Personalia(
-			personident = personident,
-			personId = personId,
-			navn = Navn(fornavn, mellomnavn, etternavn)
-		)
-	}
+fun List<ArrangorDbo>.toPGObject() = PGobject().also {
+	it.type = "json"
+	it.value = JsonUtils.objectMapper().writeValueAsString(this)
 }

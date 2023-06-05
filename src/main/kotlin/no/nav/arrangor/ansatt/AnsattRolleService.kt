@@ -1,26 +1,26 @@
 package no.nav.arrangor.ansatt
 
 import no.nav.arrangor.MetricsService
-import no.nav.arrangor.ansatt.repositories.KoordinatorDeltakerlisteRepository
-import no.nav.arrangor.ansatt.repositories.RolleRepository
-import no.nav.arrangor.ansatt.repositories.VeilederDeltakerRepository
+import no.nav.arrangor.ansatt.repository.AnsattDbo
+import no.nav.arrangor.ansatt.repository.ArrangorDbo
+import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.altinn.AltinnAclClient
 import no.nav.arrangor.client.altinn.AltinnRolle
 import no.nav.arrangor.domain.AnsattRolle
+import no.nav.arrangor.domain.Arrangor
+import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.utils.DataUpdateWrapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.time.ZonedDateTime
 import java.util.UUID
 
 @Service
 class AnsattRolleService(
-	private val rolleRepository: RolleRepository,
 	private val altinnClient: AltinnAclClient,
 	private val metricsService: MetricsService,
-	private val arrangorService: ArrangorService,
-	private val veilederDeltakerRepository: VeilederDeltakerRepository,
-	private val koordinatorDeltakerlisteRepository: KoordinatorDeltakerlisteRepository
+	private val arrangorService: ArrangorService
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -29,108 +29,159 @@ class AnsattRolleService(
 		return altinnClient.hentRoller(personIdent).getOrThrow()
 	}
 
-	fun getRoller(ansattId: UUID): List<RolleRepository.RolleDbo> {
-		return rolleRepository.getAktiveRoller(ansattId)
-	}
-
-	fun lagreRollerForNyAnsatt(ansattId: UUID, roller: List<AltinnRolle>) {
+	fun mapAltinnRollerTilArrangorListeForNyAnsatt(roller: List<AltinnRolle>): List<ArrangorDbo> {
 		val unikeOrgnummer = roller.map { it.organisasjonsnummer }.distinct()
-		unikeOrgnummer.forEach { arrangorService.getOrUpsert(it) }
-		val orgRoller = altinnToOrgRolle(roller)
-		rolleRepository.leggTilRoller(orgRoller.map { it.toInput(ansattId) })
-			.also { logLagtTil(ansattId, orgRoller) }
-	}
+		val arrangorer = unikeOrgnummer.map { arrangorService.getOrUpsert(it) }
 
-	fun oppdaterRoller(ansattId: UUID, personident: String): DataUpdateWrapper<List<RolleRepository.RolleDbo>> {
-		val gamleRoller = dboToOrgRolle(rolleRepository.getAktiveRoller(ansattId))
-		val nyeRoller = altinnToOrgRolle(altinnClient.hentRoller(personident).getOrThrow())
-
-		val updated = oppdaterRoller(ansattId, gamleRoller, nyeRoller)
-
-		return DataUpdateWrapper(
-			isUpdated = updated,
-			data = rolleRepository.getAktiveRoller(ansattId)
-		)
-	}
-
-	fun oppdaterRoller(ansattId: UUID, gamleRoller: List<OrgRolle>, nyeRoller: List<OrgRolle>): Boolean {
-		val rollerSomSkalSlettes =
-			gamleRoller.filter { nyeRoller.find { nyRolle -> nyRolle.rolle == it.rolle && nyRolle.organisasjonsnummer == it.organisasjonsnummer } == null }
-		val rollerSomSkalLeggesTil =
-			nyeRoller.filter { gamleRoller.find { gammelRolle -> gammelRolle.rolle == it.rolle && gammelRolle.organisasjonsnummer == it.organisasjonsnummer } == null }
-
-		if (rollerSomSkalSlettes.isNotEmpty()) {
-			deaktiverRollerOgTilganger(ansattId, rollerSomSkalSlettes)
-		}
-
-		// val unikeOrgnummer = rollerSomSkalLeggesTil.map { it.organisasjonsnummer }.distinct()
-		// unikeOrgnummer.forEach { arrangorService.getOrUpsert(it) } Legges til igjen når amt-arrangør er master!
-		rolleRepository.leggTilRoller(rollerSomSkalLeggesTil.map { it.toInput(ansattId) })
-			.also { logLagtTil(ansattId, rollerSomSkalLeggesTil) }
-
-		return (rollerSomSkalSlettes.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty())
-			.also { if (it) metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalSlettes.size) }
-	}
-
-	private fun deaktiverRollerOgTilganger(ansattId: UUID, rollerSomSkalSlettes: List<OrgRolle>) {
-		val unikeOrgnummer = rollerSomSkalSlettes.map { it.organisasjonsnummer }.distinct()
-		val arrangorer = unikeOrgnummer.mapNotNull { arrangorService.get(it) }
-		val koordinatorsDeltakerlister = rollerSomSkalSlettes.find { it.rolle == AnsattRolle.KOORDINATOR }?.let {
-			koordinatorDeltakerlisteRepository.getAktive(ansattId)
-		}
-		rollerSomSkalSlettes.forEach { orgRolle ->
-			val arrangorId = arrangorer.find { it.organisasjonsnummer == orgRolle.organisasjonsnummer }?.id
-				?: throw IllegalStateException("Ansatt $ansattId har rolle hos organisasjon ${orgRolle.organisasjonsnummer} som ikke finnes")
-			if (orgRolle.rolle == AnsattRolle.VEILEDER) {
-				veilederDeltakerRepository.deaktiver(ansattId = ansattId, arrangorId = arrangorId)
-			} else if (orgRolle.rolle == AnsattRolle.KOORDINATOR && !koordinatorsDeltakerlister.isNullOrEmpty()) {
-				koordinatorDeltakerlisteRepository.deaktiverKoordinatorDeltakerliste(ansattId = ansattId, arrangorId = arrangorId)
+		val arrangorListe = roller.mapNotNull { altinnRolle ->
+			val arrangor = arrangorer.find { altinnRolle.organisasjonsnummer == it.organisasjonsnummer }
+			if (arrangor != null) {
+				ArrangorDbo(
+					arrangorId = arrangor.id,
+					roller = altinnRolle.roller.map { RolleDbo(it) },
+					veileder = emptyList(),
+					koordinator = emptyList()
+				)
+			} else {
+				null
 			}
 		}
-		rolleRepository.deaktiverRoller(rollerSomSkalSlettes.map { it.id })
-			.also { logFjernet(ansattId, rollerSomSkalSlettes) }
+		return arrangorListe
 	}
 
-	private fun logFjernet(ansattId: UUID, fjernet: List<OrgRolle>) = fjernet.forEach {
-		logger.info("Ansatt med $ansattId mistet ${it.rolle} hos ${it.organisasjonsnummer}")
+	fun getAnsattDboMedOppdaterteRoller(ansattDbo: AnsattDbo, personident: String): DataUpdateWrapper<AnsattDbo> {
+		val nyeRollerFraAltinn = altinnClient.hentRoller(personident).getOrThrow()
+
+		val unikeOrgnummerFraAltinn = nyeRollerFraAltinn.map { it.organisasjonsnummer }.distinct()
+		val unikeArrangorerFraAltinnMedRolle = arrangorService.get(unikeOrgnummerFraAltinn) // skal endres til getOrUpsert når denne appen er master
+
+		val nyeRoller = altinnToRolleOgArrangor(nyeRollerFraAltinn, unikeArrangorerFraAltinnMedRolle)
+
+		return getAnsattDboMedOppdaterteRoller(ansattDbo, nyeRoller)
 	}
 
-	private fun logLagtTil(ansattId: UUID, lagtTil: List<OrgRolle>) = lagtTil.forEach {
-		logger.info("Ansatt med $ansattId fikk ${it.rolle} hos ${it.organisasjonsnummer}")
+	fun getOppdatertArrangorListeForIngestAvAnsatt(ansattDbo: AnsattDbo, tilknyttedeArrangorer: List<TilknyttetArrangor>): List<ArrangorDbo> {
+		val nyeRoller = tilknyttetArrangorToRolleOgArrangor(tilknyttedeArrangorer)
+
+		return getAnsattDboMedOppdaterteRoller(ansattDbo, nyeRoller).data.arrangorer
 	}
 
-	private fun dboToOrgRolle(roller: List<RolleRepository.RolleDbo>): List<OrgRolle> = roller
-		.map { OrgRolle(it.id, it.organisasjonsnummer, it.rolle) }
+	private fun getAnsattDboMedOppdaterteRoller(ansattDbo: AnsattDbo, nyeRoller: List<RolleOgArrangor>): DataUpdateWrapper<AnsattDbo> {
+		val gamleAktiveRoller = ansattDbo.arrangorer.flatMap { arrangor ->
+			arrangor.roller
+				.filter { it.erGyldig() }
+				.map { RolleOgArrangor(arrangor.arrangorId, it.rolle) }
+		}
 
-	private fun altinnToOrgRolle(roller: List<AltinnRolle>): List<OrgRolle> = roller
-		.flatMap { entry -> entry.roller.map { entry.organisasjonsnummer to it } }
-		.map { OrgRolle(-1, it.first, it.second) }
+		val rollerSomSkalDeaktiveres = gamleAktiveRoller
+			.filter { nyeRoller.find { nyRolle -> nyRolle.rolle == it.rolle && nyRolle.arrangorId == it.arrangorId } == null }
+		val rollerSomSkalLeggesTil = nyeRoller
+			.filter { gamleAktiveRoller.find { gammelRolle -> gammelRolle.rolle == it.rolle && gammelRolle.arrangorId == it.arrangorId } == null }
 
-	data class OrgRolle(
-		val id: Int,
-		val organisasjonsnummer: String,
-		val rolle: AnsattRolle
-	) {
-		fun toInput(ansattId: UUID): RolleRepository.RolleInput = RolleRepository.RolleInput(
-			ansattId,
-			organisasjonsnummer,
-			rolle
+		val oppdaterteArrangorerForAnsatt = getOppdaterteArrangorerForAnsatt(ansattDbo, rollerSomSkalDeaktiveres, rollerSomSkalLeggesTil)
+
+		if (rollerSomSkalDeaktiveres.isNotEmpty()) {
+			logFjernet(ansattDbo.id, rollerSomSkalDeaktiveres)
+		}
+		if (rollerSomSkalLeggesTil.isNotEmpty()) {
+			logLagtTil(ansattDbo.id, rollerSomSkalLeggesTil)
+		}
+		val isUpdated = rollerSomSkalDeaktiveres.isNotEmpty() || rollerSomSkalLeggesTil.isNotEmpty()
+		if (isUpdated) {
+			metricsService.incEndretAnsattRolle(rollerSomSkalLeggesTil.size + rollerSomSkalDeaktiveres.size)
+		}
+
+		return DataUpdateWrapper(
+			isUpdated = isUpdated,
+			data = ansattDbo.copy(arrangorer = oppdaterteArrangorerForAnsatt)
 		)
-
-		override fun equals(other: Any?): Boolean {
-			if (this === other) return true
-			if (javaClass != other?.javaClass) return false
-
-			other as OrgRolle
-
-			if (organisasjonsnummer != other.organisasjonsnummer) return false
-			return rolle == other.rolle
-		}
-
-		override fun hashCode(): Int {
-			var result = organisasjonsnummer.hashCode()
-			result = 31 * result + rolle.hashCode()
-			return result
-		}
 	}
+
+	private fun getOppdaterteArrangorerForAnsatt(
+		ansattDbo: AnsattDbo,
+		rollerSomSkalDeaktiveres: List<RolleOgArrangor>,
+		rollerSomSkalLeggesTil: List<RolleOgArrangor>
+	): List<ArrangorDbo> {
+		val oppdaterteArrangorer = mutableListOf<ArrangorDbo>()
+		oppdaterteArrangorer.addAll(ansattDbo.arrangorer)
+
+		rollerSomSkalDeaktiveres.forEach { rolleOgArrangor ->
+			val arrangor = oppdaterteArrangorer.find { it.arrangorId == rolleOgArrangor.arrangorId }
+			if (arrangor != null) {
+				if (rolleOgArrangor.rolle == AnsattRolle.KOORDINATOR) {
+					arrangor.koordinator.forEach {
+						if (it.erGyldig()) {
+							it.gyldigTil = ZonedDateTime.now()
+						}
+					}
+				}
+				if (rolleOgArrangor.rolle == AnsattRolle.VEILEDER) {
+					arrangor.veileder.forEach {
+						if (it.erGyldig()) {
+							it.gyldigTil = ZonedDateTime.now()
+						}
+					}
+				}
+				arrangor.roller.find { it.erGyldig() && it.rolle == rolleOgArrangor.rolle }?.let { it.gyldigTil = ZonedDateTime.now() }
+			} else {
+				logger.warn("Kan ikke deaktivere rolle hos arrangør som ikke er koblet til ansatt, arrangørid ${rolleOgArrangor.arrangorId}, ansattId ${ansattDbo.id}")
+			}
+		}
+
+		rollerSomSkalLeggesTil.forEach { rolleOgArrangor ->
+			val arrangor = oppdaterteArrangorer.find { it.arrangorId == rolleOgArrangor.arrangorId }
+			if (arrangor != null) {
+				val eksisterendeRolle = arrangor.roller.find { it.rolle == rolleOgArrangor.rolle }
+				if (eksisterendeRolle != null && !eksisterendeRolle.erGyldig()) {
+					eksisterendeRolle.gyldigTil = null
+				} else {
+					val oppdaterteRoller = mutableListOf<RolleDbo>()
+					oppdaterteRoller.addAll(arrangor.roller)
+					oppdaterteRoller.add(RolleDbo(rolleOgArrangor.rolle))
+					val oppdatertArrangor = arrangor.copy(roller = oppdaterteRoller)
+					oppdaterteArrangorer.removeIf { it.arrangorId == arrangor.arrangorId }
+					oppdaterteArrangorer.add(oppdatertArrangor)
+				}
+			} else {
+				oppdaterteArrangorer.add(
+					ArrangorDbo(
+						arrangorId = rolleOgArrangor.arrangorId,
+						roller = listOf(RolleDbo(rolleOgArrangor.rolle)),
+						koordinator = emptyList(),
+						veileder = emptyList()
+					)
+				)
+			}
+		}
+		return oppdaterteArrangorer
+	}
+
+	private fun logFjernet(ansattId: UUID, fjernet: List<RolleOgArrangor>) = fjernet.forEach {
+		logger.info("Ansatt med $ansattId mistet ${it.rolle} hos ${it.arrangorId}")
+	}
+
+	private fun logLagtTil(ansattId: UUID, lagtTil: List<RolleOgArrangor>) = lagtTil.forEach {
+		logger.info("Ansatt med $ansattId fikk ${it.rolle} hos ${it.arrangorId}")
+	}
+
+	private fun altinnToRolleOgArrangor(roller: List<AltinnRolle>, arrangorer: List<Arrangor>): List<RolleOgArrangor> {
+		return roller
+			.flatMap { entry ->
+				entry.roller.map {
+					val arrangorId = arrangorer.find { arrangor -> arrangor.organisasjonsnummer == entry.organisasjonsnummer }?.id
+					arrangorId to it
+				}
+			}.mapNotNull { it.first?.let { arrangorId -> RolleOgArrangor(arrangorId, it.second) } }
+	}
+
+	private fun tilknyttetArrangorToRolleOgArrangor(tilknyttedeArrangorer: List<TilknyttetArrangor>): List<RolleOgArrangor> {
+		return tilknyttedeArrangorer
+			.flatMap { entry -> entry.roller.map { entry.arrangorId to it } }
+			.map { RolleOgArrangor(it.first, it.second) }
+	}
+
+	private data class RolleOgArrangor(
+		val arrangorId: UUID,
+		val rolle: AnsattRolle
+	)
 }
