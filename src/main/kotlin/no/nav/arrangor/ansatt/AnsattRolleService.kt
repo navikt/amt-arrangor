@@ -29,7 +29,7 @@ class AnsattRolleService(
 		return altinnClient.hentRoller(personIdent).getOrThrow()
 	}
 
-	fun getArrangorListeForNyAnsatt(roller: List<AltinnRolle>): List<ArrangorDbo> {
+	fun mapAltinnRollerTilArrangorListeForNyAnsatt(roller: List<AltinnRolle>): List<ArrangorDbo> {
 		val unikeOrgnummer = roller.map { it.organisasjonsnummer }.distinct()
 		val arrangorer = unikeOrgnummer.map { arrangorService.getOrUpsert(it) }
 
@@ -139,6 +139,7 @@ class AnsattRolleService(
 					oppdaterteRoller.addAll(arrangor.roller)
 					oppdaterteRoller.add(RolleDbo(rolleOgArrangor.rolle))
 					val oppdatertArrangor = arrangor.copy(roller = oppdaterteRoller)
+					oppdaterteArrangorer.removeIf { it.arrangorId == arrangor.arrangorId }
 					oppdaterteArrangorer.add(oppdatertArrangor)
 				}
 			} else {

@@ -169,7 +169,7 @@ class AnsattService(
 		}
 		val person = personClient.hentPersonalia(personIdent).getOrThrow()
 
-		val arrangorer = rolleService.getArrangorListeForNyAnsatt(altinnRoller)
+		val arrangorer = rolleService.mapAltinnRollerTilArrangorListeForNyAnsatt(altinnRoller)
 
 		val ansattDbo = ansattRepository.insertOrUpdate(
 			AnsattDbo(

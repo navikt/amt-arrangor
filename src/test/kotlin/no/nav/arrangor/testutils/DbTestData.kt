@@ -23,7 +23,7 @@ class DbTestData(
 		fornavn: String = UUID.randomUUID().toString(),
 		mellomnavn: String = UUID.randomUUID().toString(),
 		etternavn: String = UUID.randomUUID().toString(),
-		arrangorer: List<ArrangorDbo> = listOf(ArrangorDbo(UUID.randomUUID(), listOf(RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), emptyList())),
+		arrangorer: List<ArrangorDbo>,
 		lastSynchronized: LocalDateTime = LocalDateTime.now()
 	): AnsattDbo = ansatt(personident, personId, fornavn, mellomnavn, etternavn, arrangorer, lastSynchronized)
 		.let { ansattRepository.insertOrUpdate(it) }
