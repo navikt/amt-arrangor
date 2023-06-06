@@ -2,7 +2,6 @@ package no.nav.arrangor.ansatt
 
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.ingest.IgnoredDeltakerlister
 import no.nav.arrangor.utils.Issuer
 import no.nav.security.token.support.core.api.ProtectedWithClaims
 import no.nav.security.token.support.core.context.TokenValidationContextHolder
@@ -42,7 +41,6 @@ class AnsattController(
 		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
 		@PathVariable("arrangorId") arrangorId: UUID
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		if (IgnoredDeltakerlister.deltakerlisteIds.contains(deltakerlisteId)) throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "Deltakerliste er blokkert")
 		ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
 	}
 
