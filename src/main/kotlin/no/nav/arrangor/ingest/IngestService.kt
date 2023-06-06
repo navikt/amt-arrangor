@@ -6,6 +6,7 @@ import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.dto.ArrangorDto
+import no.nav.arrangor.ingest.model.VirksomhetDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
@@ -61,5 +62,37 @@ class IngestService(
 
 		logger.info("Konsumerte ansatt med id ${ansatt.id}")
 		metricsService.incConsumedAnsatt()
+	}
+
+	fun handleVirksomhetEndring(virksomhetDto: VirksomhetDto?) {
+		if (virksomhetDto == null) return
+
+		val arrangor = arrangorRepository.get(virksomhetDto.organisasjonsnummer)
+
+		if (arrangor != null) {
+			val overordnetArrangorId = if (virksomhetDto.overordnetEnhetOrganisasjonsnummer != null) {
+				val overordnetArrangor = arrangorRepository.get(virksomhetDto.overordnetEnhetOrganisasjonsnummer)
+				if (overordnetArrangor == null) {
+					// når amt-arrangør er master for arrangører skal arrangøren opprettes hvis denne er null
+					logger.warn("Fant ikke overordnet arrangør for orgnummer ${virksomhetDto.overordnetEnhetOrganisasjonsnummer}, lagrer arrangør ${arrangor.id} uten overordnet arrangør")
+					null
+				} else if (overordnetArrangor.id != arrangor.overordnetArrangorId) {
+					logger.info("Arrangør ${arrangor.id} har fått ny overordnet arrangør med id ${overordnetArrangor.id}")
+					overordnetArrangor.id
+				} else {
+					arrangor.overordnetArrangorId
+				}
+			} else {
+				null
+			}
+			arrangorRepository.insertOrUpdate(
+				arrangor.copy(
+					navn = virksomhetDto.navn,
+					organisasjonsnummer = virksomhetDto.organisasjonsnummer,
+					overordnetArrangorId = overordnetArrangorId
+				)
+			)
+			logger.info("Oppdatert arrangør med id ${arrangor.id}")
+		}
 	}
 }

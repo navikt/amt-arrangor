@@ -90,6 +90,7 @@ class ArrangorService(
 			val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
 				arrangorRepository.insertOrUpdate(
 					ArrangorRepository.ArrangorDbo(
+						id = UUID.randomUUID(),
 						navn = virksomhet.overordnetEnhetNavn
 							?: throw IllegalStateException("Navn burde vært satt for $orgNr's overordnet enhet (${virksomhet.overordnetEnhetOrganisasjonsnummer}"),
 						organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
@@ -100,6 +101,7 @@ class ArrangorService(
 
 			return arrangorRepository.insertOrUpdate(
 				ArrangorRepository.ArrangorDbo(
+					id = arrangor?.id ?: UUID.randomUUID(),
 					navn = virksomhet.navn,
 					organisasjonsnummer = virksomhet.organisasjonsnummer,
 					overordnetArrangorId = overordnetArrangor?.id
@@ -108,7 +110,6 @@ class ArrangorService(
 					.also { metricsService.incEndredeArrangorer() }
 			)
 		}
-
 		return arrangor
 	}
 

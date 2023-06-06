@@ -84,7 +84,7 @@ class ArrangorRepository(
 	).firstOrNull()
 
 	data class ArrangorDbo(
-		val id: UUID = UUID.randomUUID(),
+		val id: UUID,
 		val navn: String,
 		val organisasjonsnummer: String,
 		val overordnetArrangorId: UUID?

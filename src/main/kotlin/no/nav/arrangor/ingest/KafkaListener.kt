@@ -12,14 +12,15 @@ class KafkaListener(
 ) {
 
 	@KafkaListener(
-		topics = [ARRANGOR_TOPIC], // Leser kun arrangørene først for å få lest inn arrangører med samme id som i amt-tiltak
-		properties = ["auto.offset.reset = earliest"],
+		topics = [ARRANGOR_TOPIC, VIRKSOMHET_TOPIC], // Legg til lesing av ansatt-topicen her når deltakere er migrert inn i amt-person-service
+		properties = ["auto.offset.reset = latest"], // bør endres tilbake til earliest når vi får offset på virksomhet-topic og før vi leser ansatte
 		containerFactory = "kafkaListenerContainerFactory"
 	)
 	fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
 		when (record.topic()) {
 			ARRANGOR_TOPIC -> ingestService.handleArrangor(record.value()?.let { JsonUtils.fromJson(it) })
 			ANSATT_TOPIC -> ingestService.handleAnsatt(record.value()?.let { JsonUtils.fromJson(it) })
+			VIRKSOMHET_TOPIC -> ingestService.handleVirksomhetEndring(record.value()?.let { JsonUtils.fromJson(it) })
 			else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
 		}
 		ack.acknowledge()
