@@ -12,8 +12,8 @@ class KafkaListener(
 ) {
 
 	@KafkaListener(
-		topics = [ARRANGOR_TOPIC, VIRKSOMHET_TOPIC], // Legg til lesing av ansatt-topicen her når deltakere er migrert inn i amt-person-service
-		properties = ["auto.offset.reset = latest"], // bør endres tilbake til earliest når vi får offset på virksomhet-topic og før vi leser ansatte
+		topics = [ARRANGOR_TOPIC, ANSATT_TOPIC, VIRKSOMHET_TOPIC],
+		properties = ["auto.offset.reset = earliest"],
 		containerFactory = "kafkaListenerContainerFactory"
 	)
 	fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
