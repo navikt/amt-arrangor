@@ -16,6 +16,7 @@ import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.ingest.PublishService
+import no.nav.arrangor.utils.isDev
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -207,7 +208,17 @@ class AnsattService(
 		}
 	}
 	private fun ingestNyAnsatt(ansatt: Ansatt) {
-		val person = personClient.hentPersonalia(ansatt.personalia.personident).getOrThrow()
+		val person = try {
+			personClient.hentPersonalia(ansatt.personalia.personident).getOrThrow()
+		} catch (e: Exception) {
+			logger.error("Noe gikk galt ved henting av person for ansattId ${ansatt.id}")
+			if (isDev()) {
+				logger.warn("Ignorerer ansatt i dev ${ansatt.id}")
+				return
+			} else {
+				throw e
+			}
+		}
 		val arrangorer = ansatt.arrangorer.map { tilknyttetArrangor ->
 			ArrangorDbo(
 				arrangorId = tilknyttetArrangor.arrangorId,
