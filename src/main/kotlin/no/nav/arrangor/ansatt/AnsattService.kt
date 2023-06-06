@@ -212,11 +212,11 @@ class AnsattService(
 			logger.error("Noe gikk galt ved henting av person for ansattId ${ansatt.id}")
 			if (isDev()) {
 				logger.warn("Ignorerer ansatt i dev ${ansatt.id}")
-				return
+				null
 			} else {
 				throw it
 			}
-		}
+		} ?: return
 		val arrangorer = ansatt.arrangorer.map { tilknyttetArrangor ->
 			ArrangorDbo(
 				arrangorId = tilknyttetArrangor.arrangorId,
