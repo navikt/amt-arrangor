@@ -364,40 +364,45 @@ class IngestServiceTest : IntegrationTest() {
 	fun `handleVirksomhetEndring - finnes i db med annen overordnet arrangor og ny overordnet arrangor finnes i db - overordnet arrangor oppdateres i db`() {
 		val overordnetArrangorId = UUID.randomUUID()
 		val overordnetOrgnummer = "888887776"
-		ArrangorDto(
-			id = overordnetArrangorId,
-			navn = "Overordnet arrangør",
-			organisasjonsnummer = overordnetOrgnummer,
-			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
-
+		val nyOverordnetArrangorId = UUID.randomUUID()
+		val nyOverordnetOrgnummer = "111122222"
 		val arrangorId = UUID.randomUUID()
 		val orgnummer = "999988888"
-		mockAmtEnhetsregiserServer.addVirksomhet(
-			Virksomhet(
-				organisasjonsnummer = orgnummer,
-				navn = "Arrangør",
-				overordnetEnhetOrganisasjonsnummer = overordnetOrgnummer,
-				overordnetEnhetNavn = "Overordnet arrangør"
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = overordnetArrangorId,
+				navn = "Overordnet navn",
+				organisasjonsnummer = overordnetOrgnummer,
+				overordnetArrangorId = null
 			)
 		)
-		ArrangorDto(
-			id = arrangorId,
-			navn = UUID.randomUUID().toString(),
-			organisasjonsnummer = orgnummer,
-			overordnetArrangorId = UUID.randomUUID()
-		).also { ingestService.handleArrangor(it) }
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = nyOverordnetArrangorId,
+				navn = "Ny overordnet navn",
+				organisasjonsnummer = nyOverordnetOrgnummer,
+				overordnetArrangorId = null
+			)
+		)
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = arrangorId,
+				navn = "Navn",
+				organisasjonsnummer = orgnummer,
+				overordnetArrangorId = overordnetArrangorId
+			)
+		)
 
 		ingestService.handleVirksomhetEndring(
 			VirksomhetDto(
 				organisasjonsnummer = orgnummer,
 				navn = "Nytt navn",
-				overordnetEnhetOrganisasjonsnummer = overordnetOrgnummer
+				overordnetEnhetOrganisasjonsnummer = nyOverordnetOrgnummer
 			)
 		)
 
 		val oppdatertArrangor = arrangorRepository.get(arrangorId)
 		oppdatertArrangor?.navn shouldBe "Nytt navn"
-		oppdatertArrangor?.overordnetArrangorId shouldBe overordnetArrangorId
+		oppdatertArrangor?.overordnetArrangorId shouldBe nyOverordnetArrangorId
 	}
 }
