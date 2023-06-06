@@ -59,6 +59,7 @@ class DbTestData(
 		organisasjonsnummer: String = UUID.randomUUID().toString(),
 		overordnetArrangorId: UUID? = null
 	): ArrangorRepository.ArrangorDbo = ArrangorRepository.ArrangorDbo(
+		id = UUID.randomUUID(),
 		navn = navn,
 		organisasjonsnummer = organisasjonsnummer,
 		overordnetArrangorId = overordnetArrangorId
