@@ -37,6 +37,14 @@ class ArrangorService(
 			?: upsertArrangor(orgNr)
 		).toDomain()
 
+	fun getOrUpsert(orgnumre: List<String>): List<Arrangor> {
+		val lagredeArrangorer = arrangorRepository.getArrangorerMedOrgnumre(orgnumre)
+			.map { it.toDomain() }
+		val orgnummerSomMangler = orgnumre.filterNot { orgnummer -> lagredeArrangorer.any { it.organisasjonsnummer == orgnummer } }
+		val nyeArrangorer = orgnummerSomMangler.map { upsertArrangor(it).toDomain() }
+		return lagredeArrangorer + nyeArrangorer
+	}
+
 	fun getArrangorMedOverordnetArrangor(orgNr: String): ArrangorMedOverordnetArrangor {
 		val arrangor = arrangorRepository.get(orgNr)
 			?: upsertArrangor(orgNr)

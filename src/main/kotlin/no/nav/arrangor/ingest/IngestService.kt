@@ -73,7 +73,7 @@ class IngestService(
 			val overordnetArrangorId = if (virksomhetDto.overordnetEnhetOrganisasjonsnummer != null) {
 				val overordnetArrangor = arrangorRepository.get(virksomhetDto.overordnetEnhetOrganisasjonsnummer)
 				if (overordnetArrangor == null) {
-					// når amt-arrangør er master for arrangører skal arrangøren opprettes hvis denne er null
+					// når amt-arrangør ikke lenger lytter på arrangør-topic fra amt-tiltak skal arrangøren opprettes hvis denne er null
 					logger.warn("Fant ikke overordnet arrangør for orgnummer ${virksomhetDto.overordnetEnhetOrganisasjonsnummer}, lagrer arrangør ${arrangor.id} uten overordnet arrangør")
 					null
 				} else if (overordnetArrangor.id != arrangor.overordnetArrangorId) {

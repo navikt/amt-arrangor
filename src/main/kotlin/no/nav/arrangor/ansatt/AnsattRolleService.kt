@@ -53,7 +53,7 @@ class AnsattRolleService(
 		val nyeRollerFraAltinn = altinnClient.hentRoller(personident).getOrThrow()
 
 		val unikeOrgnummerFraAltinn = nyeRollerFraAltinn.map { it.organisasjonsnummer }.distinct()
-		val unikeArrangorerFraAltinnMedRolle = arrangorService.get(unikeOrgnummerFraAltinn) // skal endres til getOrUpsert når denne appen er master
+		val unikeArrangorerFraAltinnMedRolle = arrangorService.getOrUpsert(unikeOrgnummerFraAltinn)
 
 		val nyeRoller = altinnToRolleOgArrangor(nyeRollerFraAltinn, unikeArrangorerFraAltinnMedRolle)
 
