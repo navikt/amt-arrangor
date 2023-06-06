@@ -208,15 +208,13 @@ class AnsattService(
 		}
 	}
 	private fun ingestNyAnsatt(ansatt: Ansatt) {
-		val person = try {
-			personClient.hentPersonalia(ansatt.personalia.personident).getOrThrow()
-		} catch (e: Exception) {
+		val person = personClient.hentPersonalia(ansatt.personalia.personident).getOrElse {
 			logger.error("Noe gikk galt ved henting av person for ansattId ${ansatt.id}")
 			if (isDev()) {
 				logger.warn("Ignorerer ansatt i dev ${ansatt.id}")
 				return
 			} else {
-				throw e
+				throw it
 			}
 		}
 		val arrangorer = ansatt.arrangorer.map { tilknyttetArrangor ->
