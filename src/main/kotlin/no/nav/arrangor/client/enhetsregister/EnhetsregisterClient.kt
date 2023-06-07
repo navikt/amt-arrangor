@@ -34,7 +34,7 @@ class EnhetsregisterClient(
 			}
 			.let { JsonUtils.fromJson<Virksomhet>(it) }
 			.also {
-				log.debug(
+				log.info(
 					"hentVirksomhet $orgNr executed in ${
 					Duration.between(start, Instant.now()).toMillis()
 					} ms."
