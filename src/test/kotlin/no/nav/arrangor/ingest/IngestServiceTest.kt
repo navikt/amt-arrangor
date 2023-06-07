@@ -405,4 +405,53 @@ class IngestServiceTest : IntegrationTest() {
 		oppdatertArrangor?.navn shouldBe "Nytt navn"
 		oppdatertArrangor?.overordnetArrangorId shouldBe nyOverordnetArrangorId
 	}
+
+	@Test
+	fun `handleVirksomhetEndring - finnes i db med annen overordnet arrangor og ny overordnet arrangor finnes ikke i db - ny overordnet arrangor lagres i db`() {
+		val overordnetArrangorId = UUID.randomUUID()
+		val overordnetOrgnummer = "888887776"
+		val nyOverordnetOrgnummer = "111122222"
+		val arrangorId = UUID.randomUUID()
+		val orgnummer = "999988888"
+		mockAmtEnhetsregiserServer.addVirksomhet(
+			Virksomhet(
+				organisasjonsnummer = nyOverordnetOrgnummer,
+				navn = "Ny Overordnet arrangør",
+				overordnetEnhetOrganisasjonsnummer = null,
+				overordnetEnhetNavn = null
+			)
+		)
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = overordnetArrangorId,
+				navn = "Overordnet navn",
+				organisasjonsnummer = overordnetOrgnummer,
+				overordnetArrangorId = null
+			)
+		)
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = arrangorId,
+				navn = "Navn",
+				organisasjonsnummer = orgnummer,
+				overordnetArrangorId = overordnetArrangorId
+			)
+		)
+
+		ingestService.handleVirksomhetEndring(
+			VirksomhetDto(
+				organisasjonsnummer = orgnummer,
+				navn = "Nytt navn",
+				overordnetEnhetOrganisasjonsnummer = nyOverordnetOrgnummer
+			)
+		)
+
+		val oppdatertArrangor = arrangorRepository.get(arrangorId)
+		oppdatertArrangor?.navn shouldBe "Nytt navn"
+		oppdatertArrangor?.overordnetArrangorId shouldNotBe overordnetArrangorId
+		val nyOverordnetArrangor = arrangorRepository.get(nyOverordnetOrgnummer)
+		nyOverordnetArrangor shouldNotBe null
+		nyOverordnetArrangor?.navn shouldBe "Ny Overordnet arrangør"
+		oppdatertArrangor?.overordnetArrangorId shouldBe nyOverordnetArrangor?.id
+	}
 }

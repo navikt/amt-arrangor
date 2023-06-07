@@ -21,6 +21,7 @@ class MetricsService(
 	private val endredeAnsattRoller = registry.counter("amt_arrangor_ansatt_endret_roller")
 
 	private val consumedArrangor = registry.counter("amt_arrangor_consumed_arrangor")
+	private val consumedVirksomhetEndring = registry.counter("amt_arrangor_consumed_virksomhet")
 	private val consumedAnsatt = registry.counter("amt_arrangor_consumed_ansatt")
 	private val consumerFailed = registry.counter("amt_arrangor_consume_failed")
 
@@ -37,6 +38,7 @@ class MetricsService(
 	fun incEndretAnsattRolle(count: Int = 1) = endredeAnsattRoller.increment(count.toDouble())
 
 	fun incConsumedArrangor(count: Int = 1) = consumedArrangor.increment(count.toDouble())
+	fun incConsumedVirksomhetEndring(count: Int = 1) = consumedVirksomhetEndring.increment(count.toDouble())
 	fun incConsumedAnsatt(count: Int = 1) = consumedAnsatt.increment(count.toDouble())
 	fun incConsumerFaild(count: Int = 1) = consumerFailed.increment(count.toDouble())
 }
