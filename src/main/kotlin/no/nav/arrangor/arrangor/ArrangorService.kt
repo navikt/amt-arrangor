@@ -118,7 +118,6 @@ class ArrangorService(
 	}
 
 	private fun getDefaultVirksomhet(organisasjonsnummer: String): Virksomhet {
-		logger.warn("Kunne ikke hente virksomhet for orgnummer $organisasjonsnummer, bruker defaultverdier")
 		return Virksomhet(
 			organisasjonsnummer = organisasjonsnummer,
 			navn = "Ukjent virksomhet",
