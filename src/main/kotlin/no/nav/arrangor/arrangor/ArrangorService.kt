@@ -32,22 +32,19 @@ class ArrangorService(
 	fun get(orgNr: String): Arrangor? =
 		arrangorRepository.get(orgNr)?.toDomain()
 
-	fun getOrUpsert(orgNr: String): Arrangor = (
-		arrangorRepository.get(orgNr)
-			?: upsertArrangor(orgNr)
-		).toDomain()
+	fun getOrCreate(orgNr: String): Arrangor =
+		getOrCreateArrangor(orgNr).toDomain()
 
-	fun getOrUpsert(orgnumre: List<String>): List<Arrangor> {
+	fun getOrCreate(orgnumre: List<String>): List<Arrangor> {
 		val lagredeArrangorer = arrangorRepository.getArrangorerMedOrgnumre(orgnumre)
 			.map { it.toDomain() }
 		val orgnummerSomMangler = orgnumre.filterNot { orgnummer -> lagredeArrangorer.any { it.organisasjonsnummer == orgnummer } }
-		val nyeArrangorer = orgnummerSomMangler.map { upsertArrangor(it).toDomain() }
+		val nyeArrangorer = orgnummerSomMangler.map { insertArrangor(it).toDomain() }
 		return lagredeArrangorer + nyeArrangorer
 	}
 
 	fun getArrangorMedOverordnetArrangor(orgNr: String): ArrangorMedOverordnetArrangor {
-		val arrangor = arrangorRepository.get(orgNr)
-			?: upsertArrangor(orgNr)
+		val arrangor = getOrCreateArrangor(orgNr)
 		val overordnetArrangor = arrangor.overordnetArrangorId?.let {
 			get(it)
 		}
@@ -84,41 +81,40 @@ class ArrangorService(
 		}
 	}
 
-	private fun upsertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
+	private fun getOrCreateArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
 		val arrangor = arrangorRepository.get(orgNr)
 
-		val oldVirksomhet = arrangor?.let { oar ->
-			val overordnet = oar.overordnetArrangorId?.let { arrangorRepository.get(it) }
-			Virksomhet(oar.organisasjonsnummer, oar.navn, overordnet?.organisasjonsnummer, overordnet?.navn)
+		if (arrangor != null) {
+			return arrangor
 		}
+		logger.info("Arrangør for orgnummer $orgNr mangler, oppretter arrangør..")
 
+		return insertArrangor(orgNr)
+	}
+
+	private fun insertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
 		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(getDefaultVirksomhet(orgNr))
-
-		if (oldVirksomhet != virksomhet) {
-			val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
-				arrangorRepository.insertOrUpdate(
-					ArrangorRepository.ArrangorDbo(
-						id = UUID.randomUUID(),
-						navn = virksomhet.overordnetEnhetNavn
-							?: throw IllegalStateException("Navn burde vært satt for $orgNr's overordnet enhet (${virksomhet.overordnetEnhetOrganisasjonsnummer}"),
-						organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
-						overordnetArrangorId = null
-					)
-				)
-			}
-
-			return arrangorRepository.insertOrUpdate(
+		val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
+			arrangorRepository.insertOrUpdate(
 				ArrangorRepository.ArrangorDbo(
-					id = arrangor?.id ?: UUID.randomUUID(),
-					navn = virksomhet.navn,
-					organisasjonsnummer = virksomhet.organisasjonsnummer,
-					overordnetArrangorId = overordnetArrangor?.id
+					id = UUID.randomUUID(),
+					navn = virksomhet.overordnetEnhetNavn
+						?: throw IllegalStateException("Navn burde vært satt for $orgNr's overordnet enhet (${virksomhet.overordnetEnhetOrganisasjonsnummer}"),
+					organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
+					overordnetArrangorId = null
 				)
-					.also { publishService.publishArrangor(it.toDomain()) }
-					.also { metricsService.incEndredeArrangorer() }
 			)
 		}
-		return arrangor
+		return arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = UUID.randomUUID(),
+				navn = virksomhet.navn,
+				organisasjonsnummer = virksomhet.organisasjonsnummer,
+				overordnetArrangorId = overordnetArrangor?.id
+			)
+				.also { publishService.publishArrangor(it.toDomain()) }
+				.also { metricsService.incEndredeArrangorer() }
+		)
 	}
 
 	private fun getDefaultVirksomhet(organisasjonsnummer: String): Virksomhet {

@@ -31,7 +31,7 @@ class AnsattRolleService(
 
 	fun mapAltinnRollerTilArrangorListeForNyAnsatt(roller: List<AltinnRolle>): List<ArrangorDbo> {
 		val unikeOrgnummer = roller.map { it.organisasjonsnummer }.distinct()
-		val arrangorer = unikeOrgnummer.map { arrangorService.getOrUpsert(it) }
+		val arrangorer = unikeOrgnummer.map { arrangorService.getOrCreate(it) }
 
 		val arrangorListe = roller.mapNotNull { altinnRolle ->
 			val arrangor = arrangorer.find { altinnRolle.organisasjonsnummer == it.organisasjonsnummer }
@@ -53,7 +53,7 @@ class AnsattRolleService(
 		val nyeRollerFraAltinn = altinnClient.hentRoller(personident).getOrThrow()
 
 		val unikeOrgnummerFraAltinn = nyeRollerFraAltinn.map { it.organisasjonsnummer }.distinct()
-		val unikeArrangorerFraAltinnMedRolle = arrangorService.getOrUpsert(unikeOrgnummerFraAltinn)
+		val unikeArrangorerFraAltinnMedRolle = arrangorService.getOrCreate(unikeOrgnummerFraAltinn)
 
 		val nyeRoller = altinnToRolleOgArrangor(nyeRollerFraAltinn, unikeArrangorerFraAltinnMedRolle)
 
