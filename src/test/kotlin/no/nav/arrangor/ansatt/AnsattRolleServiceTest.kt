@@ -163,29 +163,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		arrangorOne.roller[0].erGyldig() shouldBe true
 	}
 
-	@Test // Kun frem til amt-arrangor er master, skal fjernes etter det
-	fun `mapAltinnRollerTilArrangorListeForNyAnsatt - nye roller, ny arrangor - ignorerer ny arrangor`() {
-		ansatt = db.insertAnsatt(arrangorer = listOf(ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.KOORDINATOR, gyldigTil = ZonedDateTime.now().minusDays(5))), emptyList(), emptyList())))
-		val nyArrangorOrgnummer = "123456789"
-		mockAltinnServer.addRoller(
-			ansatt.personident,
-			AltinnAclClient.ResponseWrapper(
-				listOf(
-					AltinnAclClient.ResponseEntry(nyArrangorOrgnummer, listOf(KOORDINATOR))
-				)
-			)
-		)
-
-		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
-			.also { it.isUpdated shouldBe false }
-			.data
-
-		ansattDbo.arrangorer.size shouldBe 1
-		ansattDbo.arrangorer.find { it.arrangorId != arrangorOne.id } shouldBe null
-		arrangorRepository.get(nyArrangorOrgnummer) shouldBe null
-	}
-
-	/*@Test //Kommentert ut frem til amt-arrangør er master
+	@Test
 	fun `mapAltinnRollerTilArrangorListeForNyAnsatt - nye roller, ny arrangor - returnerer objekt med korrekte roller og lagrer ny arrangor`() {
 		ansatt = db.insertAnsatt(arrangorer = listOf(ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.KOORDINATOR, gyldigTil = ZonedDateTime.now().minusDays(5))), emptyList(), emptyList())))
 		val nyArrangorOrgnummer = "123456789"
@@ -218,7 +196,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		nyArrangor.roller[0].gyldigTil shouldBe null
 
 		arrangorRepository.get(nyArrangorOrgnummer) shouldNotBe null
-	}*/
+	}
 
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - likt i altinn og database - ingen endringer`() {

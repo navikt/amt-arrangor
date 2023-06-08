@@ -320,6 +320,185 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
+	fun `handleAnsatt - skal legge til veilederrelasjon - ansatt oppdateres i db`() {
+		val arrangor = ArrangorDto(
+			id = UUID.randomUUID(),
+			navn = UUID.randomUUID().toString(),
+			organisasjonsnummer = UUID.randomUUID().toString(),
+			overordnetArrangorId = null
+		).also { ingestService.handleArrangor(it) }
+
+		val tilknyttetArrangor = TilknyttetArrangor(
+			arrangorId = arrangor.id,
+			arrangor = Arrangor(
+				id = arrangor.id,
+				navn = arrangor.navn,
+				organisasjonsnummer = arrangor.organisasjonsnummer,
+				overordnetArrangorId = null
+			),
+			overordnetArrangor = null,
+			roller = listOf(AnsattRolle.VEILEDER),
+			veileder = emptyList(),
+			koordinator = emptyList()
+		)
+		val ansatt = Ansatt(
+			id = UUID.randomUUID(),
+			personalia = Personalia(
+				personident = personIdent,
+				personId = personId,
+				navn = Navn(
+					fornavn = UUID.randomUUID().toString(),
+					mellomnavn = null,
+					etternavn = UUID.randomUUID().toString()
+				)
+			),
+			arrangorer = listOf(tilknyttetArrangor)
+		)
+		ingestService.handleAnsatt(ansatt)
+
+		val oppdatertAnsatt = ansatt.copy(
+			arrangorer = listOf(
+				tilknyttetArrangor.copy(
+					veileder = listOf(
+						Veileder(deltakerId = UUID.randomUUID(), type = VeilederType.VEILEDER)
+					)
+				)
+			)
+		)
+
+		ingestService.handleAnsatt(oppdatertAnsatt)
+
+		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
+
+		ansattDbo.arrangorer.size shouldBe 1
+		val arrangorDb = ansattDbo.arrangorer.find { it.arrangorId == arrangor.id }
+		arrangorDb shouldNotBe null
+		arrangorDb!!.roller.size shouldBe 1
+		arrangorDb.roller.find { it.erGyldig() } shouldNotBe null
+		arrangorDb.veileder.size shouldBe 1
+		arrangorDb.veileder.find { it.erGyldig() } shouldNotBe null
+		arrangorDb.koordinator.size shouldBe 0
+	}
+
+	@Test
+	fun `handleAnsatt - skal fjerne veilederrelasjon - ansatt oppdateres i db`() {
+		val arrangor = ArrangorDto(
+			id = UUID.randomUUID(),
+			navn = UUID.randomUUID().toString(),
+			organisasjonsnummer = UUID.randomUUID().toString(),
+			overordnetArrangorId = null
+		).also { ingestService.handleArrangor(it) }
+
+		val tilknyttetArrangor = TilknyttetArrangor(
+			arrangorId = arrangor.id,
+			arrangor = Arrangor(
+				id = arrangor.id,
+				navn = arrangor.navn,
+				organisasjonsnummer = arrangor.organisasjonsnummer,
+				overordnetArrangorId = null
+			),
+			overordnetArrangor = null,
+			roller = listOf(AnsattRolle.VEILEDER),
+			veileder = listOf(Veileder(deltakerId = UUID.randomUUID(), type = VeilederType.VEILEDER)),
+			koordinator = emptyList()
+		)
+		val ansatt = Ansatt(
+			id = UUID.randomUUID(),
+			personalia = Personalia(
+				personident = personIdent,
+				personId = personId,
+				navn = Navn(
+					fornavn = UUID.randomUUID().toString(),
+					mellomnavn = null,
+					etternavn = UUID.randomUUID().toString()
+				)
+			),
+			arrangorer = listOf(tilknyttetArrangor)
+		)
+		ingestService.handleAnsatt(ansatt)
+
+		val oppdatertAnsatt = ansatt.copy(
+			arrangorer = listOf(
+				tilknyttetArrangor.copy(
+					veileder = emptyList()
+				)
+			)
+		)
+
+		ingestService.handleAnsatt(oppdatertAnsatt)
+
+		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
+
+		ansattDbo.arrangorer.size shouldBe 1
+		val arrangorDb = ansattDbo.arrangorer.find { it.arrangorId == arrangor.id }
+		arrangorDb shouldNotBe null
+		arrangorDb!!.roller.size shouldBe 1
+		arrangorDb.roller.find { it.erGyldig() } shouldNotBe null
+		arrangorDb.veileder.size shouldBe 1
+		arrangorDb.veileder.find { it.erGyldig() } shouldBe null
+		arrangorDb.koordinator.size shouldBe 0
+	}
+
+	@Test
+	fun `handleAnsatt - skal legge til koordinators deltakerliste - ansatt oppdateres i db`() {
+		val arrangor = ArrangorDto(
+			id = UUID.randomUUID(),
+			navn = UUID.randomUUID().toString(),
+			organisasjonsnummer = UUID.randomUUID().toString(),
+			overordnetArrangorId = null
+		).also { ingestService.handleArrangor(it) }
+
+		val tilknyttetArrangor = TilknyttetArrangor(
+			arrangorId = arrangor.id,
+			arrangor = Arrangor(
+				id = arrangor.id,
+				navn = arrangor.navn,
+				organisasjonsnummer = arrangor.organisasjonsnummer,
+				overordnetArrangorId = null
+			),
+			overordnetArrangor = null,
+			roller = listOf(AnsattRolle.KOORDINATOR),
+			veileder = emptyList(),
+			koordinator = emptyList()
+		)
+		val ansatt = Ansatt(
+			id = UUID.randomUUID(),
+			personalia = Personalia(
+				personident = personIdent,
+				personId = personId,
+				navn = Navn(
+					fornavn = UUID.randomUUID().toString(),
+					mellomnavn = null,
+					etternavn = UUID.randomUUID().toString()
+				)
+			),
+			arrangorer = listOf(tilknyttetArrangor)
+		)
+		ingestService.handleAnsatt(ansatt)
+
+		val oppdatertAnsatt = ansatt.copy(
+			arrangorer = listOf(
+				tilknyttetArrangor.copy(
+					koordinator = listOf(UUID.randomUUID())
+				)
+			)
+		)
+
+		ingestService.handleAnsatt(oppdatertAnsatt)
+
+		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
+
+		ansattDbo.arrangorer.size shouldBe 1
+		val arrangorDb = ansattDbo.arrangorer.find { it.arrangorId == arrangor.id }
+		arrangorDb shouldNotBe null
+		arrangorDb!!.roller.size shouldBe 1
+		arrangorDb.roller.find { it.erGyldig() } shouldNotBe null
+		arrangorDb.veileder.size shouldBe 0
+		arrangorDb.koordinator.size shouldBe 1
+		arrangorDb.koordinator.find { it.erGyldig() } shouldNotBe null
+	}
+
+	@Test
 	fun `handleVirksomhetEndring - finnes i db med annet navn - arrangornavn oppdateres i db`() {
 		val overordnetArrangorId = UUID.randomUUID()
 		val overordnetOrgnummer = "888887776"
@@ -404,5 +583,54 @@ class IngestServiceTest : IntegrationTest() {
 		val oppdatertArrangor = arrangorRepository.get(arrangorId)
 		oppdatertArrangor?.navn shouldBe "Nytt navn"
 		oppdatertArrangor?.overordnetArrangorId shouldBe nyOverordnetArrangorId
+	}
+
+	@Test
+	fun `handleVirksomhetEndring - finnes i db med annen overordnet arrangor og ny overordnet arrangor finnes ikke i db - ny overordnet arrangor lagres i db`() {
+		val overordnetArrangorId = UUID.randomUUID()
+		val overordnetOrgnummer = "888887776"
+		val nyOverordnetOrgnummer = "111122222"
+		val arrangorId = UUID.randomUUID()
+		val orgnummer = "999988888"
+		mockAmtEnhetsregiserServer.addVirksomhet(
+			Virksomhet(
+				organisasjonsnummer = nyOverordnetOrgnummer,
+				navn = "Ny Overordnet arrangør",
+				overordnetEnhetOrganisasjonsnummer = null,
+				overordnetEnhetNavn = null
+			)
+		)
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = overordnetArrangorId,
+				navn = "Overordnet navn",
+				organisasjonsnummer = overordnetOrgnummer,
+				overordnetArrangorId = null
+			)
+		)
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = arrangorId,
+				navn = "Navn",
+				organisasjonsnummer = orgnummer,
+				overordnetArrangorId = overordnetArrangorId
+			)
+		)
+
+		ingestService.handleVirksomhetEndring(
+			VirksomhetDto(
+				organisasjonsnummer = orgnummer,
+				navn = "Nytt navn",
+				overordnetEnhetOrganisasjonsnummer = nyOverordnetOrgnummer
+			)
+		)
+
+		val oppdatertArrangor = arrangorRepository.get(arrangorId)
+		oppdatertArrangor?.navn shouldBe "Nytt navn"
+		oppdatertArrangor?.overordnetArrangorId shouldNotBe overordnetArrangorId
+		val nyOverordnetArrangor = arrangorRepository.get(nyOverordnetOrgnummer)
+		nyOverordnetArrangor shouldNotBe null
+		nyOverordnetArrangor?.navn shouldBe "Ny Overordnet arrangør"
+		oppdatertArrangor?.overordnetArrangorId shouldBe nyOverordnetArrangor?.id
 	}
 }
