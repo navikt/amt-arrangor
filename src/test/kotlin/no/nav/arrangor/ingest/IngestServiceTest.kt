@@ -381,6 +381,65 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
+	fun `handleAnsatt - skal fjerne veilederrelasjon - ansatt oppdateres i db`() {
+		val arrangor = ArrangorDto(
+			id = UUID.randomUUID(),
+			navn = UUID.randomUUID().toString(),
+			organisasjonsnummer = UUID.randomUUID().toString(),
+			overordnetArrangorId = null
+		).also { ingestService.handleArrangor(it) }
+
+		val tilknyttetArrangor = TilknyttetArrangor(
+			arrangorId = arrangor.id,
+			arrangor = Arrangor(
+				id = arrangor.id,
+				navn = arrangor.navn,
+				organisasjonsnummer = arrangor.organisasjonsnummer,
+				overordnetArrangorId = null
+			),
+			overordnetArrangor = null,
+			roller = listOf(AnsattRolle.VEILEDER),
+			veileder = listOf(Veileder(deltakerId = UUID.randomUUID(), type = VeilederType.VEILEDER)),
+			koordinator = emptyList()
+		)
+		val ansatt = Ansatt(
+			id = UUID.randomUUID(),
+			personalia = Personalia(
+				personident = personIdent,
+				personId = personId,
+				navn = Navn(
+					fornavn = UUID.randomUUID().toString(),
+					mellomnavn = null,
+					etternavn = UUID.randomUUID().toString()
+				)
+			),
+			arrangorer = listOf(tilknyttetArrangor)
+		)
+		ingestService.handleAnsatt(ansatt)
+
+		val oppdatertAnsatt = ansatt.copy(
+			arrangorer = listOf(
+				tilknyttetArrangor.copy(
+					veileder = emptyList()
+				)
+			)
+		)
+
+		ingestService.handleAnsatt(oppdatertAnsatt)
+
+		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
+
+		ansattDbo.arrangorer.size shouldBe 1
+		val arrangorDb = ansattDbo.arrangorer.find { it.arrangorId == arrangor.id }
+		arrangorDb shouldNotBe null
+		arrangorDb!!.roller.size shouldBe 1
+		arrangorDb.roller.find { it.erGyldig() } shouldNotBe null
+		arrangorDb.veileder.size shouldBe 1
+		arrangorDb.veileder.find { it.erGyldig() } shouldBe null
+		arrangorDb.koordinator.size shouldBe 0
+	}
+
+	@Test
 	fun `handleAnsatt - skal legge til koordinators deltakerliste - ansatt oppdateres i db`() {
 		val arrangor = ArrangorDto(
 			id = UUID.randomUUID(),
