@@ -44,6 +44,7 @@ class IngestServiceTest : IntegrationTest() {
 
 	val personIdent = "12345678910"
 	val personId: UUID = UUID.randomUUID()
+	val source = "amt-tiltak"
 
 	@BeforeEach
 	fun setUp() {
@@ -73,6 +74,7 @@ class IngestServiceTest : IntegrationTest() {
 		)
 		ArrangorDto(
 			id = arrangorId,
+			source = source,
 			navn = "Arrangørnavn",
 			organisasjonsnummer = orgnummer,
 			overordnetArrangorId = overordnetArrangorId
@@ -122,6 +124,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		ArrangorDto(
 			id = arrangorId,
+			source = source,
 			navn = "Arrangørnavn",
 			organisasjonsnummer = orgnummer,
 			overordnetArrangorId = nyOverordnetArrangorId
@@ -142,6 +145,7 @@ class IngestServiceTest : IntegrationTest() {
 	fun `handleAnsatt - finnes ikke i db - ansatt lagres i db`() {
 		val arrangor = ArrangorDto(
 			id = UUID.randomUUID(),
+			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
@@ -162,6 +166,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
+			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -228,6 +233,7 @@ class IngestServiceTest : IntegrationTest() {
 	fun `handleAnsatt - finnes i db - ansatt oppdateres i db`() {
 		val arrangor = ArrangorDto(
 			id = UUID.randomUUID(),
+			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
@@ -235,6 +241,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		val arrangorTwo = ArrangorDto(
 			id = UUID.randomUUID(),
+			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
@@ -264,6 +271,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
+			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -323,6 +331,7 @@ class IngestServiceTest : IntegrationTest() {
 	fun `handleAnsatt - skal legge til veilederrelasjon - ansatt oppdateres i db`() {
 		val arrangor = ArrangorDto(
 			id = UUID.randomUUID(),
+			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
@@ -343,6 +352,7 @@ class IngestServiceTest : IntegrationTest() {
 		)
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
+			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -384,6 +394,7 @@ class IngestServiceTest : IntegrationTest() {
 	fun `handleAnsatt - skal fjerne veilederrelasjon - ansatt oppdateres i db`() {
 		val arrangor = ArrangorDto(
 			id = UUID.randomUUID(),
+			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
@@ -404,6 +415,7 @@ class IngestServiceTest : IntegrationTest() {
 		)
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
+			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -443,6 +455,7 @@ class IngestServiceTest : IntegrationTest() {
 	fun `handleAnsatt - skal legge til koordinators deltakerliste - ansatt oppdateres i db`() {
 		val arrangor = ArrangorDto(
 			id = UUID.randomUUID(),
+			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
@@ -463,6 +476,7 @@ class IngestServiceTest : IntegrationTest() {
 		)
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
+			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -504,6 +518,7 @@ class IngestServiceTest : IntegrationTest() {
 		val overordnetOrgnummer = "888887776"
 		ArrangorDto(
 			id = overordnetArrangorId,
+			source = source,
 			navn = "Overordnet arrangør",
 			organisasjonsnummer = overordnetOrgnummer,
 			overordnetArrangorId = null
@@ -521,6 +536,7 @@ class IngestServiceTest : IntegrationTest() {
 		)
 		ArrangorDto(
 			id = arrangorId,
+			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = orgnummer,
 			overordnetArrangorId = overordnetArrangorId

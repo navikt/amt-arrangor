@@ -3,8 +3,10 @@ package no.nav.arrangor.ingest.config
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -28,7 +30,9 @@ class KafkaConfig(
 	private val PKCS12 = "PKCS12"
 
 	fun commonConfig() = mapOf(
-		BOOTSTRAP_SERVERS_CONFIG to kafkaBrokers
+		BOOTSTRAP_SERVERS_CONFIG to kafkaBrokers,
+		ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+		ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java
 	) + securityConfig()
 
 	private fun securityConfig() = mapOf(

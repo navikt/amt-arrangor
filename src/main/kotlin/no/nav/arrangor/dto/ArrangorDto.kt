@@ -4,6 +4,7 @@ import java.util.UUID
 
 data class ArrangorDto(
 	val id: UUID,
+	val source: String? = "amt-arrangor",
 	val navn: String,
 	val organisasjonsnummer: String,
 	val overordnetArrangorId: UUID?
