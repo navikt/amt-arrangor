@@ -18,13 +18,13 @@ class PublishService(
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	fun publishArrangor(arrangor: Arrangor) {
-		template.send(ARRANGOR_TOPIC, JsonUtils.toJson(arrangor.toDto()))
+		template.send(ARRANGOR_TOPIC, arrangor.id.toString(), JsonUtils.toJson(arrangor.toDto()))
 			.also { metricsService.incPubliserteArrangorer() }
 			.also { logger.info("Publiserte arrangør med id ${arrangor.id}") }
 	}
 
 	fun publishAnsatt(ansatt: Ansatt) {
-		template.send(ANSATT_TOPIC, JsonUtils.toJson(ansatt))
+		template.send(ANSATT_TOPIC, ansatt.id.toString(), JsonUtils.toJson(ansatt))
 			.also { metricsService.incPubliserteAnsatte() }
 			.also { logger.info("Publiserte ansatt med id ${ansatt.id}") }
 	}
