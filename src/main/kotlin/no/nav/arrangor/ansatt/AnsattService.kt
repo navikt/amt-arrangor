@@ -106,27 +106,61 @@ class AnsattService(
 		return getAndMaybeUpdateAnsatt(ansattDbo)
 	}
 
-	fun setVeileder(personident: String, arrangorId: UUID, deltakerId: UUID, type: VeilederType): Ansatt {
+	fun oppdaterVeiledereForDeltaker(
+		personident: String,
+		deltakerId: UUID,
+		request: AnsattController.OppdaterVeiledereForDeltakerRequest
+	) {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
-		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
-			?: throw IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId")
-		if (arrangor.roller.find { it.erGyldig() && it.rolle == AnsattRolle.VEILEDER } == null) {
+		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == request.arrangorId }
+			?: throw IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id ${request.arrangorId}")
+		if (arrangor.roller.find { it.erGyldig() && it.rolle == AnsattRolle.KOORDINATOR } == null) {
+			throw IllegalArgumentException("Ansatt har ikke koordinatortilgang for arrangør med id ${request.arrangorId}")
+		}
+
+		val ansatteSomFjernes = ansattRepository.getAnsatte(request.veilederSomFjernes.map { it.ansattId })
+		ansatteSomFjernes.forEach { ansatt ->
+			fjernVeileder(
+				ansattDbo = ansatt,
+				arrangorId = request.arrangorId,
+				deltakerId = deltakerId,
+				type = request.veilederSomFjernes.find { it.ansattId == ansatt.id }?.type
+					?: throw IllegalStateException("Fant ikke ansatt fra listen, skal ikke kunne skje!")
+			)
+		}
+
+		val ansatteSomLeggesTil = ansattRepository.getAnsatte(request.veilederSomLeggesTil.map { it.ansattId })
+		ansatteSomLeggesTil.forEach { ansatt ->
+			setVeileder(
+				ansattDbo = ansatt,
+				arrangorId = request.arrangorId,
+				deltakerId = deltakerId,
+				type = request.veilederSomLeggesTil.find { it.ansattId == ansatt.id }?.type
+					?: throw IllegalStateException("Fant ikke ansatt fra listen, skal ikke kunne skje!")
+			)
+		}
+		logger.info("Oppdatert veiledere for deltaker $deltakerId")
+	}
+
+	private fun setVeileder(ansattDbo: AnsattDbo, arrangorId: UUID, deltakerId: UUID, type: VeilederType) {
+		val ansattArrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
+		if (ansattArrangor == null || ansattArrangor.roller.find { it.erGyldig() && it.rolle == AnsattRolle.VEILEDER } == null) {
 			throw IllegalArgumentException("Ansatt har ikke veiledertilgang for arrangør med id $arrangorId")
 		}
 
-		val eksisterendeVeilederRelasjon = arrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type }
+		val eksisterendeVeilederRelasjon = ansattArrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type }
 		if (eksisterendeVeilederRelasjon != null && eksisterendeVeilederRelasjon.erGyldig()) {
 			logger.info("Ansatt er allerede veileder for deltaker med id $deltakerId")
-			return getAndMaybeUpdateAnsatt(ansattDbo)
+			return
 		}
 		val oppdatertAnsattDbo = if (eksisterendeVeilederRelasjon != null && !eksisterendeVeilederRelasjon.erGyldig()) {
 			eksisterendeVeilederRelasjon.gyldigTil = null
 			ansattDbo
 		} else {
 			val oppdatertVeilederDeltakerForArrangor = mutableListOf<VeilederDeltakerDbo>()
-			oppdatertVeilederDeltakerForArrangor.addAll(arrangor.veileder)
+			oppdatertVeilederDeltakerForArrangor.addAll(ansattArrangor.veileder)
 			oppdatertVeilederDeltakerForArrangor.add(VeilederDeltakerDbo(deltakerId, type))
-			val oppdatertArrangor = arrangor.copy(veileder = oppdatertVeilederDeltakerForArrangor)
+			val oppdatertArrangor = ansattArrangor.copy(veileder = oppdatertVeilederDeltakerForArrangor)
 			val oppdaterteArrangorer = mutableListOf<ArrangorDbo>()
 			ansattDbo.arrangorer.forEach {
 				if (it.arrangorId != arrangorId) {
@@ -137,29 +171,27 @@ class AnsattService(
 			ansattDbo.copy(arrangorer = oppdaterteArrangorer)
 		}
 
-		return mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
-			.also { ansatt -> publishService.publishAnsatt(ansatt) }
-			.also { metricsService.incLagtTilSomVeileder() }
-			.also { logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId") }
+		val oppdaterAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
+		publishService.publishAnsatt(oppdaterAnsatt)
+		metricsService.incLagtTilSomVeileder()
+		logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId")
 	}
 
-	fun fjernVeileder(personident: String, arrangorId: UUID, deltakerId: UUID, type: VeilederType): Ansatt {
-		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
-		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
-			?: throw IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId")
-		if (arrangor.roller.find { it.erGyldig() && it.rolle == AnsattRolle.VEILEDER } == null) {
-			throw IllegalArgumentException("Ansatt har ikke veiledertilgang for arrangør med id $arrangorId")
+	fun fjernVeileder(ansattDbo: AnsattDbo, arrangorId: UUID, deltakerId: UUID, type: VeilederType) {
+		val ansattArrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
+		if (ansattArrangor == null) {
+			logger.warn("Ansatt ${ansattDbo.id} har ingen tilganger hos arrangør $arrangorId, ingen deltakere å fjerne")
+			return
 		}
 
-		arrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type && it.erGyldig() }?.let {
+		ansattArrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type && it.erGyldig() }?.let {
 			it.gyldigTil = ZonedDateTime.now()
 
-			return mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
-				.also { ansatt -> publishService.publishAnsatt(ansatt) }
-				.also { metricsService.incFjernetSomVeileder() }
-				.also { _ -> logger.info("Ansatt ${ansattDbo.id} mistet veilederrolle for $deltakerId") }
+			val oppdatertAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
+			publishService.publishAnsatt(oppdatertAnsatt)
+			metricsService.incFjernetSomVeileder()
 		}
-		return getAndMaybeUpdateAnsatt(ansattDbo)
+		logger.info("Ansatt ${ansattDbo.id} mistet veilederrolle for $deltakerId")
 	}
 
 	fun opprettAnsatt(personIdent: String): Ansatt? {
