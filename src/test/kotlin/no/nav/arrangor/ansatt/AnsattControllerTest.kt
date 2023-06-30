@@ -74,24 +74,18 @@ class AnsattControllerTest : IntegrationTest() {
 		}
 
 		@Test
-		fun `setVeileder - no token - unauthorized`() {
+		fun `oppdaterVeiledereForDeltaker - no token - unauthorized`() {
 			sendRequest(
 				"POST",
-				"/api/ansatt/veileder",
+				"/api/ansatt/veiledere/${UUID.randomUUID()}",
 				JsonUtils.toJson(
-					AnsattController.SetVeilederForDeltakerRequestBody(
-						deltakerId = UUID.randomUUID(),
+					AnsattController.OppdaterVeiledereForDeltakerRequest(
 						arrangorId = UUID.randomUUID(),
-						type = VeilederType.VEILEDER
+						veilederSomLeggesTil = listOf(AnsattController.VeilederAnsatt(UUID.randomUUID(), VeilederType.VEILEDER)),
+						veilederSomFjernes = emptyList()
 					)
 				).toJsonRequestBody()
 			)
-				.also { it.code shouldBe 401 }
-		}
-
-		@Test
-		fun `fjernVeilederForDeltaker - no token - unauthorized`() {
-			sendRequest("DELETE", "/api/ansatt/veileder/${UUID.randomUUID()}/${UUID.randomUUID()}/VEILEDER")
 				.also { it.code shouldBe 401 }
 		}
 	}
