@@ -24,11 +24,6 @@ class AnsattController(
 	private val ansattService: AnsattService,
 	private val contextHolder: TokenValidationContextHolder
 ) {
-
-	@GetMapping("{id}")
-	fun get(@PathVariable("id") id: UUID): Ansatt = ansattService.get(id)
-		?: throw NoSuchElementException("Ansatt $id eksisterer ikke.")
-
 	@GetMapping
 	fun getByPersonident(): Ansatt =
 		hentPersonligIdentTilInnloggetBruker().let { personident ->
