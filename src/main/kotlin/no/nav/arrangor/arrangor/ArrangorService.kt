@@ -10,9 +10,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.UUID
 
-/*
-    TODO: Mangler publisering om endringer
- */
 @Service
 class ArrangorService(
 	private val arrangorRepository: ArrangorRepository,
@@ -103,6 +100,8 @@ class ArrangorService(
 					organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
 					overordnetArrangorId = null
 				)
+					.also { publishService.publishArrangor(it.toDomain()) }
+					.also { metricsService.incEndredeArrangorer() }
 			)
 		}
 		return arrangorRepository.insertOrUpdate(

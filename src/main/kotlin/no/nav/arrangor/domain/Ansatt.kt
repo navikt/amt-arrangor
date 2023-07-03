@@ -4,7 +4,6 @@ import java.util.UUID
 
 data class Ansatt(
 	val id: UUID,
-	val source: String? = "amt-arrangor",
 	val personalia: Personalia,
 	val arrangorer: List<TilknyttetArrangor>
 )

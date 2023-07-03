@@ -153,6 +153,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		val arrangorTwo = ArrangorDto(
 			id = UUID.randomUUID(),
+			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
@@ -166,7 +167,6 @@ class IngestServiceTest : IntegrationTest() {
 
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
-			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -271,7 +271,6 @@ class IngestServiceTest : IntegrationTest() {
 
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
-			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -352,7 +351,6 @@ class IngestServiceTest : IntegrationTest() {
 		)
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
-			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -415,7 +413,6 @@ class IngestServiceTest : IntegrationTest() {
 		)
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
-			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
@@ -476,7 +473,6 @@ class IngestServiceTest : IntegrationTest() {
 		)
 		val ansatt = Ansatt(
 			id = UUID.randomUUID(),
-			source = source,
 			personalia = Personalia(
 				personident = personIdent,
 				personId = personId,
