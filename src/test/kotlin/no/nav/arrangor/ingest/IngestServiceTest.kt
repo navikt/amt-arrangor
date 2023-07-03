@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.ansatt.repository.AnsattRepository
+import no.nav.arrangor.ansatt.repository.ArrangorDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.domain.Ansatt
@@ -14,7 +15,6 @@ import no.nav.arrangor.domain.Personalia
 import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.dto.ArrangorDto
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
@@ -59,105 +59,21 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleArrangor - finnes ikke i db - arrangor og overordnet arrangor lagres`() {
-		val overordnetArrangorId = UUID.randomUUID()
-		val overordnetOrgnummer = "888887776"
-		val arrangorId = UUID.randomUUID()
-		val orgnummer = "999988888"
-		mockAmtEnhetsregiserServer.addVirksomhet(
-			Virksomhet(
-				organisasjonsnummer = orgnummer,
-				navn = "Arrangør",
-				overordnetEnhetOrganisasjonsnummer = overordnetOrgnummer,
-				overordnetEnhetNavn = "Overordnet arrangør"
-			)
-		)
-		ArrangorDto(
-			id = arrangorId,
-			source = source,
-			navn = "Arrangørnavn",
-			organisasjonsnummer = orgnummer,
-			overordnetArrangorId = overordnetArrangorId
-		).also { ingestService.handleArrangor(it) }
-
-		val arrangorFraDb = arrangorRepository.get(arrangorId)
-		arrangorFraDb shouldNotBe null
-		arrangorFraDb?.id shouldBe arrangorId
-		arrangorFraDb?.navn shouldBe "Arrangørnavn"
-		arrangorFraDb?.organisasjonsnummer shouldBe orgnummer
-		arrangorFraDb?.overordnetArrangorId shouldBe overordnetArrangorId
-		arrangorRepository.get(overordnetArrangorId) shouldNotBe null
-	}
-
-	@Test
-	fun `handleArrangor - finnes i db med annen overordnet arrangor - oppdatert arrangor og overordnet arrangor lagres`() {
-		val overordnetArrangorId = UUID.randomUUID()
-		val overordnetOrgnummer = "888887776"
-		val nyOverordnetArrangorId = UUID.randomUUID()
-		val nyOverordnetOrgnummer = "111122222"
-		val arrangorId = UUID.randomUUID()
-		val orgnummer = "999988888"
-		arrangorRepository.insertOrUpdate(
-			ArrangorRepository.ArrangorDbo(
-				id = overordnetArrangorId,
-				navn = "Overordnet navn",
-				organisasjonsnummer = overordnetOrgnummer,
-				overordnetArrangorId = null
-			)
-		)
-		arrangorRepository.insertOrUpdate(
-			ArrangorRepository.ArrangorDbo(
-				id = arrangorId,
-				navn = "Navn",
-				organisasjonsnummer = orgnummer,
-				overordnetArrangorId = overordnetArrangorId
-			)
-		)
-		mockAmtEnhetsregiserServer.addVirksomhet(
-			Virksomhet(
-				organisasjonsnummer = orgnummer,
-				navn = "Arrangør",
-				overordnetEnhetOrganisasjonsnummer = nyOverordnetOrgnummer,
-				overordnetEnhetNavn = "Ny overordnet arrangør"
-			)
-		)
-
-		ArrangorDto(
-			id = arrangorId,
-			source = source,
-			navn = "Arrangørnavn",
-			organisasjonsnummer = orgnummer,
-			overordnetArrangorId = nyOverordnetArrangorId
-		).also { ingestService.handleArrangor(it) }
-
-		val arrangorFraDb = arrangorRepository.get(arrangorId)
-		arrangorFraDb shouldNotBe null
-		arrangorFraDb?.id shouldBe arrangorId
-		arrangorFraDb?.navn shouldBe "Arrangørnavn"
-		arrangorFraDb?.organisasjonsnummer shouldBe orgnummer
-		arrangorFraDb?.overordnetArrangorId shouldBe nyOverordnetArrangorId
-		arrangorRepository.get(overordnetArrangorId) shouldNotBe null
-		val nyOverordnetArrangor = arrangorRepository.get(nyOverordnetArrangorId)
-		nyOverordnetArrangor?.navn shouldBe "Ny overordnet arrangør"
-	}
-
-	@Test
 	fun `handleAnsatt - finnes ikke i db - ansatt lagres i db`() {
-		val arrangor = ArrangorDto(
+		val arrangor = ArrangorRepository.ArrangorDbo(
 			id = UUID.randomUUID(),
-			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
-
-		val arrangorTwo = ArrangorDto(
+		)
+		arrangorRepository.insertOrUpdate(arrangor)
+		val arrangorTwo = ArrangorRepository.ArrangorDbo(
 			id = UUID.randomUUID(),
-			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
+		)
+		arrangorRepository.insertOrUpdate(arrangorTwo)
 		val gjennomforinger = listOf(
 			UUID.randomUUID(),
 			UUID.randomUUID(),
@@ -231,21 +147,20 @@ class IngestServiceTest : IntegrationTest() {
 
 	@Test
 	fun `handleAnsatt - finnes i db - ansatt oppdateres i db`() {
-		val arrangor = ArrangorDto(
+		val arrangor = ArrangorRepository.ArrangorDbo(
 			id = UUID.randomUUID(),
-			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
-
-		val arrangorTwo = ArrangorDto(
+		)
+		arrangorRepository.insertOrUpdate(arrangor)
+		val arrangorTwo = ArrangorRepository.ArrangorDbo(
 			id = UUID.randomUUID(),
-			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
+		)
+		arrangorRepository.insertOrUpdate(arrangorTwo)
 		val gjennomforinger = listOf(
 			UUID.randomUUID(),
 			UUID.randomUUID(),
@@ -328,13 +243,13 @@ class IngestServiceTest : IntegrationTest() {
 
 	@Test
 	fun `handleAnsatt - skal legge til veilederrelasjon - ansatt oppdateres i db`() {
-		val arrangor = ArrangorDto(
+		val arrangor = ArrangorRepository.ArrangorDbo(
 			id = UUID.randomUUID(),
-			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
+		)
+		arrangorRepository.insertOrUpdate(arrangor)
 
 		val tilknyttetArrangor = TilknyttetArrangor(
 			arrangorId = arrangor.id,
@@ -390,13 +305,13 @@ class IngestServiceTest : IntegrationTest() {
 
 	@Test
 	fun `handleAnsatt - skal fjerne veilederrelasjon - ansatt oppdateres i db`() {
-		val arrangor = ArrangorDto(
+		val arrangor = ArrangorRepository.ArrangorDbo(
 			id = UUID.randomUUID(),
-			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
+		)
+		arrangorRepository.insertOrUpdate(arrangor)
 
 		val tilknyttetArrangor = TilknyttetArrangor(
 			arrangorId = arrangor.id,
@@ -450,13 +365,13 @@ class IngestServiceTest : IntegrationTest() {
 
 	@Test
 	fun `handleAnsatt - skal legge til koordinators deltakerliste - ansatt oppdateres i db`() {
-		val arrangor = ArrangorDto(
+		val arrangor = ArrangorRepository.ArrangorDbo(
 			id = UUID.randomUUID(),
-			source = source,
 			navn = UUID.randomUUID().toString(),
 			organisasjonsnummer = UUID.randomUUID().toString(),
 			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
+		)
+		arrangorRepository.insertOrUpdate(arrangor)
 
 		val tilknyttetArrangor = TilknyttetArrangor(
 			arrangorId = arrangor.id,
@@ -512,13 +427,14 @@ class IngestServiceTest : IntegrationTest() {
 	fun `handleVirksomhetEndring - finnes i db med annet navn - arrangornavn oppdateres i db`() {
 		val overordnetArrangorId = UUID.randomUUID()
 		val overordnetOrgnummer = "888887776"
-		ArrangorDto(
-			id = overordnetArrangorId,
-			source = source,
-			navn = "Overordnet arrangør",
-			organisasjonsnummer = overordnetOrgnummer,
-			overordnetArrangorId = null
-		).also { ingestService.handleArrangor(it) }
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = overordnetArrangorId,
+				navn = "Overordnet arrangør",
+				organisasjonsnummer = overordnetOrgnummer,
+				overordnetArrangorId = null
+			)
+		)
 
 		val arrangorId = UUID.randomUUID()
 		val orgnummer = "999988888"
@@ -530,13 +446,14 @@ class IngestServiceTest : IntegrationTest() {
 				overordnetEnhetNavn = "Overordnet arrangør"
 			)
 		)
-		ArrangorDto(
-			id = arrangorId,
-			source = source,
-			navn = UUID.randomUUID().toString(),
-			organisasjonsnummer = orgnummer,
-			overordnetArrangorId = overordnetArrangorId
-		).also { ingestService.handleArrangor(it) }
+		arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = arrangorId,
+				navn = UUID.randomUUID().toString(),
+				organisasjonsnummer = orgnummer,
+				overordnetArrangorId = overordnetArrangorId
+			)
+		)
 
 		ingestService.handleVirksomhetEndring(
 			VirksomhetDto(
