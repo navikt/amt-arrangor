@@ -52,20 +52,18 @@ class AnsattController(
 		ansattService.fjernKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
 	}
 
-	@PostMapping("veileder")
-	fun setVeileder(
-		@RequestBody body: SetVeilederForDeltakerRequestBody
-	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.setVeileder(personident = personident, deltakerId = body.deltakerId, arrangorId = body.arrangorId, type = body.type)
-	}
-
-	@DeleteMapping("veileder/{arrangorId}/{deltakerId}/{type}")
-	fun fjernVeilederForDeltaker(
+	@PostMapping("veiledere/{deltakerId}")
+	fun oppdaterVeiledereForDeltaker(
 		@PathVariable("deltakerId") deltakerId: UUID,
-		@PathVariable("arrangorId") arrangorId: UUID,
-		@PathVariable("type") type: VeilederType
-	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.fjernVeileder(personident = personident, deltakerId = deltakerId, arrangorId = arrangorId, type = type)
+		@RequestBody request: OppdaterVeiledereForDeltakerRequest
+	) {
+		hentPersonligIdentTilInnloggetBruker().let { personident ->
+			ansattService.oppdaterVeiledereForDeltaker(
+				personident = personident,
+				deltakerId = deltakerId,
+				request = request
+			)
+		}
 	}
 
 	private fun hentPersonligIdentTilInnloggetBruker(): String {
@@ -86,9 +84,14 @@ class AnsattController(
 			)
 	}
 
-	data class SetVeilederForDeltakerRequestBody(
-		val deltakerId: UUID,
+	data class OppdaterVeiledereForDeltakerRequest(
 		val arrangorId: UUID,
+		val veilederSomLeggesTil: List<VeilederAnsatt>,
+		val veilederSomFjernes: List<VeilederAnsatt>
+	)
+
+	data class VeilederAnsatt(
+		val ansattId: UUID,
 		val type: VeilederType
 	)
 }

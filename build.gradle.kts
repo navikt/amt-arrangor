@@ -1,9 +1,9 @@
 plugins {
-    id("org.springframework.boot") version "3.1.0"
+    id("org.springframework.boot") version "3.1.1"
     id("io.spring.dependency-management") version "1.1.0"
-    id("org.jlleitschuh.gradle.ktlint") version "11.4.0"
-    kotlin("jvm") version "1.8.21"
-    kotlin("plugin.spring") version "1.8.21"
+    id("org.jlleitschuh.gradle.ktlint") version "11.4.2"
+    kotlin("jvm") version "1.8.22"
+    kotlin("plugin.spring") version "1.8.22"
 }
 
 group = "no.nav.amt-arrangor"
@@ -15,9 +15,9 @@ repositories {
     maven { setUrl("https://packages.confluent.io/maven/") }
 }
 
-val logstashEncoderVersion = "7.3"
-val kafkaClientsVersion = "3.4.1"
-val shedlockVersion = "5.4.0"
+val logstashEncoderVersion = "7.4"
+val kafkaClientsVersion = "3.5.0"
+val shedlockVersion = "5.5.0"
 val okHttpVersion = "4.11.0"
 val tokenSupportVersion = "3.1.0"
 val arrowVersion = "1.2.0-RC"
@@ -67,7 +67,7 @@ dependencies {
     }
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("no.nav.security:token-validation-spring-test:$tokenSupportVersion")
-    testImplementation("no.nav.security:mock-oauth2-server:0.5.8")
+    testImplementation("no.nav.security:mock-oauth2-server:0.5.9")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")

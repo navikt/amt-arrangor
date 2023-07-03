@@ -73,6 +73,17 @@ class AnsattRepository(
 		rowMapper
 	).firstOrNull()
 
+	fun getAnsatte(ider: List<UUID>): List<AnsattDbo> {
+		if (ider.isEmpty()) {
+			return emptyList()
+		}
+		return template.query(
+			"SELECT * FROM ansatt WHERE id in(:ids)",
+			sqlParameters("ids" to ider),
+			rowMapper
+		)
+	}
+
 	fun get(personident: String): AnsattDbo? = template.query(
 		"SELECT * from ansatt where personident = :personident",
 		sqlParameters("personident" to personident),
