@@ -48,13 +48,6 @@ class AnsattControllerTest : IntegrationTest() {
 	@Nested
 	@DisplayName("Tester at alle endepunkt er sikret")
 	inner class EndpointsSecuredTests {
-
-		@Test
-		fun `get (id) - no token - unauthorized`() {
-			sendRequest("GET", "/api/ansatt/${UUID.randomUUID()}")
-				.also { it.code shouldBe 401 }
-		}
-
 		@Test
 		fun `getByPersonident - no token - unauthorized`() {
 			sendRequest("GET", "/api/ansatt")
