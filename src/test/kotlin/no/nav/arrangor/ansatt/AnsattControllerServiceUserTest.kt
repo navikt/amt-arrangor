@@ -83,7 +83,7 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `getAnsatt (id) - autentisert, ansatt finnes ikke og har ingen roller - returnerer 404 og oppretter ikke ansatt`() {
+	fun `getAnsatt - autentisert, ansatt finnes ikke og har ingen roller - returnerer 404 og oppretter ikke ansatt`() {
 		val personident = "12345678910"
 		val personId = UUID.randomUUID()
 		mockAltinnServer.addRoller(
