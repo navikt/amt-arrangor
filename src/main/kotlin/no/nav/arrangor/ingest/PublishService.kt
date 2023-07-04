@@ -4,6 +4,7 @@ import no.nav.arrangor.MetricsService
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.dto.AMT_ARRANGOR_SOURCE
+import no.nav.arrangor.dto.AnsattDto
 import no.nav.arrangor.dto.ArrangorDto
 import no.nav.arrangor.utils.JsonUtils
 import org.slf4j.LoggerFactory
@@ -25,7 +26,7 @@ class PublishService(
 	}
 
 	fun publishAnsatt(ansatt: Ansatt) {
-		template.send(ANSATT_TOPIC, ansatt.id.toString(), JsonUtils.toJson(ansatt))
+		template.send(ANSATT_TOPIC, ansatt.id.toString(), JsonUtils.toJson(ansatt.toDto()))
 			.also { metricsService.incPubliserteAnsatte() }
 			.also { logger.info("Publiserte ansatt med id ${ansatt.id}") }
 	}
@@ -36,5 +37,12 @@ class PublishService(
 		navn = navn,
 		organisasjonsnummer = organisasjonsnummer,
 		overordnetArrangorId = overordnetArrangorId
+	)
+
+	private fun Ansatt.toDto(): AnsattDto = AnsattDto(
+		id = id,
+		source = AMT_ARRANGOR_SOURCE,
+		personalia = personalia,
+		arrangorer = arrangorer
 	)
 }

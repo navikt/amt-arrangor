@@ -4,7 +4,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.ansatt.repository.AnsattRepository
-import no.nav.arrangor.ansatt.repository.ArrangorDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.domain.Ansatt
@@ -15,6 +14,7 @@ import no.nav.arrangor.domain.Personalia
 import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
+import no.nav.arrangor.dto.AnsattDto
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
@@ -44,7 +44,6 @@ class IngestServiceTest : IntegrationTest() {
 
 	val personIdent = "12345678910"
 	val personId: UUID = UUID.randomUUID()
-	val source = "amt-tiltak"
 
 	@BeforeEach
 	fun setUp() {
@@ -127,7 +126,7 @@ class IngestServiceTest : IntegrationTest() {
 			)
 		)
 
-		ingestService.handleAnsatt(ansatt)
+		ingestService.handleAnsatt(AnsattDto(ansatt.id, null, ansatt.personalia, ansatt.arrangorer))
 
 		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
 
@@ -214,10 +213,10 @@ class IngestServiceTest : IntegrationTest() {
 				)
 			)
 		)
-		ingestService.handleAnsatt(ansatt)
+		ingestService.handleAnsatt(AnsattDto(ansatt.id, null, ansatt.personalia, ansatt.arrangorer))
 		val oppdatertAnsatt = ansatt.copy(arrangorer = listOf(tilknyttetArrangor))
 
-		ingestService.handleAnsatt(oppdatertAnsatt)
+		ingestService.handleAnsatt(AnsattDto(oppdatertAnsatt.id, null, oppdatertAnsatt.personalia, oppdatertAnsatt.arrangorer))
 
 		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
 
@@ -277,7 +276,7 @@ class IngestServiceTest : IntegrationTest() {
 			),
 			arrangorer = listOf(tilknyttetArrangor)
 		)
-		ingestService.handleAnsatt(ansatt)
+		ingestService.handleAnsatt(AnsattDto(ansatt.id, null, ansatt.personalia, ansatt.arrangorer))
 
 		val oppdatertAnsatt = ansatt.copy(
 			arrangorer = listOf(
@@ -289,7 +288,7 @@ class IngestServiceTest : IntegrationTest() {
 			)
 		)
 
-		ingestService.handleAnsatt(oppdatertAnsatt)
+		ingestService.handleAnsatt(AnsattDto(oppdatertAnsatt.id, null, oppdatertAnsatt.personalia, oppdatertAnsatt.arrangorer))
 
 		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
 
@@ -339,7 +338,7 @@ class IngestServiceTest : IntegrationTest() {
 			),
 			arrangorer = listOf(tilknyttetArrangor)
 		)
-		ingestService.handleAnsatt(ansatt)
+		ingestService.handleAnsatt(AnsattDto(ansatt.id, null, ansatt.personalia, ansatt.arrangorer))
 
 		val oppdatertAnsatt = ansatt.copy(
 			arrangorer = listOf(
@@ -349,7 +348,7 @@ class IngestServiceTest : IntegrationTest() {
 			)
 		)
 
-		ingestService.handleAnsatt(oppdatertAnsatt)
+		ingestService.handleAnsatt(AnsattDto(oppdatertAnsatt.id, null, oppdatertAnsatt.personalia, oppdatertAnsatt.arrangorer))
 
 		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
 
@@ -399,7 +398,7 @@ class IngestServiceTest : IntegrationTest() {
 			),
 			arrangorer = listOf(tilknyttetArrangor)
 		)
-		ingestService.handleAnsatt(ansatt)
+		ingestService.handleAnsatt(AnsattDto(ansatt.id, null, ansatt.personalia, ansatt.arrangorer))
 
 		val oppdatertAnsatt = ansatt.copy(
 			arrangorer = listOf(
@@ -409,7 +408,7 @@ class IngestServiceTest : IntegrationTest() {
 			)
 		)
 
-		ingestService.handleAnsatt(oppdatertAnsatt)
+		ingestService.handleAnsatt(AnsattDto(oppdatertAnsatt.id, null, oppdatertAnsatt.personalia, oppdatertAnsatt.arrangorer))
 
 		val ansattDbo = ansattRepository.get(ansatt.id) ?: throw RuntimeException("Fant ikke ansatt")
 
