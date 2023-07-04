@@ -4,7 +4,9 @@ import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.AnsattService
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
-import no.nav.arrangor.domain.Ansatt
+import no.nav.arrangor.dto.AMT_ARRANGOR_SOURCE
+import no.nav.arrangor.dto.AnsattDto
+import no.nav.arrangor.dto.toAnsatt
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -21,10 +23,13 @@ class IngestService(
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	fun handleAnsatt(ansatt: Ansatt?) {
+	fun handleAnsatt(ansatt: AnsattDto?) {
 		if (ansatt == null) return
+		if (ansatt.source == AMT_ARRANGOR_SOURCE) {
+			return
+		}
 
-		ansattService.ingestAnsatt(ansatt)
+		ansattService.ingestAnsatt(ansatt.toAnsatt())
 
 		logger.info("Konsumerte ansatt med id ${ansatt.id}")
 		metricsService.incConsumedAnsatt()
