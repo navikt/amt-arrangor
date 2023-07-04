@@ -1,12 +1,8 @@
 package no.nav.arrangor.ingest
 
 import no.nav.arrangor.MetricsService
-import no.nav.arrangor.ansatt.AnsattService
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
-import no.nav.arrangor.dto.AMT_ARRANGOR_SOURCE
-import no.nav.arrangor.dto.AnsattDto
-import no.nav.arrangor.dto.toAnsatt
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -15,25 +11,12 @@ import java.util.UUID
 @Service
 class IngestService(
 	private val arrangorRepository: ArrangorRepository,
-	private val ansattService: AnsattService,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val metricsService: MetricsService,
 	private val publishService: PublishService
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
-
-	fun handleAnsatt(ansatt: AnsattDto?) {
-		if (ansatt == null) return
-		if (ansatt.source == AMT_ARRANGOR_SOURCE) {
-			return
-		}
-
-		ansattService.ingestAnsatt(ansatt.toAnsatt())
-
-		logger.info("Konsumerte ansatt med id ${ansatt.id}")
-		metricsService.incConsumedAnsatt()
-	}
 
 	fun handleVirksomhetEndring(virksomhetDto: VirksomhetDto?) {
 		if (virksomhetDto == null) return

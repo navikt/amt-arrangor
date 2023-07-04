@@ -5,7 +5,6 @@ import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
 import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
-import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.person.PersonClient
@@ -16,7 +15,6 @@ import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.ingest.PublishService
-import no.nav.arrangor.utils.isDev
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -216,66 +214,6 @@ class AnsattService(
 		)
 		logger.info("Opprettet ny ansatt og lagret roller for ansattId ${ansattDbo.id}")
 		return mapToAnsatt(ansattDbo).also { publishService.publishAnsatt(it) }
-	}
-
-	fun ingestAnsatt(ansatt: Ansatt) {
-		val ansattFromDb = ansattRepository.get(ansatt.id)
-
-		if (ansattFromDb == null) {
-			logger.info("Ansatt med id ${ansatt.id} finnes ikke fra før, oppretter ansatt")
-			ingestNyAnsatt(ansatt)
-		} else {
-			logger.info("Ansatt med id ${ansatt.id} finnes fra før, oppdaterer ansatt")
-			val oppdatertArrangorlisteForAnsatt = rolleService.getOppdatertArrangorListeForIngestAvAnsatt(ansattFromDb, ansatt.arrangorer)
-			ansattRepository.insertOrUpdate(
-				ansattFromDb.copy(
-					personident = ansatt.personalia.personident,
-					fornavn = ansatt.personalia.navn.fornavn,
-					mellomnavn = ansatt.personalia.navn.mellomnavn,
-					etternavn = ansatt.personalia.navn.etternavn,
-					arrangorer = oppdatertArrangorlisteForAnsatt
-				)
-			)
-		}
-	}
-	private fun ingestNyAnsatt(ansatt: Ansatt) {
-		val person = personClient.hentPersonalia(ansatt.personalia.personident).getOrElse {
-			logger.error("Noe gikk galt ved henting av person for ansattId ${ansatt.id}")
-			if (isDev()) {
-				logger.warn("Ignorerer ansatt i dev ${ansatt.id}")
-				null
-			} else {
-				throw it
-			}
-		} ?: return
-		val arrangorer = ansatt.arrangorer.map { tilknyttetArrangor ->
-			ArrangorDbo(
-				arrangorId = tilknyttetArrangor.arrangorId,
-				roller = tilknyttetArrangor.roller.map { RolleDbo(it) },
-				veileder = tilknyttetArrangor.veileder.map {
-					VeilederDeltakerDbo(
-						deltakerId = it.deltakerId,
-						veilederType = it.type
-					)
-				},
-				koordinator = tilknyttetArrangor.koordinator.map {
-					KoordinatorsDeltakerlisteDbo(
-						deltakerlisteId = it
-					)
-				}
-			)
-		}
-		ansattRepository.insertOrUpdate(
-			AnsattDbo(
-				id = ansatt.id,
-				personId = person.id,
-				personident = ansatt.personalia.personident,
-				fornavn = ansatt.personalia.navn.fornavn,
-				mellomnavn = ansatt.personalia.navn.mellomnavn,
-				etternavn = ansatt.personalia.navn.etternavn,
-				arrangorer = arrangorer
-			)
-		)
 	}
 
 	fun oppdaterAnsattesRoller() = ansattRepository.getToSynchronize(
