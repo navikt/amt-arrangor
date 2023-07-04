@@ -25,7 +25,7 @@ class PublishService(
 	}
 
 	fun publishAnsatt(ansatt: Ansatt) {
-		template.send(ANSATT_TOPIC, JsonUtils.toJson(ansatt))
+		template.send(ANSATT_TOPIC, ansatt.id.toString(), JsonUtils.toJson(ansatt))
 			.also { metricsService.incPubliserteAnsatte() }
 			.also { logger.info("Publiserte ansatt med id ${ansatt.id}") }
 	}
