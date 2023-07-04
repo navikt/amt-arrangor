@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import java.util.UUID
 import javax.sql.DataSource
 
 class ArrangorControllerServiceUserTest : IntegrationTest() {
@@ -78,5 +79,48 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 		arrangor.overordnetArrangor?.id shouldBe overordnetArrangor.id
 		arrangor.overordnetArrangor?.navn shouldBe "Overordnet"
 		arrangor.overordnetArrangor?.organisasjonsnummer shouldBe orgnummerOverordnetArrangor
+	}
+
+	@Test
+	fun `getArrangor (id) - ikke gyldig token - unauthorized`() {
+		val response = sendRequest(
+			method = "GET",
+			path = "/api/service/arrangor/${UUID.randomUUID()}"
+		)
+
+		response.code shouldBe 401
+	}
+
+	@Test
+	fun `getArrangor (id) - autentisert, arrangor finnes ikke - returnerer 404`() {
+		val response = sendRequest(
+			method = "GET",
+			path = "/api/service/arrangor/${UUID.randomUUID()}",
+			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
+		)
+
+		response.code shouldBe 404
+	}
+
+	@Test
+	fun `getArrangor (id) - autentisert, arrangor har overordnet arrangor - returnerer arrangor`() {
+		val orgnummerOverordnetArrangor = "98765"
+		val overordnetArrangor = db.insertArrangor(navn = "Overordnet", organisasjonsnummer = orgnummerOverordnetArrangor, overordnetArrangorId = null)
+		val orgnummer = "12345"
+		val arrangor = db.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
+
+		val response = sendRequest(
+			method = "GET",
+			path = "/api/service/arrangor/${arrangor.id}",
+			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
+		)
+
+		response.code shouldBe 200
+		val arrangorResponse = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body!!.string())
+		arrangorResponse.organisasjonsnummer shouldBe orgnummer
+		arrangorResponse.navn shouldBe "Navn"
+		arrangorResponse.overordnetArrangor?.id shouldBe overordnetArrangor.id
+		arrangorResponse.overordnetArrangor?.navn shouldBe "Overordnet"
+		arrangorResponse.overordnetArrangor?.organisasjonsnummer shouldBe orgnummerOverordnetArrangor
 	}
 }

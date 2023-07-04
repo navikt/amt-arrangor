@@ -48,7 +48,6 @@ class AnsattService(
 		return ansattRepository.get(personident)?.id
 	}
 
-	// all funksjonalitet for å legge til/fjerne deltakerlister og deltakere må gjenngås mer nøye før den tas i bruk
 	fun setKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }

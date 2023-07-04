@@ -53,6 +53,19 @@ class ArrangorService(
 		)
 	}
 
+	fun getArrangorMedOverordnetArrangor(arrangorId: UUID): ArrangorMedOverordnetArrangor? {
+		val arrangor = get(arrangorId) ?: return null
+		val overordnetArrangor = arrangor.overordnetArrangorId?.let {
+			get(it)
+		}
+		return ArrangorMedOverordnetArrangor(
+			id = arrangor.id,
+			navn = arrangor.navn,
+			organisasjonsnummer = arrangor.organisasjonsnummer,
+			overordnetArrangor = overordnetArrangor
+		)
+	}
+
 	fun getArrangorerMedOverordnetArrangorForArrangorIder(arrangorIder: List<UUID>): List<ArrangorMedOverordnetArrangor> {
 		val arrangorer = arrangorRepository.getArrangorerMedIder(arrangorIder)
 		val unikeOverordnedeArrangorIder = arrangorer.mapNotNull { it.overordnetArrangorId }.distinct()
