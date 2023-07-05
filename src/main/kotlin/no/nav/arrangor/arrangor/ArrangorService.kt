@@ -113,9 +113,9 @@ class ArrangorService(
 					organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
 					overordnetArrangorId = null
 				)
-					.also { publishService.publishArrangor(it.toDomain()) }
-					.also { metricsService.incEndredeArrangorer() }
 			)
+				.also { publishService.publishArrangor(it.toDomain()) }
+				.also { metricsService.incEndredeArrangorer() }
 		}
 		return arrangorRepository.insertOrUpdate(
 			ArrangorRepository.ArrangorDbo(
@@ -124,9 +124,9 @@ class ArrangorService(
 				organisasjonsnummer = virksomhet.organisasjonsnummer,
 				overordnetArrangorId = overordnetArrangor?.id
 			)
-				.also { publishService.publishArrangor(it.toDomain()) }
-				.also { metricsService.incEndredeArrangorer() }
 		)
+			.also { publishService.publishArrangor(it.toDomain()) }
+			.also { metricsService.incEndredeArrangorer() }
 	}
 
 	private fun getDefaultVirksomhet(organisasjonsnummer: String): Virksomhet {
