@@ -12,13 +12,12 @@ class KafkaListener(
 ) {
 
 	@KafkaListener(
-		topics = [ANSATT_TOPIC, VIRKSOMHET_TOPIC],
+		topics = [VIRKSOMHET_TOPIC],
 		properties = ["auto.offset.reset = earliest"],
 		containerFactory = "kafkaListenerContainerFactory"
 	)
 	fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
 		when (record.topic()) {
-			ANSATT_TOPIC -> ingestService.handleAnsatt(record.value()?.let { JsonUtils.fromJson(it) })
 			VIRKSOMHET_TOPIC -> ingestService.handleVirksomhetEndring(record.value()?.let { JsonUtils.fromJson(it) })
 			else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
 		}
