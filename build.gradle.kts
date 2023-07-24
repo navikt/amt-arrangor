@@ -1,9 +1,9 @@
 plugins {
-    id("org.springframework.boot") version "3.1.1"
-    id("io.spring.dependency-management") version "1.1.0"
+    id("org.springframework.boot") version "3.1.2"
+    id("io.spring.dependency-management") version "1.1.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.5.0"
-    kotlin("jvm") version "1.8.22"
-    kotlin("plugin.spring") version "1.8.22"
+    kotlin("jvm") version "1.9.0"
+    kotlin("plugin.spring") version "1.9.0"
 }
 
 group = "no.nav.amt-arrangor"
@@ -16,16 +16,17 @@ repositories {
 }
 
 val logstashEncoderVersion = "7.4"
-val kafkaClientsVersion = "3.5.0"
-val shedlockVersion = "5.5.0"
+val kafkaClientsVersion = "3.5.1"
+val shedlockVersion = "5.6.0"
 val okHttpVersion = "4.11.0"
 val tokenSupportVersion = "3.1.0"
-val arrowVersion = "1.2.0-RC"
+val arrowVersion = "1.2.0"
 val kotestVersion = "5.6.2"
 val testcontainersVersion = "1.18.3"
 val mockkVersion = "1.13.5"
+val mockOauthServerVersion = "1.0.0"
 
-val commonVersion = "3.2023.04.18_10.07-0576b4e09008"
+val commonVersion = "3.2023.07.07_09.10-85326e9557f0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
@@ -67,7 +68,7 @@ dependencies {
     }
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("no.nav.security:token-validation-spring-test:$tokenSupportVersion")
-    testImplementation("no.nav.security:mock-oauth2-server:0.5.9")
+    testImplementation("no.nav.security:mock-oauth2-server:$mockOauthServerVersion")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")
