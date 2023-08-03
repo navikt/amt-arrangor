@@ -38,12 +38,12 @@ class PersonClient(
 	}
 
 	data class PersonRequest(
-		val personIdent: String
+		val personident: String
 	)
 
 	data class PersonResponse(
 		val id: UUID,
-		val personIdent: String,
+		val personident: String,
 		val fornavn: String,
 		val mellomnavn: String?,
 		val etternavn: String

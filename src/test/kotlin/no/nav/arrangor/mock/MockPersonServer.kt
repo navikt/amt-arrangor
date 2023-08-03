@@ -22,7 +22,7 @@ class MockPersonServer : MockHttpServer("amt-person") {
 					JsonUtils.toJson(
 						PersonClient.PersonResponse(
 							id = personId,
-							personIdent = personident,
+							personident = personident,
 							fornavn,
 							mellomnavn,
 							etternavn
