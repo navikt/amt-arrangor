@@ -98,7 +98,7 @@ class AnsattRepositoryTest {
 		val oppdatertAnsatt = AnsattDbo(
 			id = ansattId,
 			personident = "123456",
-			personId = UUID.randomUUID(),
+			personId = oldAnsatt.personId,
 			fornavn = "Test2",
 			mellomnavn = null,
 			etternavn = "Testersen2",
@@ -184,6 +184,36 @@ class AnsattRepositoryTest {
 		).let { repository.insertOrUpdate(it) }
 
 		repository.get(stored.personident) shouldBe stored
+	}
+
+	@Test
+	fun `getByPersonId - exists - returns Ansatt`() {
+		val ansattId = UUID.randomUUID()
+		val arrangorId = UUID.randomUUID()
+		val deltakerId = UUID.randomUUID()
+		val stored = AnsattDbo(
+			id = ansattId,
+			personident = "123456",
+			personId = UUID.randomUUID(),
+			fornavn = "Test",
+			mellomnavn = "Mellom",
+			etternavn = "Testersen",
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorId,
+					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
+					koordinator = emptyList()
+				)
+			)
+		).let { repository.insertOrUpdate(it) }
+
+		repository.getByPersonId(stored.personId) shouldBe stored
+	}
+
+	@Test
+	fun `getByPersonId - not exists - returns null`() {
+		repository.getByPersonId(UUID.randomUUID()) shouldBe null
 	}
 
 	@Test
