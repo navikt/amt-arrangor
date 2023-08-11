@@ -1,8 +1,11 @@
 package no.nav.arrangor.ingest
 
 import no.nav.arrangor.MetricsService
+import no.nav.arrangor.ansatt.repository.AnsattDbo
+import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
+import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -10,6 +13,7 @@ import java.util.UUID
 
 @Service
 class IngestService(
+	private val ansattRepository: AnsattRepository,
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val metricsService: MetricsService,
@@ -39,6 +43,30 @@ class IngestService(
 			logger.info("Oppdatert arrangør med id ${arrangor.id}")
 			metricsService.incConsumedVirksomhetEndring()
 		}
+	}
+
+	fun handleAnsattPersonalia(ansattPersonalia: AnsattPersonaliaDto) {
+		val ansatt = ansattRepository.getByPersonId(ansattPersonalia.id)
+			?: return logger.warn("Mottok personalia men fant ikke ansatt med personId ${ansattPersonalia.id}")
+
+		if (harPersonaliaEndringer(ansatt, ansattPersonalia)) {
+			ansattRepository.insertOrUpdate(
+				ansatt.copy(
+					fornavn = ansattPersonalia.fornavn,
+					mellomnavn = ansattPersonalia.mellomnavn,
+					etternavn = ansattPersonalia.etternavn,
+					personident = ansattPersonalia.personident
+				)
+			)
+			logger.info("Oppdaterte personalia for ansatt ${ansatt.id}")
+		}
+	}
+
+	private fun harPersonaliaEndringer(ansatt: AnsattDbo, ansattPersonalia: AnsattPersonaliaDto): Boolean {
+		return ansatt.personident != ansattPersonalia.personident ||
+			ansatt.fornavn != ansattPersonalia.fornavn ||
+			ansatt.mellomnavn != ansattPersonalia.mellomnavn ||
+			ansatt.etternavn != ansattPersonalia.etternavn
 	}
 
 	private fun getOverordnetArrangorId(

@@ -40,7 +40,8 @@ class AnsattRepository(
 				:arrangorer,
 		        :modified_at,
 		        :last_synchronized)
-		ON CONFLICT (personident) DO UPDATE SET
+		ON CONFLICT (person_id) DO UPDATE SET
+			personident		  = :personident,
 		    fornavn           = :fornavn,
 		    mellomnavn        = :mellomnavn,
 		    etternavn         = :etternavn,
@@ -114,6 +115,12 @@ class AnsattRepository(
 
 		return template.query(sql, parameters, rowMapper)
 	}
+
+	fun getByPersonId(personId: UUID) = template.query(
+		"SELECT * FROM ansatt WHERE person_id = :personId",
+		sqlParameters("personId" to personId),
+		rowMapper
+	).firstOrNull()
 }
 
 fun List<ArrangorDbo>.toPGObject() = PGobject().also {

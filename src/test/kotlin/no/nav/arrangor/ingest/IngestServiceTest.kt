@@ -1,10 +1,14 @@
 package no.nav.arrangor.ingest
 
+import io.kotest.matchers.date.shouldBeWithin
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
+import no.nav.arrangor.ansatt.repository.AnsattDbo
+import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.Virksomhet
+import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
@@ -13,6 +17,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import java.time.Duration
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.sql.DataSource
 
@@ -26,6 +32,9 @@ class IngestServiceTest : IntegrationTest() {
 
 	@Autowired
 	private lateinit var arrangorRepository: ArrangorRepository
+
+	@Autowired
+	private lateinit var ansattRepository: AnsattRepository
 
 	private lateinit var db: DbTestData
 
@@ -182,5 +191,93 @@ class IngestServiceTest : IntegrationTest() {
 		nyOverordnetArrangor shouldNotBe null
 		nyOverordnetArrangor?.navn shouldBe "Ny Overordnet arrangør"
 		oppdatertArrangor?.overordnetArrangorId shouldBe nyOverordnetArrangor?.id
+	}
+
+	@Test
+	fun `handleAnsattPersonalia - ansatt har endringer - oppdaterer ansatt`() {
+		val ansatt = AnsattDbo(
+			id = UUID.randomUUID(),
+			personident = "123456",
+			personId = UUID.randomUUID(),
+			fornavn = "Test",
+			mellomnavn = "Mellom",
+			etternavn = "Testersen",
+			arrangorer = emptyList()
+		)
+		ansattRepository.insertOrUpdate(ansatt)
+
+		val nyPersonalia = AnsattPersonaliaDto(
+			ansatt.personId,
+			"ny ident",
+			"nytt",
+			null,
+			"navn"
+		)
+
+		ingestService.handleAnsattPersonalia(nyPersonalia)
+
+		val oppdatertAnsatt = ansattRepository.get(ansatt.id)!!
+		oppdatertAnsatt.personident shouldBe nyPersonalia.personident
+		oppdatertAnsatt.fornavn shouldBe nyPersonalia.fornavn
+		oppdatertAnsatt.mellomnavn shouldBe nyPersonalia.mellomnavn
+		oppdatertAnsatt.etternavn shouldBe nyPersonalia.etternavn
+	}
+
+	@Test
+	fun `handleAnsattPersonalia - ansatt har ikke endringer - oppdaterer ikke ansatt`() {
+		val ansatt = AnsattDbo(
+			id = UUID.randomUUID(),
+			personident = "123456",
+			personId = UUID.randomUUID(),
+			fornavn = "Test",
+			mellomnavn = "Mellom",
+			etternavn = "Testersen",
+			arrangorer = emptyList(),
+			modifiedAt = LocalDateTime.now().minusMonths(1)
+
+		)
+		ansattRepository.insertOrUpdate(ansatt)
+
+		val personalia = AnsattPersonaliaDto(
+			ansatt.personId,
+			ansatt.personident,
+			ansatt.fornavn,
+			ansatt.mellomnavn,
+			ansatt.etternavn
+		)
+
+		ingestService.handleAnsattPersonalia(personalia)
+
+		val faktiskAnsatt = ansattRepository.get(ansatt.id)!!
+		faktiskAnsatt.personident shouldBe ansatt.personident
+		faktiskAnsatt.fornavn shouldBe ansatt.fornavn
+		faktiskAnsatt.mellomnavn shouldBe ansatt.mellomnavn
+		faktiskAnsatt.etternavn shouldBe ansatt.etternavn
+		faktiskAnsatt.modifiedAt.shouldBeWithin(Duration.ofSeconds(1), ansatt.modifiedAt)
+	}
+
+	@Test
+	fun `handleAnsattPersonalia - ansatt finnes ikke - gjør ingenting`() {
+		val ansatt = AnsattDbo(
+			id = UUID.randomUUID(),
+			personident = "123456",
+			personId = UUID.randomUUID(),
+			fornavn = "Test",
+			mellomnavn = "Mellom",
+			etternavn = "Testersen",
+			arrangorer = emptyList(),
+			modifiedAt = LocalDateTime.now().minusMonths(1)
+
+		)
+
+		val personalia = AnsattPersonaliaDto(
+			ansatt.personId,
+			ansatt.personident,
+			ansatt.fornavn,
+			ansatt.mellomnavn,
+			ansatt.etternavn
+		)
+
+		ingestService.handleAnsattPersonalia(personalia)
 	}
 }
