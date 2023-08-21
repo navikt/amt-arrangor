@@ -89,7 +89,7 @@ class IntegrationTest {
 				registry.add("spring.datasource.hikari.maximum-pool-size") { 3 }
 			}
 
-			KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.0.1")).apply {
+			KafkaContainer(DockerImageName.parse(getKafkaImage())).apply {
 				start()
 				System.setProperty("KAFKA_BROKERS", bootstrapServers)
 			}
@@ -157,4 +157,13 @@ class IntegrationTest {
 fun String.toJsonRequestBody(): RequestBody {
 	val mediaTypeJson = "application/json".toMediaType()
 	return this.toRequestBody(mediaTypeJson)
+}
+
+private fun getKafkaImage(): String {
+	val tag = when (System.getProperty("os.arch")) {
+		"aarch64" -> "7.2.2-1-ubi8.arm64"
+		else -> "7.2.2"
+	}
+
+	return "confluentinc/cp-kafka:$tag"
 }
