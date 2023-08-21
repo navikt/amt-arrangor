@@ -6,9 +6,17 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
+import no.nav.arrangor.ansatt.repository.ArrangorDbo
+import no.nav.arrangor.ansatt.repository.RolleDbo
+import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.Virksomhet
+import no.nav.arrangor.domain.AnsattRolle
+import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
+import no.nav.arrangor.ingest.model.DeltakerDto
+import no.nav.arrangor.ingest.model.DeltakerStatus
+import no.nav.arrangor.ingest.model.DeltakerStatusDto
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
@@ -19,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.util.UUID
 import javax.sql.DataSource
 
@@ -257,27 +266,164 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleAnsattPersonalia - ansatt finnes ikke - gjør ingenting`() {
-		val ansatt = AnsattDbo(
-			id = UUID.randomUUID(),
-			personident = "123456",
-			personId = UUID.randomUUID(),
-			fornavn = "Test",
-			mellomnavn = "Mellom",
-			etternavn = "Testersen",
-			arrangorer = emptyList(),
-			modifiedAt = LocalDateTime.now().minusMonths(1)
+	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker frem i tid`() {
+		val deltakerId1 = UUID.randomUUID()
+		val deltakerId2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
 
+		val ansatt1 = veileder(
+			arrangor,
+			listOf(
+				VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER),
+				VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER)
+			)
+		)
+		val ansatt2 = veileder(
+			arrangor,
+			listOf(
+				VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
+				VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER)
+			)
+		)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltakerDto = DeltakerDto(
+			id = deltakerId1,
+			status = DeltakerStatusDto(DeltakerStatus.HAR_SLUTTET, LocalDateTime.now(), LocalDateTime.now())
 		)
 
-		val personalia = AnsattPersonaliaDto(
-			ansatt.personId,
-			ansatt.personident,
-			ansatt.fornavn,
-			ansatt.mellomnavn,
-			ansatt.etternavn
+		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+	}
+
+	@Test
+	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til nå`() {
+		val deltakerId1 = UUID.randomUUID()
+		val deltakerId2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 = veileder(
+			arrangor,
+			listOf(
+				VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER),
+				VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER)
+			)
+		)
+		val ansatt2 = veileder(
+			arrangor,
+			listOf(
+				VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
+				VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER)
+			)
+		)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltakerDto = DeltakerDto(
+			id = deltakerId1,
+			status = DeltakerStatusDto(DeltakerStatus.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now())
 		)
 
-		ingestService.handleAnsattPersonalia(personalia)
+		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+
+		val forventetDeaktiveringsdato = ZonedDateTime.now()
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+	}
+
+	@Test
+	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til nå`() {
+		val deltakerId1 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 = veileder(
+			arrangor,
+			listOf(
+				VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER)
+			)
+		)
+		val ansatt2 = veileder(
+			arrangor,
+			listOf(
+				VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER)
+			)
+		)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltakerDto = DeltakerDto(
+			id = deltakerId1,
+			status = DeltakerStatusDto(DeltakerStatus.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now())
+		)
+
+		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+
+		val forventetDeaktiveringsdato = ZonedDateTime.now()
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+		}
+	}
+
+	private fun veileder(
+		arrangor: UUID,
+		veilderDeltakere: List<VeilederDeltakerDbo>
+	): AnsattDbo {
+		return db.ansatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangor,
+					listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+					veilderDeltakere,
+					emptyList()
+				)
+			)
+		)
 	}
 }

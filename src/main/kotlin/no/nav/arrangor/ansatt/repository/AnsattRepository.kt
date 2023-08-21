@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.util.UUID
 
 @Repository
@@ -121,6 +122,36 @@ class AnsattRepository(
 		sqlParameters("personId" to personId),
 		rowMapper
 	).firstOrNull()
+
+	fun deaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime): List<AnsattDbo> {
+		val sql = """
+			UPDATE ansatt
+			SET arrangorer  = jsonb_set(
+					arrangorer,
+					ARRAY [arrangor_idx::text, 'veileder', veileder_idx::text, 'gyldigTil'],
+					to_jsonb(:deaktiveringsdato),
+					false
+				),
+				modified_at = current_timestamp
+			FROM (SELECT id,
+						 arrangor.index - 1 as arrangor_idx,
+						 veileder.index - 1 as veileder_idx
+				  FROM ansatt,
+					   LATERAL jsonb_array_elements(arrangorer) WITH ORDINALITY AS arrangor(value, index),
+					   LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
+				  WHERE veileder.value ->> 'deltakerId' = :deltakerId
+					AND veileder.value ->> 'gyldigTil' IS NULL) AS subquery
+			WHERE subquery.id = ansatt.id
+			RETURNING *
+		""".trimIndent()
+
+		val parameters = sqlParameters(
+			"deaktiveringsdato" to deaktiveringsdato.toString(),
+			"deltakerId" to deltakerId.toString()
+		)
+
+		return template.query(sql, parameters, rowMapper)
+	}
 }
 
 fun List<ArrangorDbo>.toPGObject() = PGobject().also {

@@ -1,19 +1,26 @@
 package no.nav.arrangor.ingest
 
 import no.nav.arrangor.MetricsService
+import no.nav.arrangor.ansatt.AnsattService
 import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
+import no.nav.arrangor.ingest.model.AVSLUTTENDE_STATUSER
 import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
+import no.nav.arrangor.ingest.model.DeltakerDto
+import no.nav.arrangor.ingest.model.SKJULES_ALLTID_STATUSER
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.UUID
 
 @Service
 class IngestService(
 	private val ansattRepository: AnsattRepository,
+	private val ansattService: AnsattService,
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val metricsService: MetricsService,
@@ -104,6 +111,20 @@ class IngestService(
 				logger.warn("Kunne ikke opprette ovrordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer")
 			}
 			nyOverordnetArrangor?.id
+		}
+	}
+
+	fun handleDeltakerEndring(id: UUID, deltaker: DeltakerDto?) {
+		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER) {
+			ansattService.deaktiverVeiledereForDeltaker(id, ZonedDateTime.now())
+			return
+		} else if (deltaker.status.type in AVSLUTTENDE_STATUSER) {
+			ansattService.deaktiverVeiledereForDeltaker(
+				deltakerId = id,
+				// Deltakere fjernes fra deltakeroversikten 14 dager etter avsluttende status er satt,
+				// så veiledere må ikke deaktiveres før den datoen er passert
+				deaktiveringsdato = deltaker.status.gyldigFra.plusDays(20).atZone(ZoneId.systemDefault())
+			)
 		}
 	}
 }

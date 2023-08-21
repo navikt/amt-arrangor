@@ -1,6 +1,8 @@
 package no.nav.arrangor.ansatt.repository
 
 import io.kotest.matchers.collections.shouldContainInOrder
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.date.shouldBeWithin
 import io.kotest.matchers.shouldBe
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
@@ -11,7 +13,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.util.UUID
 
 class AnsattRepositoryTest {
@@ -237,5 +241,63 @@ class AnsattRepositoryTest {
 
 		returned.size shouldBe 2
 		returned shouldContainInOrder listOf(two, three)
+	}
+
+	@Test
+	fun `deaktiverVeiledereForDeltaker - aktive veiledere - deaktiverer alle aktive veiledere for deltaker`() {
+		val deltaker1 = UUID.randomUUID()
+		val deltaker2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 = db.ansatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangor,
+					listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+					listOf(
+						VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER),
+						VeilederDeltakerDbo(deltaker2, VeilederType.MEDVEILEDER)
+					),
+					emptyList()
+				)
+			)
+		)
+		val ansatt2 = db.ansatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangor,
+					listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+					listOf(
+						VeilederDeltakerDbo(deltaker1, VeilederType.MEDVEILEDER),
+						VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER)
+					),
+					emptyList()
+				)
+			)
+		)
+		repository.insertOrUpdate(ansatt1)
+		repository.insertOrUpdate(ansatt2)
+
+		val deaktiveringsdato = ZonedDateTime.now().plusDays(1)
+
+		val oppdaterteAnsatte = repository.deaktiverVeiledereForDeltaker(deltaker1, deaktiveringsdato)
+		oppdaterteAnsatte shouldHaveSize 2
+
+		val oppdatertAnsatt1 = oppdaterteAnsatte.find { it.id == ansatt1.id }!!
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltaker1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(1), deaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltaker2 }!!.gyldigTil shouldBe null
+		}
+
+		val oppdatertAnsatt2 = oppdaterteAnsatte.find { it.id == ansatt2.id }!!
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltaker1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(1), deaktiveringsdato)
+			arr.veileder.find { it.deltakerId == deltaker2 }!!.gyldigTil shouldBe null
+		}
 	}
 }
