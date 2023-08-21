@@ -141,7 +141,7 @@ class AnsattRepository(
 					   LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
 				  WHERE veileder.value ->> 'deltakerId' = :deltakerId
 					AND veileder.value ->> 'gyldigTil' IS NULL) AS subquery
-			where subquery.id = ansatt.id
+			WHERE subquery.id = ansatt.id
 			RETURNING *
 		""".trimIndent()
 

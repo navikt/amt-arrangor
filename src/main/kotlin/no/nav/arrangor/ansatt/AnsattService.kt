@@ -283,6 +283,6 @@ class AnsattService(
 	fun deaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime) {
 		val ansatteEndret = ansattRepository.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
 		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
-		logger.info("Deaktiverte veilederer for deltaker $deltakerId")
+		logger.info("Deaktiverte veiledere for deltaker $deltakerId")
 	}
 }
