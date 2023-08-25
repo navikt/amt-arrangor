@@ -117,6 +117,22 @@ class AnsattRepository(
 		return template.query(sql, parameters, rowMapper)
 	}
 
+	fun getAll(offset: Int, limit: Int): List<AnsattDbo> {
+		val sql = """
+		SELECT *
+		FROM ansatt
+		ORDER BY modified_at asc
+		OFFSET :offset
+		LIMIT :limit
+		""".trimIndent()
+
+		val parameters = sqlParameters(
+			"offset" to offset,
+			"limit" to limit
+		)
+		return template.query(sql, parameters, rowMapper)
+	}
+
 	fun getByPersonId(personId: UUID) = template.query(
 		"SELECT * FROM ansatt WHERE person_id = :personId",
 		sqlParameters("personId" to personId),

@@ -2,14 +2,21 @@ package no.nav.arrangor.ansatt
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.clearMocks
+import io.mockk.mockk
+import io.mockk.verify
 import no.nav.arrangor.IntegrationTest
+import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
 import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
+import no.nav.arrangor.arrangor.ArrangorService
+import no.nav.arrangor.client.person.PersonClient
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
+import no.nav.arrangor.ingest.PublishService
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
 import org.junit.jupiter.api.AfterEach
@@ -22,10 +29,21 @@ import java.util.UUID
 import javax.sql.DataSource
 
 class AnsattServiceTest : IntegrationTest() {
+	val publishService = mockk<PublishService>(relaxed = true)
+	val metricsService = mockk<MetricsService>(relaxed = true)
+
+	@Autowired
+	lateinit var personClient: PersonClient
+
+	@Autowired
+	lateinit var rolleService: AnsattRolleService
+
 	@Autowired
 	lateinit var ansattRepository: AnsattRepository
 
 	@Autowired
+	lateinit var arrangorService: ArrangorService
+
 	lateinit var ansattService: AnsattService
 
 	@Autowired
@@ -33,17 +51,69 @@ class AnsattServiceTest : IntegrationTest() {
 
 	lateinit var db: DbTestData
 	lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
+	lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
 
 	@BeforeEach
 	fun setUp() {
+		resetMockServers()
+		clearMocks(publishService)
 		db = DbTestData(NamedParameterJdbcTemplate(dataSource))
+		ansattService = AnsattService(personClient, ansattRepository, rolleService, publishService, metricsService, arrangorService)
 
 		arrangorOne = db.insertArrangor()
+		arrangorTwo = db.insertArrangor()
 	}
 
 	@AfterEach
 	fun tearDown() {
 		DbTestDataUtils.cleanDatabase(dataSource)
+	}
+
+	@Test
+	fun `oppdaterRoller - ansatt mister eneste rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten arrangoren`() {
+		val ansattDbo = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList()),
+				ArrangorDbo(arrangorTwo.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList())
+			)
+		)
+		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+
+		ansattService.oppdaterRoller(ansattDbo)
+
+		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
+		oppdatertAnsatt?.arrangorer?.size shouldBe 2
+		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorOne.id }?.roller?.first()?.erGyldig() shouldBe false
+		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorTwo.id }?.roller?.first()?.erGyldig() shouldBe true
+
+		verify(exactly = 1) { publishService.publishAnsatt(match { it.arrangorer.size == 1 && it.arrangorer.first().arrangorId == arrangorTwo.id }) }
+	}
+
+	@Test
+	fun `oppdaterRoller - ansatt mister en rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten rollen`() {
+		val ansattDbo = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), emptyList())
+			)
+		)
+		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+
+		ansattService.oppdaterRoller(ansattDbo)
+
+		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
+		oppdatertAnsatt?.arrangorer?.size shouldBe 1
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.size shouldBe 2
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.KOORDINATOR }?.erGyldig() shouldBe false
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.VEILEDER }?.erGyldig() shouldBe true
+
+		verify(exactly = 1) {
+			publishService.publishAnsatt(
+				match {
+					it.arrangorer.first().roller.size == 1 &&
+						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER
+				}
+			)
+		}
 	}
 
 	@Test
