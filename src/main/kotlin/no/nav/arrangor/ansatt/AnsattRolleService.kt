@@ -62,12 +62,6 @@ class AnsattRolleService(
 		return getAnsattDboMedOppdaterteRoller(ansattDbo, nyeRoller)
 	}
 
-	fun getOppdatertArrangorListeForIngestAvAnsatt(ansattDbo: AnsattDbo, tilknyttedeArrangorer: List<TilknyttetArrangor>): List<ArrangorDbo> {
-		val nyeRoller = tilknyttetArrangorToRolleOgArrangor(tilknyttedeArrangorer)
-
-		return getAnsattDboMedOppdaterteRoller(ansattDbo, nyeRoller).data.arrangorer
-	}
-
 	private fun getAnsattDboMedOppdaterteRoller(ansattDbo: AnsattDbo, nyeRoller: List<RolleOgArrangor>): DataUpdateWrapper<AnsattDbo> {
 		val gamleAktiveRoller = ansattDbo.arrangorer.flatMap { arrangor ->
 			arrangor.roller
