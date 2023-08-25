@@ -70,7 +70,7 @@ class AnsattServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `oppdaterRoller - ansatt mister rolle - ansatt lagres med deaktivert rolle og publiseres uten rollen`() {
+	fun `oppdaterRoller - ansatt mister eneste rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten arrangoren`() {
 		val ansattDbo = db.insertAnsatt(
 			arrangorer = listOf(
 				ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList()),
@@ -87,6 +87,33 @@ class AnsattServiceTest : IntegrationTest() {
 		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorTwo.id }?.roller?.first()?.erGyldig() shouldBe true
 
 		verify(exactly = 1) { publishService.publishAnsatt(match { it.arrangorer.size == 1 && it.arrangorer.first().arrangorId == arrangorTwo.id }) }
+	}
+
+	@Test
+	fun `oppdaterRoller - ansatt mister en rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten rollen`() {
+		val ansattDbo = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), emptyList())
+			)
+		)
+		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+
+		ansattService.oppdaterRoller(ansattDbo)
+
+		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
+		oppdatertAnsatt?.arrangorer?.size shouldBe 1
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.size shouldBe 2
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.KOORDINATOR }?.erGyldig() shouldBe false
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.VEILEDER }?.erGyldig() shouldBe true
+
+		verify(exactly = 1) {
+			publishService.publishAnsatt(
+				match {
+					it.arrangorer.first().roller.size == 1 &&
+						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER
+				}
+			)
+		}
 	}
 
 	@Test
