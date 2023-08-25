@@ -244,6 +244,10 @@ class AnsattService(
 			.also { if (updated) publishService.publishAnsatt(it) }
 	}
 
+	fun getAll(offset: Int, limit: Int): List<Ansatt> {
+		return ansattRepository.getAll(offset, limit).map { mapToAnsatt(it) }
+	}
+
 	private fun mapToAnsatt(ansattDbo: AnsattDbo): Ansatt {
 		return Ansatt(
 			id = ansattDbo.id,

@@ -30,12 +30,4 @@ class MockAltinnServer : MockHttpServer("altinn-server") {
 				)
 		)
 	}
-
-	fun addFailure(personident: String, errorCode: Int = 500) {
-		addResponseHandler(
-			path = "/api/v1/rolle/tiltaksarrangor?norskIdent=$personident",
-			response = MockResponse()
-				.setResponseCode(errorCode)
-		)
-	}
 }
