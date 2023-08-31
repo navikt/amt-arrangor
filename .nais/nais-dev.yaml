@@ -61,6 +61,7 @@ spec:
       rules:
         - application: amt-tiltak
         - application: amt-tiltaksarrangor-bff
+        - application: amt-aktivitetskort-publisher
         - application: debug-dings
           namespace: plattformsikkerhet
           cluster: dev-gcp
