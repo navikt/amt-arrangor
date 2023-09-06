@@ -15,7 +15,7 @@ class ArrangorService(
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val publishService: PublishService,
-	private val metricsService: MetricsService
+	private val metricsService: MetricsService,
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -35,7 +35,8 @@ class ArrangorService(
 	fun getOrCreate(orgnumre: List<String>): List<Arrangor> {
 		val lagredeArrangorer = arrangorRepository.getArrangorerMedOrgnumre(orgnumre)
 			.map { it.toDomain() }
-		val orgnummerSomMangler = orgnumre.filterNot { orgnummer -> lagredeArrangorer.any { it.organisasjonsnummer == orgnummer } }
+		val orgnummerSomMangler =
+			orgnumre.filterNot { orgnummer -> lagredeArrangorer.any { it.organisasjonsnummer == orgnummer } }
 		val nyeArrangorer = orgnummerSomMangler.map { insertArrangor(it).toDomain() }
 		return lagredeArrangorer + nyeArrangorer
 	}
@@ -104,20 +105,8 @@ class ArrangorService(
 
 	private fun insertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
 		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(getDefaultVirksomhet(orgNr))
-		val overordnetArrangor = virksomhet.overordnetEnhetOrganisasjonsnummer?.let {
-			arrangorRepository.insertOrUpdate(
-				ArrangorRepository.ArrangorDbo(
-					id = UUID.randomUUID(),
-					navn = virksomhet.overordnetEnhetNavn
-						?: throw IllegalStateException("Navn burde vært satt for $orgNr's overordnet enhet (${virksomhet.overordnetEnhetOrganisasjonsnummer}"),
-					organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
-					overordnetArrangorId = null
-				)
-			)
-				.also { publishService.publishArrangor(it.toDomain()) }
-				.also { metricsService.incEndredeArrangorer() }
-		}
-		return arrangorRepository.insertOrUpdate(
+		val overordnetArrangor = getOverordnetArrangor(virksomhet)
+		val arrangor = arrangorRepository.insertOrUpdate(
 			ArrangorRepository.ArrangorDbo(
 				id = UUID.randomUUID(),
 				navn = virksomhet.navn,
@@ -125,8 +114,24 @@ class ArrangorService(
 				overordnetArrangorId = overordnetArrangor?.id
 			)
 		)
-			.also { publishService.publishArrangor(it.toDomain()) }
-			.also { metricsService.incEndredeArrangorer() }
+		publishService.publishArrangor(arrangor.toDomain())
+		metricsService.incEndredeArrangorer()
+		return arrangor
+	}
+
+	private fun getOverordnetArrangor(virksomhet: Virksomhet): ArrangorRepository.ArrangorDbo? {
+		if (virksomhet.overordnetEnhetOrganisasjonsnummer == null || virksomhet.overordnetEnhetNavn == null) return null
+		val overordnetArrangor = arrangorRepository.insertOrUpdate(
+			ArrangorRepository.ArrangorDbo(
+				id = UUID.randomUUID(),
+				navn = virksomhet.overordnetEnhetNavn,
+				organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
+				overordnetArrangorId = null
+			)
+		)
+		publishService.publishArrangor(overordnetArrangor.toDomain())
+		metricsService.incEndredeArrangorer()
+		return overordnetArrangor
 	}
 
 	private fun getDefaultVirksomhet(organisasjonsnummer: String): Virksomhet {
