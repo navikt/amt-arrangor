@@ -20,15 +20,15 @@ class ArrangorService(
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	fun getOrCreate(orgNr: String): ArrangorRepository.ArrangorDbo {
+	fun getOrCreate(orgNr: String): Arrangor {
 		val arrangor = arrangorRepository.get(orgNr)
 
 		if (arrangor != null) {
-			return arrangor
+			return arrangor.toDomain()
 		}
 		logger.info("Arrangør for orgnummer $orgNr mangler, oppretter arrangør..")
 
-		return insertArrangor(orgNr)
+		return insertArrangor(orgNr).toDomain()
 	}
 
 	fun getOrCreate(orgnumre: List<String>): List<Arrangor> {
