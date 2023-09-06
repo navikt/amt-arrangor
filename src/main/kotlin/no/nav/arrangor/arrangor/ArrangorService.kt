@@ -20,17 +20,16 @@ class ArrangorService(
 
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	fun get(id: UUID): Arrangor? = arrangorRepository.get(id)
-		.let { it?.toDomain() }
+	fun getOrCreate(orgNr: String): ArrangorRepository.ArrangorDbo {
+		val arrangor = arrangorRepository.get(orgNr)
 
-	fun get(orgnumre: List<String>): List<Arrangor> = arrangorRepository.getArrangorerMedOrgnumre(orgnumre)
-		.map { it.toDomain() }
+		if (arrangor != null) {
+			return arrangor
+		}
+		logger.info("Arrangør for orgnummer $orgNr mangler, oppretter arrangør..")
 
-	fun get(orgNr: String): Arrangor? =
-		arrangorRepository.get(orgNr)?.toDomain()
-
-	fun getOrCreate(orgNr: String): Arrangor =
-		getOrCreateArrangor(orgNr).toDomain()
+		return insertArrangor(orgNr)
+	}
 
 	fun getOrCreate(orgnumre: List<String>): List<Arrangor> {
 		val lagredeArrangorer = arrangorRepository.getArrangorerMedOrgnumre(orgnumre)
@@ -41,11 +40,9 @@ class ArrangorService(
 		return lagredeArrangorer + nyeArrangorer
 	}
 
-	fun getArrangorMedOverordnetArrangor(orgNr: String): ArrangorMedOverordnetArrangor {
-		val arrangor = getOrCreateArrangor(orgNr)
-		val overordnetArrangor = arrangor.overordnetArrangorId?.let {
-			get(it)
-		}
+	fun getArrangorMedOverordnetArrangor(orgnr: String): ArrangorMedOverordnetArrangor {
+		val arrangor = getOrCreate(orgnr)
+		val overordnetArrangor = arrangor.overordnetArrangorId?.let { arrangorRepository.get(it)?.toDomain() }
 		return ArrangorMedOverordnetArrangor(
 			id = arrangor.id,
 			navn = arrangor.navn,
@@ -54,11 +51,10 @@ class ArrangorService(
 		)
 	}
 
-	fun getArrangorMedOverordnetArrangor(arrangorId: UUID): ArrangorMedOverordnetArrangor? {
-		val arrangor = get(arrangorId) ?: return null
-		val overordnetArrangor = arrangor.overordnetArrangorId?.let {
-			get(it)
-		}
+	fun getArrangorMedOverordnetArrangor(id: UUID): ArrangorMedOverordnetArrangor? {
+		val arrangor = arrangorRepository.get(id).let { it?.toDomain() } ?: return null
+
+		val overordnetArrangor = arrangor.overordnetArrangorId?.let { arrangorRepository.get(it)?.toDomain() }
 		return ArrangorMedOverordnetArrangor(
 			id = arrangor.id,
 			navn = arrangor.navn,
@@ -67,8 +63,8 @@ class ArrangorService(
 		)
 	}
 
-	fun getArrangorerMedOverordnetArrangorForArrangorIder(arrangorIder: List<UUID>): List<ArrangorMedOverordnetArrangor> {
-		val arrangorer = arrangorRepository.getArrangorerMedIder(arrangorIder)
+	fun getArrangorerMedOverordnetArrangor(ider: List<UUID>): List<ArrangorMedOverordnetArrangor> {
+		val arrangorer = arrangorRepository.getArrangorerMedIder(ider)
 		val unikeOverordnedeArrangorIder = arrangorer.mapNotNull { it.overordnetArrangorId }.distinct()
 		val overordnedeArrangorer = arrangorRepository.getArrangorerMedIder(unikeOverordnedeArrangorIder)
 
@@ -90,17 +86,6 @@ class ArrangorService(
 				}
 			)
 		}
-	}
-
-	private fun getOrCreateArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
-		val arrangor = arrangorRepository.get(orgNr)
-
-		if (arrangor != null) {
-			return arrangor
-		}
-		logger.info("Arrangør for orgnummer $orgNr mangler, oppretter arrangør..")
-
-		return insertArrangor(orgNr)
 	}
 
 	private fun insertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
