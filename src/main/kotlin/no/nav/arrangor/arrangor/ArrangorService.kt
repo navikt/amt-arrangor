@@ -15,7 +15,7 @@ class ArrangorService(
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val publishService: PublishService,
-	private val metricsService: MetricsService,
+	private val metricsService: MetricsService
 ) {
 
 	private val logger = LoggerFactory.getLogger(javaClass)

@@ -55,6 +55,12 @@ class ArrangorRepository(
 		rowMapper
 	).firstOrNull()
 
+	fun get(orgNr: String): ArrangorDbo? = template.query(
+		"SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
+		sqlParameters("organisasjonsnummer" to orgNr),
+		rowMapper
+	).firstOrNull()
+
 	fun getArrangorerMedIder(ids: List<UUID>): List<ArrangorDbo> {
 		if (ids.isEmpty()) {
 			return emptyList()
@@ -76,12 +82,6 @@ class ArrangorRepository(
 			rowMapper
 		)
 	}
-
-	fun get(orgNr: String): ArrangorDbo? = template.query(
-		"SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
-		sqlParameters("organisasjonsnummer" to orgNr),
-		rowMapper
-	).firstOrNull()
 
 	data class ArrangorDbo(
 		val id: UUID,
