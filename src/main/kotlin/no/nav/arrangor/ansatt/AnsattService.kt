@@ -261,7 +261,7 @@ class AnsattService(
 			return emptyList()
 		}
 		val unikeArrangorIder = arrangorDboListe.map { it.arrangorId }.distinct()
-		val arrangorer = arrangorService.getArrangorerMedOverordnetArrangorForArrangorIder(unikeArrangorIder)
+		val arrangorer = arrangorService.getArrangorerMedOverordnetArrangor(unikeArrangorIder)
 
 		return arrangorDboListe.mapNotNull { arrangorDbo ->
 			val arrangor = arrangorer.find { it.id == arrangorDbo.arrangorId }
