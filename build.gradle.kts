@@ -17,7 +17,7 @@ repositories {
 
 val logstashEncoderVersion = "7.4"
 val kafkaClientsVersion = "3.5.1"
-val shedlockVersion = "5.7.0"
+val shedlockVersion = "5.8.0"
 val okHttpVersion = "4.11.0"
 val tokenSupportVersion = "3.1.5"
 val arrowVersion = "1.2.1"
