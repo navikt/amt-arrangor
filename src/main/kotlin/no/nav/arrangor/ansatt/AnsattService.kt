@@ -76,10 +76,18 @@ class AnsattService(
 	fun fjernKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
 		val (ansattDbo, arrangor) = hentKoordinatorOgArrangor(personident, arrangorId)
 
+		return fjernDeltakerlisteTilgang(arrangor, deltakerlisteId, ansattDbo)
+	}
+
+	private fun fjernDeltakerlisteTilgang(
+		arrangor: ArrangorDbo,
+		deltakerlisteId: UUID,
+		ansattDbo: AnsattDbo
+	): Ansatt {
 		arrangor.koordinator.find { it.deltakerlisteId == deltakerlisteId && it.erGyldig() }?.let {
 			it.gyldigTil = ZonedDateTime.now()
 
-			return mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
+			mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
 				.also { ansatt -> publishService.publishAnsatt(ansatt) }
 				.also { metricsService.incFjernetSomKoodrinator() }
 				.also { logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId") }
@@ -91,7 +99,7 @@ class AnsattService(
 	private fun hentKoordinatorOgArrangor(personident: String, arrangorId: UUID): Pair<AnsattDbo, ArrangorDbo> {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 
-		val arrangor = finnArrangorMedRolle(ansattDbo, arrangorId, AnsattRolle.KOORDINATOR)
+		val arrangor = finnArrangorMedRolle(ansattDbo, arrangorId, AnsattRolle.KOORDINATOR).getOrThrow()
 
 		return Pair(ansattDbo, arrangor)
 	}
@@ -100,13 +108,13 @@ class AnsattService(
 		ansattDbo: AnsattDbo,
 		arrangorId: UUID,
 		rolle: AnsattRolle
-	): ArrangorDbo {
+	): Result<ArrangorDbo> {
 		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
-			?: throw IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId")
+			?: return Result.failure(IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId"))
 		if (arrangor.roller.find { it.erGyldig() && it.rolle == rolle } == null) {
-			throw IllegalArgumentException("Ansatt har ikke ${rolle.name.lowercase()}tilgang for arrangør med id $arrangorId")
+			return Result.failure(IllegalArgumentException("Ansatt har ikke ${rolle.name.lowercase()}tilgang for arrangør med id $arrangorId"))
 		}
-		return arrangor
+		return Result.success(arrangor)
 	}
 
 	fun oppdaterVeiledereForDeltaker(
@@ -115,7 +123,7 @@ class AnsattService(
 		request: AnsattController.OppdaterVeiledereForDeltakerRequest
 	) {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
-		finnArrangorMedRolle(ansattDbo, request.arrangorId, AnsattRolle.KOORDINATOR)
+		finnArrangorMedRolle(ansattDbo, request.arrangorId, AnsattRolle.KOORDINATOR).getOrThrow()
 
 		val ansatteSomFjernes = ansattRepository.getAnsatte(request.veilederSomFjernes.map { it.ansattId })
 		ansatteSomFjernes.forEach { ansatt ->
@@ -142,7 +150,7 @@ class AnsattService(
 	}
 
 	private fun setVeileder(ansattDbo: AnsattDbo, arrangorId: UUID, deltakerId: UUID, type: VeilederType) {
-		val ansattArrangor = finnArrangorMedRolle(ansattDbo, arrangorId, AnsattRolle.VEILEDER)
+		val ansattArrangor = finnArrangorMedRolle(ansattDbo, arrangorId, AnsattRolle.VEILEDER).getOrThrow()
 
 		val eksisterendeVeilederRelasjon = ansattArrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type }
 		if (eksisterendeVeilederRelasjon != null && eksisterendeVeilederRelasjon.erGyldig()) {
@@ -305,6 +313,27 @@ class AnsattService(
 
 		if (ansatteEndret.isNotEmpty()) {
 			logger.info("Reaktiverte veiledere ${ansatteEndret.size} for deltaker $deltakerId med status ${status.name}")
+		}
+	}
+
+	fun fjernTilgangerHosArrangor(deltakerlisteId: UUID, deltakerIder: List<UUID>, arrangorId: UUID) {
+		val ansatte = ansattRepository.getAnsatteHosArrangor(arrangorId)
+
+		for (ansatt in ansatte) {
+			finnArrangorMedRolle(ansatt, arrangorId, AnsattRolle.KOORDINATOR).onSuccess { arrangor ->
+				fjernDeltakerlisteTilgang(arrangor, deltakerlisteId, ansatt)
+			}
+
+			finnArrangorMedRolle(ansatt, arrangorId, AnsattRolle.VEILEDER).onSuccess { arrangor ->
+				arrangor.veileder.forEach {
+					if (it.erGyldig() && it.deltakerId in deltakerIder) {
+						it.gyldigTil = ZonedDateTime.now()
+					}
+				}
+				val oppdatertAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(ansatt))
+				publishService.publishAnsatt(oppdatertAnsatt)
+				logger.info("Ansatt ${ansatt.id} mistet veilederroller for deltakere på deltakerlisten $deltakerlisteId")
+			}
 		}
 	}
 }

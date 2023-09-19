@@ -3,7 +3,9 @@ package no.nav.arrangor.testutils
 import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
+import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
 import no.nav.arrangor.ansatt.repository.RolleDbo
+import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.domain.AnsattRolle
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -63,5 +65,19 @@ class DbTestData(
 		navn = navn,
 		organisasjonsnummer = organisasjonsnummer,
 		overordnetArrangorId = overordnetArrangorId
+	)
+
+	fun ansattArrangorDbo(
+		arrangorId: UUID = UUID.randomUUID(),
+		roller: List<RolleDbo> = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+		veileder: List<VeilederDeltakerDbo> = listOf(),
+		koordinator: List<KoordinatorsDeltakerlisteDbo> = listOf(
+			KoordinatorsDeltakerlisteDbo(UUID.randomUUID())
+		)
+	) = ArrangorDbo(
+		arrangorId = arrangorId,
+		roller = roller,
+		veileder = veileder,
+		koordinator = koordinator
 	)
 }

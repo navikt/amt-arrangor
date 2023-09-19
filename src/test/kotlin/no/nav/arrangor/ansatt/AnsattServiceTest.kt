@@ -59,7 +59,8 @@ class AnsattServiceTest : IntegrationTest() {
 		resetMockServers()
 		clearMocks(publishService)
 		db = DbTestData(NamedParameterJdbcTemplate(dataSource))
-		ansattService = AnsattService(personClient, ansattRepository, rolleService, publishService, metricsService, arrangorService)
+		ansattService =
+			AnsattService(personClient, ansattRepository, rolleService, publishService, metricsService, arrangorService)
 
 		arrangorOne = db.insertArrangor()
 		arrangorTwo = db.insertArrangor()
@@ -78,13 +79,17 @@ class AnsattServiceTest : IntegrationTest() {
 				ArrangorDbo(arrangorTwo.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList())
 			)
 		)
-		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+		mockAltinnServer.addRoller(
+			ansattDbo.personident,
+			mapOf(arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.VEILEDER))
+		)
 
 		ansattService.oppdaterRoller(ansattDbo)
 
 		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
 		oppdatertAnsatt?.arrangorer?.size shouldBe 2
-		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorOne.id }?.roller?.first()?.erGyldig() shouldBe false
+		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorOne.id }?.roller?.first()
+			?.erGyldig() shouldBe false
 		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorTwo.id }?.roller?.first()?.erGyldig() shouldBe true
 
 		verify(exactly = 1) { publishService.publishAnsatt(match { it.arrangorer.size == 1 && it.arrangorer.first().arrangorId == arrangorTwo.id }) }
@@ -94,18 +99,28 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `oppdaterRoller - ansatt mister en rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten rollen`() {
 		val ansattDbo = db.insertAnsatt(
 			arrangorer = listOf(
-				ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), emptyList())
+				ArrangorDbo(
+					arrangorOne.id,
+					listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
+					emptyList(),
+					emptyList()
+				)
 			)
 		)
-		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+		mockAltinnServer.addRoller(
+			ansattDbo.personident,
+			mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER))
+		)
 
 		ansattService.oppdaterRoller(ansattDbo)
 
 		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
 		oppdatertAnsatt?.arrangorer?.size shouldBe 1
 		oppdatertAnsatt?.arrangorer?.first()?.roller?.size shouldBe 2
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.KOORDINATOR }?.erGyldig() shouldBe false
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.VEILEDER }?.erGyldig() shouldBe true
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.KOORDINATOR }
+			?.erGyldig() shouldBe false
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.VEILEDER }
+			?.erGyldig() shouldBe true
 
 		verify(exactly = 1) {
 			publishService.publishAnsatt(
@@ -156,7 +171,16 @@ class AnsattServiceTest : IntegrationTest() {
 
 	@Test
 	fun `oppdaterVeiledereForDeltaker - ansatt har ikke koordinatortilgang - kaster feil`() {
-		val ansatt = db.insertAnsatt(arrangorer = listOf(ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList())))
+		val ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorOne.id,
+					listOf(RolleDbo(AnsattRolle.VEILEDER)),
+					emptyList(),
+					emptyList()
+				)
+			)
+		)
 
 		assertThrows<IllegalArgumentException> {
 			ansattService.oppdaterVeiledereForDeltaker(
@@ -405,5 +429,51 @@ class AnsattServiceTest : IntegrationTest() {
 		val veileder3Arrangor = veileder3Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
 		veileder3Arrangor?.veileder?.size shouldBe 1
 		veileder3Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig() } shouldNotBe null
+	}
+
+	@Test
+	fun `fjernKoordinatorForDeltakerliste - skal fjerne sette gyldigTil til nå`() {
+		val deltakerliste = KoordinatorsDeltakerlisteDbo(UUID.randomUUID())
+		val koordinator = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+					veileder = emptyList(),
+					koordinator = listOf(deltakerliste)
+				)
+			)
+		)
+
+		ansattService.fjernKoordinatorForDeltakerliste(
+			koordinator.personident,
+			koordinator.arrangorer[0].arrangorId,
+			deltakerliste.deltakerlisteId
+		)
+
+		ansattRepository.get(koordinator.id)!!.arrangorer[0].koordinator[0].gyldigTil shouldNotBe null
+	}
+
+	@Test
+	fun `fjernTilgangerHosArrangor - koordinator skal fjernes`() {
+		val deltakerliste = UUID.randomUUID()
+		val arrangor = db.ansattArrangorDbo(koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste)))
+		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
+
+		ansattService.fjernTilgangerHosArrangor(deltakerliste, emptyList(), arrangor.arrangorId)
+		ansattRepository.get(ansatt.id)!!.arrangorer[0].koordinator[0].gyldigTil shouldNotBe null
+	}
+
+	@Test
+	fun `fjernTilgangerHosArrangor - veileder skal fjernes`() {
+		val deltaker = UUID.randomUUID()
+		val arrangor = db.ansattArrangorDbo(
+			roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+			veileder = listOf(VeilederDeltakerDbo(deltaker, VeilederType.VEILEDER))
+		)
+		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
+
+		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker), arrangor.arrangorId)
+		ansattRepository.get(ansatt.id)!!.arrangorer[0].veileder[0].gyldigTil shouldNotBe null
 	}
 }
