@@ -17,14 +17,13 @@ repositories {
 
 val logstashEncoderVersion = "7.4"
 val kafkaClientsVersion = "3.5.1"
-val shedlockVersion = "5.7.0"
+val shedlockVersion = "5.8.0"
 val okHttpVersion = "4.11.0"
 val tokenSupportVersion = "3.1.5"
 val arrowVersion = "1.2.1"
 val kotestVersion = "5.7.2"
 val testcontainersVersion = "1.19.0"
 val mockkVersion = "1.13.7"
-val mockOauthServerVersion = "1.0.0"
 
 val commonVersion = "3.2023.09.13_04.55-a8ff452fbd94"
 
@@ -68,7 +67,6 @@ dependencies {
     }
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("no.nav.security:token-validation-spring-test:$tokenSupportVersion")
-    testImplementation("no.nav.security:mock-oauth2-server:$mockOauthServerVersion")
     testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")
