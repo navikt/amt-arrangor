@@ -116,16 +116,17 @@ class IngestService(
 
 	fun handleDeltakerEndring(id: UUID, deltaker: DeltakerDto?) {
 		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER) {
-			ansattService.deaktiverVeiledereForDeltaker(id, ZonedDateTime.now())
+			ansattService.deaktiverVeiledereForDeltaker(id, ZonedDateTime.now(), deltaker?.status?.type)
 		} else if (deltaker.status.type in AVSLUTTENDE_STATUSER) {
 			ansattService.deaktiverVeiledereForDeltaker(
 				deltakerId = id,
 				// Deltakere fjernes fra deltakeroversikten 14 dager etter avsluttende status er satt,
 				// så veiledere må ikke deaktiveres før den datoen er passert
-				deaktiveringsdato = deltaker.status.gyldigFra.plusDays(20).atZone(ZoneId.systemDefault())
+				deaktiveringsdato = deltaker.status.gyldigFra.plusDays(20).atZone(ZoneId.systemDefault()),
+				status = deltaker.status.type
 			)
 		} else {
-			ansattService.maybeReaktiverVeiledereForDeltaker(id)
+			ansattService.maybeReaktiverVeiledereForDeltaker(id, deltaker.status.type)
 		}
 	}
 }
