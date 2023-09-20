@@ -81,6 +81,23 @@ class AnsattControllerTest : IntegrationTest() {
 			)
 				.also { it.code shouldBe 401 }
 		}
+
+		@Test
+		fun `oppdaterTilgangerDeltakerlisteByttetArrangor - no token - unauthorized`() {
+			sendRequest("POST", "/api/ansatt/tilganger", "".toJsonRequestBody())
+				.also { it.code shouldBe 401 }
+		}
+
+		@Test
+		fun `oppdaterTilgangerDeltakerlisteByttetArrangor - tokenx token - unauthorized`() {
+			sendRequest(
+				method = "POST",
+				path = "/api/ansatt/tilganger",
+				body = "".toJsonRequestBody(),
+				headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "foobar")}")
+			)
+				.also { it.code shouldBe 401 }
+		}
 	}
 
 	@Nested

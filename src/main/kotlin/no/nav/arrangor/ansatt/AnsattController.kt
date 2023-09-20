@@ -61,6 +61,14 @@ class AnsattController(
 		}
 	}
 
+	@ProtectedWithClaims(issuer = Issuer.AZURE_AD)
+	@PostMapping("tilganger")
+	fun fjernTilgangerHosArrangor(
+		@RequestBody request: FjernTilgangerHosArrangorRequest
+	) {
+		ansattService.fjernTilgangerHosArrangor(request.deltakerlisteId, request.deltakere, request.gammelArrangorId)
+	}
+
 	private fun hentPersonligIdentTilInnloggetBruker(): String {
 		val context = contextHolder.tokenValidationContext
 
@@ -88,5 +96,12 @@ class AnsattController(
 	data class VeilederAnsatt(
 		val ansattId: UUID,
 		val type: VeilederType
+	)
+
+	data class FjernTilgangerHosArrangorRequest(
+		val gammelArrangorId: UUID,
+		val nyArrangorId: UUID,
+		val deltakerlisteId: UUID,
+		val deltakere: List<UUID>
 	)
 }
