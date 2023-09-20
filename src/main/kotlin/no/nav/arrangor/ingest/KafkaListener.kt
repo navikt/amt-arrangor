@@ -13,7 +13,7 @@ class KafkaListener(
 ) {
 
 	@KafkaListener(
-		topics = [VIRKSOMHET_TOPIC, ANSATT_PERSONALIA_TOPIC],
+		topics = [VIRKSOMHET_TOPIC, ANSATT_PERSONALIA_TOPIC, DELTAKER_TOPIC],
 		properties = ["auto.offset.reset = earliest"],
 		containerFactory = "kafkaListenerContainerFactory"
 	)
@@ -21,18 +21,6 @@ class KafkaListener(
 		when (record.topic()) {
 			VIRKSOMHET_TOPIC -> ingestService.handleVirksomhetEndring(record.value()?.let { JsonUtils.fromJson(it) })
 			ANSATT_PERSONALIA_TOPIC -> ingestService.handleAnsattPersonalia(JsonUtils.fromJson(record.value()))
-			else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
-		}
-		ack.acknowledge()
-	}
-
-	@KafkaListener(
-		topics = [DELTAKER_TOPIC],
-		properties = ["auto.offset.reset = earliest"],
-		containerFactory = "kafkaListenerContainerFactoryDeltakerTopic"
-	)
-	fun deltakerListener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
-		when (record.topic()) {
 			DELTAKER_TOPIC -> ingestService.handleDeltakerEndring(
 				UUID.fromString(record.key()),
 				record.value()?.let { JsonUtils.fromJson(it) }
