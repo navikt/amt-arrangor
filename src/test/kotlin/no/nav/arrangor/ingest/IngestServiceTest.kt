@@ -266,7 +266,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker frem i tid`() {
+	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker 20 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val deltakerId2 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
@@ -317,7 +317,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til nå`() {
+	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til 20 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val deltakerId2 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
@@ -346,7 +346,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
 
-		val forventetDeaktiveringsdato = ZonedDateTime.now()
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
@@ -368,7 +368,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til nå`() {
+	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til 20 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
 
@@ -394,7 +394,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
 
-		val forventetDeaktiveringsdato = ZonedDateTime.now()
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->

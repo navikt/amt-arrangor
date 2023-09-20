@@ -13,8 +13,8 @@ import no.nav.arrangor.ingest.model.SKJULES_ALLTID_STATUSER
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.util.UUID
 
 @Service
@@ -115,15 +115,15 @@ class IngestService(
 	}
 
 	fun handleDeltakerEndring(id: UUID, deltaker: DeltakerDto?) {
-		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER) {
-			ansattService.deaktiverVeiledereForDeltaker(id, ZonedDateTime.now(), deltaker?.status?.type)
-		} else if (deltaker.status.type in AVSLUTTENDE_STATUSER) {
+		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER || deltaker.status.type in AVSLUTTENDE_STATUSER) {
+			val deaktiveringsdato = LocalDateTime.now().plusDays(20).atZone(ZoneId.systemDefault())
+			// Deltakere fjernes fra deltakeroversikten 14 dager etter avsluttende status er satt,
+			// så veiledere må ikke deaktiveres før den datoen er passert. For statuser som skjules umiddelbart deaktiverer vi
+			// om 20 dager for litt sikkerhetsmargin i tilfelle deltaker blir aktiv igjen.
 			ansattService.deaktiverVeiledereForDeltaker(
 				deltakerId = id,
-				// Deltakere fjernes fra deltakeroversikten 14 dager etter avsluttende status er satt,
-				// så veiledere må ikke deaktiveres før den datoen er passert
-				deaktiveringsdato = deltaker.status.gyldigFra.plusDays(20).atZone(ZoneId.systemDefault()),
-				status = deltaker.status.type
+				deaktiveringsdato = deaktiveringsdato,
+				status = deltaker?.status?.type
 			)
 		} else {
 			ansattService.maybeReaktiverVeiledereForDeltaker(id, deltaker.status.type)
