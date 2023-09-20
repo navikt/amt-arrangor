@@ -284,7 +284,7 @@ class AnsattRepositoryTest {
 		oppdaterteAnsatte shouldHaveSize 2
 
 		val oppdatertAnsatt1 = oppdaterteAnsatte.find { it.id == ansatt1.id }!!
-		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+		oppdatertAnsatt1.arrangorer.forEach { arr ->
 			arr.veileder.find { it.deltakerId == deltaker1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(1), deaktiveringsdato)
@@ -293,7 +293,7 @@ class AnsattRepositoryTest {
 		}
 
 		val oppdatertAnsatt2 = oppdaterteAnsatte.find { it.id == ansatt2.id }!!
-		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+		oppdatertAnsatt2.arrangorer.forEach { arr ->
 			arr.veileder.find { it.deltakerId == deltaker1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(1), deaktiveringsdato)
