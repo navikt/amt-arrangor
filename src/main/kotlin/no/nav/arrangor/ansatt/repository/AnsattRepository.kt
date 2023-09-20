@@ -175,7 +175,7 @@ class AnsattRepository(
 				SET arrangorer  = jsonb_set(
 						arrangorer,
 						ARRAY [arrangor_idx::text, 'veileder', veileder_idx::text, 'gyldigTil'],
-						null,
+						'null',
 						false
 					),
 					modified_at = current_timestamp
@@ -189,7 +189,7 @@ class AnsattRepository(
 						AND veileder.value ->> 'gyldigTil' > :deaktiveringsdato) AS subquery
 				WHERE subquery.id = ansatt.id
 				RETURNING *
-			""".trimIndent()
+		""".trimIndent()
 
 		val parameters = sqlParameters(
 			"deaktiveringsdato" to deaktiveringsdato.toString(),

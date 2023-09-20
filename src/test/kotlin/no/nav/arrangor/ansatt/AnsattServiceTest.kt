@@ -122,9 +122,14 @@ class AnsattServiceTest : IntegrationTest() {
 		val koordinatorFor = UUID.randomUUID()
 		val ansattDbo = db.insertAnsatt(
 			arrangorer = listOf(
-				ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), listOf(
-					KoordinatorsDeltakerlisteDbo(koordinatorFor)
-				))
+				ArrangorDbo(
+					arrangorOne.id,
+					listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
+					emptyList(),
+					listOf(
+						KoordinatorsDeltakerlisteDbo(koordinatorFor)
+					)
+				)
 			)
 		)
 		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
