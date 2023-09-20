@@ -117,7 +117,6 @@ class IngestService(
 	fun handleDeltakerEndring(id: UUID, deltaker: DeltakerDto?) {
 		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER) {
 			ansattService.deaktiverVeiledereForDeltaker(id, ZonedDateTime.now())
-			return
 		} else if (deltaker.status.type in AVSLUTTENDE_STATUSER) {
 			ansattService.deaktiverVeiledereForDeltaker(
 				deltakerId = id,
@@ -125,6 +124,8 @@ class IngestService(
 				// så veiledere må ikke deaktiveres før den datoen er passert
 				deaktiveringsdato = deltaker.status.gyldigFra.plusDays(20).atZone(ZoneId.systemDefault())
 			)
+		} else {
+			ansattService.maybeReaktiverVeiledereForDeltaker(id)
 		}
 	}
 }

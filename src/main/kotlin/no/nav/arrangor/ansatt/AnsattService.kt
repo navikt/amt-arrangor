@@ -292,4 +292,13 @@ class AnsattService(
 			logger.info("Deaktiverte veiledere for deltaker $deltakerId")
 		}
 	}
+
+	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID) {
+		val ansatteEndret = ansattRepository.maybeReaktiverVeiledereForDeltaker(deltakerId)
+		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
+
+		if (ansatteEndret.isNotEmpty()) {
+			logger.info("Reaktiverte veiledere ${ansatteEndret.size} for deltaker $deltakerId")
+		}
+	}
 }
