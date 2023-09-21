@@ -9,6 +9,7 @@ import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
+import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
 import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
@@ -111,6 +112,43 @@ class AnsattServiceTest : IntegrationTest() {
 				match {
 					it.arrangorer.first().roller.size == 1 &&
 						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER
+				}
+			)
+		}
+	}
+
+	@Test
+	fun `oppdaterRoller - ansatt mister en rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten koordinator for`() {
+		val koordinatorFor = UUID.randomUUID()
+		val ansattDbo = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorOne.id,
+					listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
+					emptyList(),
+					listOf(
+						KoordinatorsDeltakerlisteDbo(koordinatorFor)
+					)
+				)
+			)
+		)
+		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+
+		ansattService.oppdaterRoller(ansattDbo)
+
+		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
+		oppdatertAnsatt?.arrangorer?.size shouldBe 1
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.size shouldBe 2
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.KOORDINATOR }?.erGyldig() shouldBe false
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.VEILEDER }?.erGyldig() shouldBe true
+		oppdatertAnsatt?.arrangorer?.first()?.koordinator?.first()?.erGyldig() shouldBe false
+
+		verify(exactly = 1) {
+			publishService.publishAnsatt(
+				match {
+					it.arrangorer.first().roller.size == 1 &&
+						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER &&
+						it.arrangorer.first().koordinator.isEmpty()
 				}
 			)
 		}

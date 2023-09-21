@@ -168,6 +168,36 @@ class AnsattRepository(
 
 		return template.query(sql, parameters, rowMapper)
 	}
+
+	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime = ZonedDateTime.now()): List<AnsattDbo> {
+		val sql = """
+				UPDATE ansatt
+				SET arrangorer  = jsonb_set(
+						arrangorer,
+						ARRAY [arrangor_idx::text, 'veileder', veileder_idx::text, 'gyldigTil'],
+						'null',
+						false
+					),
+					modified_at = current_timestamp
+				FROM (SELECT id,
+							 arrangor.index - 1 as arrangor_idx,
+							 veileder.index - 1 as veileder_idx
+					  FROM ansatt,
+						   LATERAL jsonb_array_elements(arrangorer) WITH ORDINALITY AS arrangor(value, index),
+						   LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
+					  WHERE veileder.value ->> 'deltakerId' = :deltakerId
+						AND veileder.value ->> 'gyldigTil' > :deaktiveringsdato) AS subquery
+				WHERE subquery.id = ansatt.id
+				RETURNING *
+		""".trimIndent()
+
+		val parameters = sqlParameters(
+			"deaktiveringsdato" to deaktiveringsdato.toString(),
+			"deltakerId" to deltakerId.toString()
+		)
+
+		return template.query(sql, parameters, rowMapper)
+	}
 }
 
 fun List<ArrangorDbo>.toPGObject() = PGobject().also {

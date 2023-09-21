@@ -15,6 +15,7 @@ import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.ingest.PublishService
+import no.nav.arrangor.ingest.model.DeltakerStatus
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -284,12 +285,21 @@ class AnsattService(
 		}
 	}
 
-	fun deaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime) {
+	fun deaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime, status: DeltakerStatus?) {
 		val ansatteEndret = ansattRepository.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
 		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
 
 		if (ansatteEndret.isNotEmpty()) {
-			logger.info("Deaktiverte veiledere for deltaker $deltakerId")
+			logger.info("Deaktiverte veiledere for deltaker $deltakerId med status ${status?.name ?: "slettet"}")
+		}
+	}
+
+	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, status: DeltakerStatus) {
+		val ansatteEndret = ansattRepository.maybeReaktiverVeiledereForDeltaker(deltakerId)
+		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
+
+		if (ansatteEndret.isNotEmpty()) {
+			logger.info("Reaktiverte veiledere ${ansatteEndret.size} for deltaker $deltakerId med status ${status.name}")
 		}
 	}
 }

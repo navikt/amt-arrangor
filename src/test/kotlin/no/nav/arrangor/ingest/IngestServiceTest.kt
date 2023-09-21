@@ -266,7 +266,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker frem i tid`() {
+	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker 20 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val deltakerId2 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
@@ -317,7 +317,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til nå`() {
+	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til 20 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val deltakerId2 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
@@ -346,7 +346,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
 
-		val forventetDeaktiveringsdato = ZonedDateTime.now()
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
@@ -368,7 +368,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til nå`() {
+	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til 20 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
 
@@ -394,7 +394,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
 
-		val forventetDeaktiveringsdato = ZonedDateTime.now()
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
@@ -408,6 +408,63 @@ class IngestServiceTest : IntegrationTest() {
 			arr.veileder.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+		}
+	}
+
+	@Test
+	fun `handleDeltakerEndret - fra avsluttende status, inaktive veiledere frem i tid, til aktiv status - fjerner gyldigTil som ikke er passert for veiledere for deltaker`() {
+		val deltakerId1 = UUID.randomUUID()
+		val deltakerId2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 = veileder(
+			arrangor,
+			listOf(
+				VeilederDeltakerDbo(
+					deltakerId1,
+					VeilederType.MEDVEILEDER,
+					gyldigTil = ZonedDateTime.now().plusDays(8)
+				),
+				VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER)
+			)
+		)
+		val ansatt2 = veileder(
+			arrangor,
+			listOf(
+				VeilederDeltakerDbo(
+					deltakerId1,
+					VeilederType.VEILEDER,
+					gyldigTil = ZonedDateTime.now().minusDays(2)
+				),
+				VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER)
+			)
+		)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltakerDto = DeltakerDto(
+			id = deltakerId1,
+			status = DeltakerStatusDto(DeltakerStatus.DELTAR, LocalDateTime.now(), LocalDateTime.now())
+		)
+
+		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil
+				.shouldBe(null)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), ZonedDateTime.now().minusDays(2))
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
 		}
 	}
 
