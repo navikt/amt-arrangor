@@ -49,28 +49,34 @@ class AnsattService(
 
 	fun setKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
 		val (ansattDbo, arrangor) = hentKoordinatorOgArrangor(personident, arrangorId)
+		return setKoordinatorForDeltakerliste(ansattDbo, arrangor, deltakerlisteId)
+	}
 
+	fun setKoordinatorForDeltakerliste(ansatt: AnsattDbo, arrangor: ArrangorDbo, deltakerlisteId: UUID): Ansatt {
 		val eksisterendeDeltakerliste = arrangor.koordinator.find { it.deltakerlisteId == deltakerlisteId }
 
-		if (eksisterendeDeltakerliste != null && eksisterendeDeltakerliste.erGyldig()) {
-			logger.info("Deltakerliste med id $deltakerlisteId er allerede lagt til")
-			return getAndMaybeUpdateAnsatt(ansattDbo)
+		return when {
+			eksisterendeDeltakerliste?.erGyldig() == true -> {
+				logger.info("Deltakerliste med id $deltakerlisteId er allerede lagt til")
+				getAndMaybeUpdateAnsatt(ansatt)
+			}
+			eksisterendeDeltakerliste != null && !eksisterendeDeltakerliste.erGyldig() -> {
+				eksisterendeDeltakerliste.gyldigTil = null
+				oppdaterOgPubliserKoordinator(ansatt, deltakerlisteId)
+			}
+			else -> {
+				val oppdatertDeltakerlisterForArrangor = arrangor.koordinator + KoordinatorsDeltakerlisteDbo(deltakerlisteId)
+				val oppdatertAnsattDbo = oppdaterAnsatt(ansatt, arrangor.copy(koordinator = oppdatertDeltakerlisterForArrangor))
+				oppdaterOgPubliserKoordinator(oppdatertAnsattDbo, deltakerlisteId)
+			}
 		}
+	}
 
-		val oppdatertAnsattDbo = if (eksisterendeDeltakerliste != null && !eksisterendeDeltakerliste.erGyldig()) {
-			eksisterendeDeltakerliste.gyldigTil = null
-			ansattDbo
-		} else {
-			val oppdatertDeltakerlisterForArrangor = mutableListOf<KoordinatorsDeltakerlisteDbo>()
-			oppdatertDeltakerlisterForArrangor.addAll(arrangor.koordinator)
-			oppdatertDeltakerlisterForArrangor.add(KoordinatorsDeltakerlisteDbo(deltakerlisteId))
-			oppdaterAnsatt(ansattDbo, arrangorId, arrangor.copy(koordinator = oppdatertDeltakerlisterForArrangor))
-		}
-
+	private fun oppdaterOgPubliserKoordinator(oppdatertAnsattDbo: AnsattDbo, deltakerlisteId: UUID): Ansatt {
 		return mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
 			.also { ansatt -> publishService.publishAnsatt(ansatt) }
 			.also { metricsService.incLagtTilSomKoordinator() }
-			.also { logger.info("Ansatt ${ansattDbo.id} ble koordinator for deltakerliste $deltakerlisteId") }
+			.also { logger.info("Ansatt ${oppdatertAnsattDbo.id} ble koordinator for deltakerliste $deltakerlisteId") }
 	}
 
 	fun fjernKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
@@ -161,10 +167,8 @@ class AnsattService(
 			eksisterendeVeilederRelasjon.gyldigTil = null
 			ansattDbo
 		} else {
-			val oppdatertVeilederDeltakerForArrangor = mutableListOf<VeilederDeltakerDbo>()
-			oppdatertVeilederDeltakerForArrangor.addAll(ansattArrangor.veileder)
-			oppdatertVeilederDeltakerForArrangor.add(VeilederDeltakerDbo(deltakerId, type))
-			oppdaterAnsatt(ansattDbo, arrangorId, ansattArrangor.copy(veileder = oppdatertVeilederDeltakerForArrangor))
+			val oppdatertVeilederDeltakerForArrangor = ansattArrangor.veileder + VeilederDeltakerDbo(deltakerId, type)
+			oppdaterAnsatt(ansattDbo, ansattArrangor.copy(veileder = oppdatertVeilederDeltakerForArrangor))
 		}
 
 		val oppdaterAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
@@ -175,16 +179,11 @@ class AnsattService(
 
 	private fun oppdaterAnsatt(
 		ansattDbo: AnsattDbo,
-		arrangorId: UUID,
 		oppdatertArrangor: ArrangorDbo
 	): AnsattDbo {
-		val oppdaterteArrangorer = mutableListOf<ArrangorDbo>()
-		ansattDbo.arrangorer.forEach {
-			if (it.arrangorId != arrangorId) {
-				oppdaterteArrangorer.add(it)
-			}
-		}
-		oppdaterteArrangorer.add(oppdatertArrangor)
+		val oppdaterteArrangorer = ansattDbo.arrangorer
+			.filter { it.arrangorId != oppdatertArrangor.arrangorId }
+			.plus(oppdatertArrangor)
 		return ansattDbo.copy(arrangorer = oppdaterteArrangorer)
 	}
 
@@ -320,20 +319,37 @@ class AnsattService(
 		val ansatte = ansattRepository.getAnsatteHosArrangor(arrangorId)
 
 		for (ansatt in ansatte) {
-			finnArrangorMedRolle(ansatt, arrangorId, AnsattRolle.KOORDINATOR).onSuccess { arrangor ->
-				fjernDeltakerlisteTilgang(arrangor, deltakerlisteId, ansatt)
-			}
+			fjernGammelKoordinatorTilgang(ansatt, arrangorId, deltakerlisteId)
 
 			finnArrangorMedRolle(ansatt, arrangorId, AnsattRolle.VEILEDER).onSuccess { arrangor ->
-				arrangor.veileder.forEach {
-					if (it.erGyldig() && it.deltakerId in deltakerIder) {
-						it.gyldigTil = ZonedDateTime.now()
-					}
+				val fjernedeTilganger = fjernGamleVeilederTilganger(arrangor, deltakerIder)
+
+				if (fjernedeTilganger.isNotEmpty()) {
+					val oppdatertAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(ansatt))
+					publishService.publishAnsatt(oppdatertAnsatt)
+					metricsService.incFjernetSomVeileder(fjernedeTilganger.size)
+					logger.info("Ansatt ${ansatt.id} mistet veilederroller for deltakere på deltakerlisten $deltakerlisteId")
 				}
-				val oppdatertAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(ansatt))
-				publishService.publishAnsatt(oppdatertAnsatt)
-				logger.info("Ansatt ${ansatt.id} mistet veilederroller for deltakere på deltakerlisten $deltakerlisteId")
 			}
+		}
+	}
+
+	private fun fjernGamleVeilederTilganger(
+		arrangor: ArrangorDbo,
+		deltakerIder: List<UUID>
+	): List<VeilederDeltakerDbo> {
+		val deltakere = arrangor.veileder.filter { it.erGyldig() && it.deltakerId in deltakerIder }
+		deltakere.forEach { it.gyldigTil = ZonedDateTime.now() }
+		return deltakere
+	}
+
+	private fun fjernGammelKoordinatorTilgang(
+		ansatt: AnsattDbo,
+		gammelArrangorId: UUID,
+		deltakerlisteId: UUID
+	) {
+		finnArrangorMedRolle(ansatt, gammelArrangorId, AnsattRolle.KOORDINATOR).onSuccess { arrangor ->
+			fjernDeltakerlisteTilgang(arrangor, deltakerlisteId, ansatt)
 		}
 	}
 }

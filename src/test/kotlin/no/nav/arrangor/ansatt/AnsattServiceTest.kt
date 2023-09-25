@@ -465,6 +465,26 @@ class AnsattServiceTest : IntegrationTest() {
 	}
 
 	@Test
+	fun `fjernTilgangerHosArrangor - ansatt er koordinator for flere lister hos arrangor - riktig tilgang skal fjernes`() {
+		val deltakerliste1 = UUID.randomUUID()
+		val deltakerliste2 = UUID.randomUUID()
+
+		val arrangor = db.ansattArrangorDbo(
+			koordinator = listOf(
+				KoordinatorsDeltakerlisteDbo(deltakerliste1),
+				KoordinatorsDeltakerlisteDbo(deltakerliste2)
+			)
+		)
+		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
+
+		ansattService.fjernTilgangerHosArrangor(deltakerliste1, emptyList(), arrangor.arrangorId)
+
+		val ansattArrangorTilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor.arrangorId }!!
+		ansattArrangorTilganger.koordinator.first { it.deltakerlisteId == deltakerliste1 }.erGyldig() shouldBe false
+		ansattArrangorTilganger.koordinator.first { it.deltakerlisteId == deltakerliste2 }.erGyldig() shouldBe true
+	}
+
+	@Test
 	fun `fjernTilgangerHosArrangor - veileder skal fjernes`() {
 		val deltaker = UUID.randomUUID()
 		val arrangor = db.ansattArrangorDbo(
@@ -475,5 +495,59 @@ class AnsattServiceTest : IntegrationTest() {
 
 		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker), arrangor.arrangorId)
 		ansattRepository.get(ansatt.id)!!.arrangorer[0].veileder[0].gyldigTil shouldNotBe null
+	}
+
+	@Test
+	fun `fjernTilgangerHosArrangor - veileder har flere tilganger hos arrangor - kun tilgang til gitte deltakere skal fjernes`() {
+		val deltaker1 = UUID.randomUUID()
+		val deltaker2 = UUID.randomUUID()
+		val deltaker3 = UUID.randomUUID()
+
+		val arrangor1 = db.ansattArrangorDbo(
+			roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+			veileder = listOf(
+				VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER),
+				VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER)
+			)
+		)
+		val arrangor2 = db.ansattArrangorDbo(
+			roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+			veileder = listOf(
+				VeilederDeltakerDbo(deltaker3, VeilederType.VEILEDER)
+			)
+		)
+		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor1, arrangor2))
+
+		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker1, deltaker2), arrangor1.arrangorId)
+		val ansattArrangor1Tilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor1.arrangorId }!!
+
+		ansattArrangor1Tilganger.veileder.first { it.deltakerId == deltaker1 }.erGyldig() shouldBe false
+		ansattArrangor1Tilganger.veileder.first { it.deltakerId == deltaker2 }.erGyldig() shouldBe false
+
+		val ansattArrangor2Tilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor2.arrangorId }!!
+
+		ansattArrangor2Tilganger.veileder.first { it.deltakerId == deltaker3 }.erGyldig() shouldBe true
+	}
+
+	@Test
+	fun `fjernTilgangerHosArrangor - ansatt er koordinator og veileder hos arrangor - fjerner riktige tilganger`() {
+		val deltaker1 = UUID.randomUUID()
+
+		val deltakerliste = UUID.randomUUID()
+
+		val arrangor1 = db.ansattArrangorDbo(
+			roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR), RolleDbo(AnsattRolle.VEILEDER)),
+			veileder = listOf(
+				VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER)
+			),
+			koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste))
+		)
+		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor1))
+
+		ansattService.fjernTilgangerHosArrangor(deltakerliste, listOf(deltaker1), arrangor1.arrangorId)
+		val ansattArrangor1Tilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor1.arrangorId }!!
+
+		ansattArrangor1Tilganger.veileder.first { it.deltakerId == deltaker1 }.erGyldig() shouldBe false
+		ansattArrangor1Tilganger.koordinator.first { it.deltakerlisteId == deltakerliste }.erGyldig() shouldBe false
 	}
 }

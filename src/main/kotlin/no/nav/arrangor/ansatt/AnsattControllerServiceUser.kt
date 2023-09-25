@@ -3,6 +3,7 @@ package no.nav.arrangor.ansatt
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.utils.Issuer
 import no.nav.security.token.support.core.api.ProtectedWithClaims
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -25,6 +26,23 @@ class AnsattControllerServiceUser(
 	@GetMapping("{id}")
 	fun get(@PathVariable("id") id: UUID): Ansatt = ansattService.get(id)
 		?: throw NoSuchElementException("Ansatt $id eksisterer ikke.")
+
+	@DeleteMapping("/tilganger")
+	fun fjernTilgangerHosArrangor(
+		@RequestBody request: FjernTilgangerHosArrangorRequest
+	) {
+		ansattService.fjernTilgangerHosArrangor(
+			deltakerlisteId = request.deltakerlisteId,
+			deltakerIder = request.deltakerIder,
+			arrangorId = request.arrangor
+		)
+	}
+
+	data class FjernTilgangerHosArrangorRequest(
+		val arrangor: UUID,
+		val deltakerlisteId: UUID,
+		val deltakerIder: List<UUID>
+	)
 
 	data class AnsattRequestBody(
 		val personident: String
