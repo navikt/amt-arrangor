@@ -34,12 +34,12 @@ class AnsattControllerServiceUser(
 		ansattService.fjernTilgangerHosArrangor(
 			deltakerlisteId = request.deltakerlisteId,
 			deltakerIder = request.deltakerIder,
-			arrangorId = request.arrangor
+			arrangorId = request.arrangorId
 		)
 	}
 
 	data class FjernTilgangerHosArrangorRequest(
-		val arrangor: UUID,
+		val arrangorId: UUID,
 		val deltakerlisteId: UUID,
 		val deltakerIder: List<UUID>
 	)
