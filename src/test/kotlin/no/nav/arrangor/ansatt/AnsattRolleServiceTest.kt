@@ -26,9 +26,6 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import javax.sql.DataSource
 
-const val KOORDINATOR = "KOORDINATOR"
-const val VEILEDER = "VEILEDER"
-
 class AnsattRolleServiceTest : IntegrationTest() {
 
 	@Autowired
@@ -111,18 +108,26 @@ class AnsattRolleServiceTest : IntegrationTest() {
 
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - to nye roller, en eksisterende rolle - returnerer objekt med korrekte roller`() {
-		ansatt = db.insertAnsatt(arrangorer = listOf(ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), emptyList())))
-		mockAltinnServer.addRoller(
-			ansatt.personident,
-			AltinnAclClient.ResponseWrapper(
-				listOf(
-					AltinnAclClient.ResponseEntry(arrangorOne.organisasjonsnummer, listOf(KOORDINATOR)),
-					AltinnAclClient.ResponseEntry(arrangorTwo.organisasjonsnummer, listOf(KOORDINATOR, VEILEDER))
+		ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+					veileder = emptyList(),
+					koordinator = emptyList()
 				)
 			)
 		)
 
-		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
+		mockAltinnServer.addRoller(
+			ansatt.personident,
+			mapOf(
+				arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR),
+				arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
+			)
+		)
+
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
 			.also { it.isUpdated shouldBe true }
 			.data
 
@@ -140,17 +145,22 @@ class AnsattRolleServiceTest : IntegrationTest() {
 
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - eksisterende rolle er utlopt men aktivert igjen fra altinn - eksisterende rolle blir gyldig igjen`() {
-		ansatt = db.insertAnsatt(arrangorer = listOf(ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.KOORDINATOR, gyldigTil = ZonedDateTime.now().minusDays(5))), emptyList(), emptyList())))
-		mockAltinnServer.addRoller(
-			ansatt.personident,
-			AltinnAclClient.ResponseWrapper(
-				listOf(
-					AltinnAclClient.ResponseEntry(arrangorOne.organisasjonsnummer, listOf(KOORDINATOR))
+		ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR, gyldigTil = ZonedDateTime.now().minusDays(5))),
+					veileder = emptyList(),
+					koordinator = emptyList()
 				)
 			)
 		)
+		mockAltinnServer.addRoller(
+			ansatt.personident,
+			mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR))
+		)
 
-		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
 			.also { it.isUpdated shouldBe true }
 			.data
 
@@ -169,11 +179,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		val nyArrangorOrgnummer = "123456789"
 		mockAltinnServer.addRoller(
 			ansatt.personident,
-			AltinnAclClient.ResponseWrapper(
-				listOf(
-					AltinnAclClient.ResponseEntry(nyArrangorOrgnummer, listOf(KOORDINATOR))
-				)
-			)
+			mapOf(nyArrangorOrgnummer to listOf(AnsattRolle.KOORDINATOR))
 		)
 		mockAmtEnhetsregiserServer.addVirksomhet(
 			Virksomhet(
@@ -184,7 +190,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 			)
 		)
 
-		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
 			.also { it.isUpdated shouldBe true }
 			.data
 
@@ -213,12 +219,10 @@ class AnsattRolleServiceTest : IntegrationTest() {
 
 		mockAltinnServer.addRoller(
 			ansatt.personident,
-			AltinnAclClient.ResponseWrapper(
-				listOf(AltinnAclClient.ResponseEntry(arrangorOne.organisasjonsnummer, listOf(KOORDINATOR)))
-			)
+			mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR))
 		)
 
-		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
 			.also { it.isUpdated shouldBe false }
 			.data
 
@@ -244,7 +248,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 
 		mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
 
-		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
 			.also { it.isUpdated shouldBe true }
 			.data
 
@@ -271,7 +275,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 
 		mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
 
-		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt, ansatt.personident)
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
 			.also { it.isUpdated shouldBe true }
 			.data
 

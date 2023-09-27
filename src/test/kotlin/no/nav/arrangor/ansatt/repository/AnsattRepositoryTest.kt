@@ -300,4 +300,27 @@ class AnsattRepositoryTest {
 			arr.veileder.find { it.deltakerId == deltaker2 }!!.gyldigTil shouldBe null
 		}
 	}
+
+	@Test
+	fun `getAnsatteHosArrangor - flere ansatte og arrangorer - returnerer ansatte med roller hos arrangor`() {
+		val arrangor1 = db.ansattArrangorDbo()
+		val arrangor2 = db.ansattArrangorDbo()
+
+		val ansatt1 = db.insertAnsatt(arrangorer = listOf(arrangor1, arrangor2))
+		val ansatt2 = db.insertAnsatt(arrangorer = listOf(arrangor1))
+		val ansatt3 = db.insertAnsatt(arrangorer = listOf(arrangor2))
+		val ansatt4 = db.insertAnsatt(arrangorer = listOf())
+
+		val ansatteArrangor1 = repository.getAnsatteHosArrangor(arrangor1.arrangorId)
+		ansatteArrangor1.any { it == ansatt1 } shouldBe true
+		ansatteArrangor1.any { it == ansatt2 } shouldBe true
+		ansatteArrangor1.any { it == ansatt3 } shouldBe false
+		ansatteArrangor1.any { it == ansatt4 } shouldBe false
+
+		val ansatteArrangor2 = repository.getAnsatteHosArrangor(arrangor2.arrangorId)
+		ansatteArrangor2.any { it == ansatt1 } shouldBe true
+		ansatteArrangor2.any { it == ansatt2 } shouldBe false
+		ansatteArrangor2.any { it == ansatt3 } shouldBe true
+		ansatteArrangor2.any { it == ansatt4 } shouldBe false
+	}
 }

@@ -54,6 +54,23 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 	}
 
 	@Test
+	fun `fjernTilgangerHosArrangor - no token - unauthorized`() {
+		sendRequest("DELETE", "/api/service/ansatt/tilganger", "".toJsonRequestBody())
+			.also { it.code shouldBe 401 }
+	}
+
+	@Test
+	fun `fjernTilgangerHosArrangor - tokenx token - unauthorized`() {
+		sendRequest(
+			method = "DELETE",
+			path = "/api/service/ansatt/tilganger",
+			body = "".toJsonRequestBody(),
+			headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "foobar")}")
+		)
+			.also { it.code shouldBe 401 }
+	}
+
+	@Test
 	fun `getAnsatt - autentisert - returnerer ansatt`() {
 		val arrangorOne = db.insertArrangor()
 		val arrangorTwo = db.insertArrangor()

@@ -198,6 +198,18 @@ class AnsattRepository(
 
 		return template.query(sql, parameters, rowMapper)
 	}
+
+	fun getAnsatteHosArrangor(arrangorId: UUID): List<AnsattDbo> {
+		val sql = """
+			select ansatt.* from ansatt,
+				lateral jsonb_array_elements(arrangorer) a
+			where a->>'arrangorId' = :arrangorId
+		""".trimIndent()
+
+		val parameters = sqlParameters("arrangorId" to arrangorId.toString())
+
+		return template.query(sql, parameters, rowMapper)
+	}
 }
 
 fun List<ArrangorDbo>.toPGObject() = PGobject().also {
