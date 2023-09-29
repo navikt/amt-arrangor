@@ -12,9 +12,9 @@ class MockAltinnServer : MockHttpServer("altinn-server") {
 		val request = JsonUtils.toJson(AltinnAclClient.HentRollerRequest(personident))
 
 		val requestPredicate = { req: RecordedRequest ->
-			req.path == "/api/v1/rolle/tiltaksarrangor"
-				&& req.method == "POST"
-				&& req.getBodyAsString() == request
+			req.path == "/api/v1/rolle/tiltaksarrangor" &&
+				req.method == "POST" &&
+				req.getBodyAsString() == request
 		}
 		addResponseHandler(
 			requestPredicate,
@@ -28,9 +28,9 @@ class MockAltinnServer : MockHttpServer("altinn-server") {
 		val request = JsonUtils.toJson(AltinnAclClient.HentRollerRequest(personident))
 
 		val requestPredicate = { req: RecordedRequest ->
-			req.path == "/api/v1/rolle/tiltaksarrangor"
-				&& req.method == "POST"
-				&& req.getBodyAsString() == request
+			req.path == "/api/v1/rolle/tiltaksarrangor" &&
+				req.method == "POST" &&
+				req.getBodyAsString() == request
 		}
 
 		addResponseHandler(
