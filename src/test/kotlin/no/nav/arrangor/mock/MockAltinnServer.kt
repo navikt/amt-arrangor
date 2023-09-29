@@ -4,12 +4,20 @@ import no.nav.arrangor.client.altinn.AltinnAclClient
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.utils.JsonUtils
 import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.RecordedRequest
 
 class MockAltinnServer : MockHttpServer("altinn-server") {
 
 	fun addRoller(personident: String, roller: AltinnAclClient.ResponseWrapper) {
+		val request = JsonUtils.toJson(AltinnAclClient.HentRollerRequest(personident))
+
+		val requestPredicate = { req: RecordedRequest ->
+			req.path == "/api/v1/rolle/tiltaksarrangor"
+				&& req.method == "POST"
+				&& req.getBodyAsString() == request
+		}
 		addResponseHandler(
-			path = "/api/v1/rolle/tiltaksarrangor?norskIdent=$personident",
+			requestPredicate,
 			response = MockResponse()
 				.setResponseCode(200)
 				.setBody(JsonUtils.toJson(roller))
@@ -17,8 +25,16 @@ class MockAltinnServer : MockHttpServer("altinn-server") {
 	}
 
 	fun addRoller(personident: String, roller: Map<String, List<AnsattRolle>>) {
+		val request = JsonUtils.toJson(AltinnAclClient.HentRollerRequest(personident))
+
+		val requestPredicate = { req: RecordedRequest ->
+			req.path == "/api/v1/rolle/tiltaksarrangor"
+				&& req.method == "POST"
+				&& req.getBodyAsString() == request
+		}
+
 		addResponseHandler(
-			path = "/api/v1/rolle/tiltaksarrangor?norskIdent=$personident",
+			requestPredicate,
 			response = MockResponse()
 				.setResponseCode(200)
 				.setBody(
