@@ -4,8 +4,10 @@ import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.utils.JsonUtils
 import no.nav.arrangor.utils.isFailure
 import no.nav.common.rest.client.RestClient
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.slf4j.LoggerFactory
 import java.util.function.Supplier
 
@@ -19,9 +21,9 @@ class AltinnAclClient(
 
 	fun hentRoller(personident: String): Result<List<AltinnRolle>> {
 		val request = Request.Builder()
-			.url("$baseUrl/api/v1/rolle/tiltaksarrangor?norskIdent=$personident")
+			.url("$baseUrl/api/v1/rolle/tiltaksarrangor")
 			.addHeader("Authorization", "Bearer ${tokenProvider.get()}")
-			.get()
+			.post(JsonUtils.toJson(HentRollerRequest(personident)).toRequestBody("application/json".toMediaType()))
 			.build()
 
 		val roller = client.newCall(request).execute()
@@ -41,6 +43,8 @@ class AltinnAclClient(
 			else -> throw IllegalArgumentException("Ukjent tiltaksarrangør rolle $rolle")
 		}
 	}
+
+	data class HentRollerRequest(val personident: String)
 
 	data class ResponseWrapper(
 		val roller: List<ResponseEntry>
