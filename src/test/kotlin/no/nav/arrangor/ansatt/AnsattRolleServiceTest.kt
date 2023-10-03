@@ -150,7 +150,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `getAnsattDboMedOppdaterteRoller - eksisterende rolle er utlopt men aktivert igjen fra altinn - eksisterende rolle blir gyldig igjen`() {
+	fun `getAnsattDboMedOppdaterteRoller - eksisterende rolle er utlopt men aktivert igjen fra altinn - ny rolle opprettes`() {
 		ansatt = db.insertAnsatt(
 			arrangorer = listOf(
 				ArrangorDbo(
@@ -173,10 +173,18 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		ansattDbo.arrangorer.size shouldBe 1
 
 		val arrangorOne = ansattDbo.arrangorer[0]
-		arrangorOne.roller.size shouldBe 1
-		arrangorOne.roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
-		arrangorOne.roller[0].gyldigTil shouldBe null
-		arrangorOne.roller[0].erGyldig() shouldBe true
+		arrangorOne.roller.size shouldBe 2
+
+		val deaktivertRolle = arrangorOne.roller.first { !it.erGyldig() }
+		val gyldigRolle = arrangorOne.roller.first { it.erGyldig() }
+
+		gyldigRolle.rolle shouldBe AnsattRolle.KOORDINATOR
+		gyldigRolle.gyldigTil shouldBe null
+		gyldigRolle.erGyldig() shouldBe true
+
+		deaktivertRolle.rolle shouldBe AnsattRolle.KOORDINATOR
+		deaktivertRolle.gyldigTil shouldNotBe null
+		deaktivertRolle.erGyldig() shouldBe false
 	}
 
 	@Test
