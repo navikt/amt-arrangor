@@ -1,6 +1,7 @@
 package no.nav.arrangor.ansatt
 
 import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.date.shouldBeWithin
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
@@ -22,6 +23,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import java.time.Duration
+import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
 import javax.sql.DataSource
@@ -116,7 +119,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 					veileder = emptyList(),
 					koordinator = emptyList()
 				)
-			)
+			),
+			lastSynchronized = LocalDateTime.now().minusMonths(1)
 		)
 
 		mockAltinnServer.addRoller(
@@ -141,6 +145,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		val arrangorTwo = ansattDbo.arrangorer.find { it.arrangorId == arrangorTwo.id }
 		arrangorTwo!!.roller.size shouldBe 2
 		arrangorTwo.roller.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
+
+		ansattDbo.lastSynchronized.shouldBeWithin(Duration.ofSeconds(10), LocalDateTime.now())
 	}
 
 	@Test

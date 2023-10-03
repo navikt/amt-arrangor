@@ -14,6 +14,7 @@ import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.utils.DataUpdateWrapper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -102,7 +103,10 @@ class AnsattRolleService(
 
 		return DataUpdateWrapper(
 			isUpdated = isUpdated,
-			data = ansattDbo.copy(arrangorer = oppdaterteArragorerMedDeltakerlisterOgVeiledere.data)
+			data = ansattDbo.copy(
+				arrangorer = oppdaterteArragorerMedDeltakerlisterOgVeiledere.data,
+				lastSynchronized = LocalDateTime.now()
+			)
 		)
 	}
 
