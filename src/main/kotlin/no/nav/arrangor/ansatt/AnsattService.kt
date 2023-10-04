@@ -60,10 +60,6 @@ class AnsattService(
 				logger.info("Deltakerliste med id $deltakerlisteId er allerede lagt til")
 				getAndMaybeUpdateAnsatt(ansatt)
 			}
-			eksisterendeDeltakerliste != null && !eksisterendeDeltakerliste.erGyldig() -> {
-				eksisterendeDeltakerliste.gyldigTil = null
-				oppdaterOgPubliserKoordinator(ansatt, deltakerlisteId)
-			}
 			else -> {
 				val oppdatertDeltakerlisterForArrangor = arrangor.koordinator + KoordinatorsDeltakerlisteDbo(deltakerlisteId)
 				val oppdatertAnsattDbo = oppdaterAnsatt(ansatt, arrangor.copy(koordinator = oppdatertDeltakerlisterForArrangor))
@@ -159,17 +155,15 @@ class AnsattService(
 		val ansattArrangor = finnArrangorMedRolle(ansattDbo, arrangorId, AnsattRolle.VEILEDER).getOrThrow()
 
 		val eksisterendeVeilederRelasjon = ansattArrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type }
-		if (eksisterendeVeilederRelasjon != null && eksisterendeVeilederRelasjon.erGyldig()) {
+		if (eksisterendeVeilederRelasjon?.erGyldig() == true) {
 			logger.info("Ansatt er allerede veileder for deltaker med id $deltakerId")
 			return
 		}
-		val oppdatertAnsattDbo = if (eksisterendeVeilederRelasjon != null && !eksisterendeVeilederRelasjon.erGyldig()) {
-			eksisterendeVeilederRelasjon.gyldigTil = null
-			ansattDbo
-		} else {
-			val oppdatertVeilederDeltakerForArrangor = ansattArrangor.veileder + VeilederDeltakerDbo(deltakerId, type)
-			oppdaterAnsatt(ansattDbo, ansattArrangor.copy(veileder = oppdatertVeilederDeltakerForArrangor))
-		}
+
+		val oppdatertAnsattDbo = oppdaterAnsatt(
+			ansattDbo = ansattDbo,
+			oppdatertArrangor = ansattArrangor.copy(veileder = ansattArrangor.veileder + VeilederDeltakerDbo(deltakerId, type))
+		)
 
 		val oppdaterAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
 		publishService.publishAnsatt(oppdaterAnsatt)
