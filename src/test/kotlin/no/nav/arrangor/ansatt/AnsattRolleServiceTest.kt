@@ -317,7 +317,6 @@ class AnsattRolleServiceTest : IntegrationTest() {
 
 		mockAltinnServer.addRoller(ansatt.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)))
 
-
 		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
 			.also { it.isUpdated shouldBe true }
 			.data

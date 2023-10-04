@@ -132,7 +132,7 @@ class AnsattRolleService(
 	private fun deaktiverRolle(
 		arrangor: ArrangorDbo?,
 		rolleOgArrangor: RolleOgArrangor,
-		ansattDbo: AnsattDbo,
+		ansattDbo: AnsattDbo
 	) {
 		if (arrangor == null) {
 			logger.warn("Kan ikke deaktivere rolle hos arrangør som ikke er koblet til ansatt, arrangørid ${rolleOgArrangor.arrangorId}, ansattId ${ansattDbo.id}")
@@ -154,7 +154,7 @@ class AnsattRolleService(
 
 	private fun leggTilRolle(
 		oppdaterteArrangorer: MutableList<ArrangorDbo>,
-		rolleOgArrangor: RolleOgArrangor,
+		rolleOgArrangor: RolleOgArrangor
 	) {
 		val arrangor = oppdaterteArrangorer.find { it.arrangorId == rolleOgArrangor.arrangorId }
 

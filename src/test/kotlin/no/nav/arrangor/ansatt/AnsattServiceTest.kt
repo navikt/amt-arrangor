@@ -178,7 +178,7 @@ class AnsattServiceTest : IntegrationTest() {
 					arrangorOne.id,
 					listOf(RolleDbo(AnsattRolle.VEILEDER, gyldigTil = ZonedDateTime.now().minusDays(7))),
 					emptyList(),
-					emptyList(),
+					emptyList()
 				)
 			)
 		)
@@ -201,7 +201,6 @@ class AnsattServiceTest : IntegrationTest() {
 				}
 			)
 		}
-
 	}
 
 	@Test
