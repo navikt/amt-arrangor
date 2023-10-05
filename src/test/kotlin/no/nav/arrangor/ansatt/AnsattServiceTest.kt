@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import java.time.ZonedDateTime
 import java.util.UUID
 import javax.sql.DataSource
 
@@ -157,6 +158,39 @@ class AnsattServiceTest : IntegrationTest() {
 		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.KOORDINATOR }?.erGyldig() shouldBe false
 		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.VEILEDER }?.erGyldig() shouldBe true
 		oppdatertAnsatt?.arrangorer?.first()?.koordinator?.first()?.erGyldig() shouldBe false
+
+		verify(exactly = 1) {
+			publishService.publishAnsatt(
+				match {
+					it.arrangorer.first().roller.size == 1 &&
+						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER &&
+						it.arrangorer.first().koordinator.isEmpty()
+				}
+			)
+		}
+	}
+
+	@Test
+	fun `oppdaterRoller - ansatt får tilbake deaktivert rolle - oppretter ny rolle og publiserer ansatt`() {
+		val ansattDbo = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorOne.id,
+					listOf(RolleDbo(AnsattRolle.VEILEDER, gyldigTil = ZonedDateTime.now().minusDays(7))),
+					emptyList(),
+					emptyList()
+				)
+			)
+		)
+		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+
+		ansattService.oppdaterRoller(ansattDbo)
+
+		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
+		oppdatertAnsatt?.arrangorer?.size shouldBe 1
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.size shouldBe 2
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.any { it.rolle == AnsattRolle.VEILEDER && it.erGyldig() } shouldBe true
+		oppdatertAnsatt?.arrangorer?.first()?.roller?.any { it.rolle == AnsattRolle.VEILEDER && !it.erGyldig() } shouldBe true
 
 		verify(exactly = 1) {
 			publishService.publishAnsatt(

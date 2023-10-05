@@ -150,7 +150,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `getAnsattDboMedOppdaterteRoller - eksisterende rolle er utlopt men aktivert igjen fra altinn - eksisterende rolle blir gyldig igjen`() {
+	fun `getAnsattDboMedOppdaterteRoller - eksisterende rolle er utlopt men aktivert igjen fra altinn - ny rolle opprettes`() {
 		ansatt = db.insertAnsatt(
 			arrangorer = listOf(
 				ArrangorDbo(
@@ -173,10 +173,18 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		ansattDbo.arrangorer.size shouldBe 1
 
 		val arrangorOne = ansattDbo.arrangorer[0]
-		arrangorOne.roller.size shouldBe 1
-		arrangorOne.roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
-		arrangorOne.roller[0].gyldigTil shouldBe null
-		arrangorOne.roller[0].erGyldig() shouldBe true
+		arrangorOne.roller.size shouldBe 2
+
+		val deaktivertRolle = arrangorOne.roller.first { !it.erGyldig() }
+		val gyldigRolle = arrangorOne.roller.first { it.erGyldig() }
+
+		gyldigRolle.rolle shouldBe AnsattRolle.KOORDINATOR
+		gyldigRolle.gyldigTil shouldBe null
+		gyldigRolle.erGyldig() shouldBe true
+
+		deaktivertRolle.rolle shouldBe AnsattRolle.KOORDINATOR
+		deaktivertRolle.gyldigTil shouldNotBe null
+		deaktivertRolle.erGyldig() shouldBe false
 	}
 
 	@Test
@@ -292,5 +300,31 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		ansattDbo.arrangorer[0].veileder[0].gyldigTil shouldNotBe null
 		ansattDbo.arrangorer[0].koordinator[0].gyldigTil shouldNotBe null
 		ansattDbo.arrangorer[0].koordinator[0].erGyldig() shouldBe false
+	}
+
+	@Test
+	fun `getAnsattDboMedOppdaterteRoller - har deaktivert rolle blir tildelt ny rolle - legger til ny rolle fjerner ikke deaktiver rolle`() {
+		ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR, gyldigTil = ZonedDateTime.now())),
+					veileder = emptyList(),
+					koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID()))
+				)
+			)
+		)
+
+		mockAltinnServer.addRoller(ansatt.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)))
+
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			.also { it.isUpdated shouldBe true }
+			.data
+
+		ansattDbo.arrangorer.size shouldBe 1
+		ansattDbo.arrangorer[0].arrangorId shouldBe arrangorOne.id
+		ansattDbo.arrangorer[0].roller.size shouldBe 2
+		ansattDbo.arrangorer[0].roller.any { it.rolle == AnsattRolle.KOORDINATOR && it.erGyldig() } shouldBe true
+		ansattDbo.arrangorer[0].roller.any { it.rolle == AnsattRolle.KOORDINATOR && !it.erGyldig() } shouldBe true
 	}
 }

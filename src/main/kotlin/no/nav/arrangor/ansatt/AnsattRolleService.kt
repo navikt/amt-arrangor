@@ -120,54 +120,59 @@ class AnsattRolleService(
 
 		rollerSomSkalDeaktiveres.forEach { rolleOgArrangor ->
 			val arrangor = oppdaterteArrangorer.find { it.arrangorId == rolleOgArrangor.arrangorId }
-			if (arrangor != null) {
-				if (rolleOgArrangor.rolle == AnsattRolle.KOORDINATOR) {
-					arrangor.koordinator.forEach {
-						if (it.erGyldig()) {
-							it.gyldigTil = ZonedDateTime.now()
-						}
-					}
-				}
-				if (rolleOgArrangor.rolle == AnsattRolle.VEILEDER) {
-					arrangor.veileder.forEach {
-						if (it.erGyldig()) {
-							it.gyldigTil = ZonedDateTime.now()
-						}
-					}
-				}
-				arrangor.roller.find { it.erGyldig() && it.rolle == rolleOgArrangor.rolle }
-					?.let { it.gyldigTil = ZonedDateTime.now() }
-			} else {
-				logger.warn("Kan ikke deaktivere rolle hos arrangør som ikke er koblet til ansatt, arrangørid ${rolleOgArrangor.arrangorId}, ansattId ${ansattDbo.id}")
-			}
+			deaktiverRolle(arrangor, rolleOgArrangor, ansattDbo)
 		}
 
 		rollerSomSkalLeggesTil.forEach { rolleOgArrangor ->
-			val arrangor = oppdaterteArrangorer.find { it.arrangorId == rolleOgArrangor.arrangorId }
-			if (arrangor != null) {
-				val eksisterendeRolle = arrangor.roller.find { it.rolle == rolleOgArrangor.rolle }
-				if (eksisterendeRolle != null && !eksisterendeRolle.erGyldig()) {
-					eksisterendeRolle.gyldigTil = null
-				} else {
-					val oppdaterteRoller = mutableListOf<RolleDbo>()
-					oppdaterteRoller.addAll(arrangor.roller)
-					oppdaterteRoller.add(RolleDbo(rolleOgArrangor.rolle))
-					val oppdatertArrangor = arrangor.copy(roller = oppdaterteRoller)
-					oppdaterteArrangorer.removeIf { it.arrangorId == arrangor.arrangorId }
-					oppdaterteArrangorer.add(oppdatertArrangor)
-				}
-			} else {
-				oppdaterteArrangorer.add(
-					ArrangorDbo(
-						arrangorId = rolleOgArrangor.arrangorId,
-						roller = listOf(RolleDbo(rolleOgArrangor.rolle)),
-						koordinator = rolleOgArrangor.koordinator ?: emptyList(),
-						veileder = rolleOgArrangor.veileder ?: emptyList()
-					)
-				)
-			}
+			leggTilRolle(oppdaterteArrangorer, rolleOgArrangor)
 		}
 		return oppdaterteArrangorer
+	}
+
+	private fun deaktiverRolle(
+		arrangor: ArrangorDbo?,
+		rolleOgArrangor: RolleOgArrangor,
+		ansattDbo: AnsattDbo
+	) {
+		if (arrangor == null) {
+			logger.warn("Kan ikke deaktivere rolle hos arrangør som ikke er koblet til ansatt, arrangørid ${rolleOgArrangor.arrangorId}, ansattId ${ansattDbo.id}")
+			return
+		}
+
+		when (rolleOgArrangor.rolle) {
+			AnsattRolle.KOORDINATOR -> arrangor.koordinator.forEach {
+				if (it.erGyldig()) it.gyldigTil = ZonedDateTime.now()
+			}
+			AnsattRolle.VEILEDER -> arrangor.veileder.forEach {
+				if (it.erGyldig()) it.gyldigTil = ZonedDateTime.now()
+			}
+		}
+
+		arrangor.roller.find { it.erGyldig() && it.rolle == rolleOgArrangor.rolle }
+			?.let { it.gyldigTil = ZonedDateTime.now() }
+	}
+
+	private fun leggTilRolle(
+		oppdaterteArrangorer: MutableList<ArrangorDbo>,
+		rolleOgArrangor: RolleOgArrangor
+	) {
+		val arrangor = oppdaterteArrangorer.find { it.arrangorId == rolleOgArrangor.arrangorId }
+
+		val eksisterendeRolle = arrangor?.roller?.find { it.rolle == rolleOgArrangor.rolle }
+		if (eksisterendeRolle?.erGyldig() == true) {
+			return
+		}
+
+		val oppdatertArrangor = arrangor?.copy(roller = arrangor.roller.plus(RolleDbo(rolleOgArrangor.rolle)))
+			?: ArrangorDbo(
+				arrangorId = rolleOgArrangor.arrangorId,
+				roller = listOf(RolleDbo(rolleOgArrangor.rolle)),
+				koordinator = rolleOgArrangor.koordinator ?: emptyList(),
+				veileder = rolleOgArrangor.veileder ?: emptyList()
+			)
+
+		oppdaterteArrangorer.remove(arrangor)
+		oppdaterteArrangorer.add(oppdatertArrangor)
 	}
 
 	private fun leggTilOgFjernVeilederOgKoordinatorlister(
