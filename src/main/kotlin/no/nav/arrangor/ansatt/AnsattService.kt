@@ -48,11 +48,8 @@ class AnsattService(
 	}
 
 	fun setKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
-		val (ansattDbo, arrangor) = hentKoordinatorOgArrangor(personident, arrangorId)
-		return setKoordinatorForDeltakerliste(ansattDbo, arrangor, deltakerlisteId)
-	}
+		val (ansatt, arrangor) = hentKoordinatorOgArrangor(personident, arrangorId)
 
-	fun setKoordinatorForDeltakerliste(ansatt: AnsattDbo, arrangor: ArrangorDbo, deltakerlisteId: UUID): Ansatt {
 		val eksisterendeDeltakerliste = arrangor.koordinator.find { it.deltakerlisteId == deltakerlisteId }
 
 		return when {
@@ -61,18 +58,26 @@ class AnsattService(
 				getAndMaybeUpdateAnsatt(ansatt)
 			}
 			else -> {
-				val oppdatertDeltakerlisterForArrangor = arrangor.koordinator + KoordinatorsDeltakerlisteDbo(deltakerlisteId)
-				val oppdatertAnsattDbo = oppdaterAnsatt(ansatt, arrangor.copy(koordinator = oppdatertDeltakerlisterForArrangor))
-				oppdaterOgPubliserKoordinator(oppdatertAnsattDbo, deltakerlisteId)
+				opprettKoordinatorTilgang(arrangor, deltakerlisteId, ansatt)
 			}
 		}
 	}
 
-	private fun oppdaterOgPubliserKoordinator(oppdatertAnsattDbo: AnsattDbo, deltakerlisteId: UUID): Ansatt {
-		return mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
-			.also { ansatt -> publishService.publishAnsatt(ansatt) }
-			.also { metricsService.incLagtTilSomKoordinator() }
-			.also { logger.info("Ansatt ${oppdatertAnsattDbo.id} ble koordinator for deltakerliste $deltakerlisteId") }
+	private fun opprettKoordinatorTilgang(
+		arrangor: ArrangorDbo,
+		deltakerlisteId: UUID,
+		ansatt: AnsattDbo,
+	): Ansatt {
+		val oppdatertDeltakerlisterForArrangor = arrangor.koordinator + KoordinatorsDeltakerlisteDbo(deltakerlisteId)
+		val oppdatertAnsattDbo = oppdaterAnsattArrangorer(ansatt, arrangor.copy(koordinator = oppdatertDeltakerlisterForArrangor))
+
+		val oppdatertAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
+
+		publishService.publishAnsatt(oppdatertAnsatt)
+		metricsService.incLagtTilSomKoordinator()
+		logger.info("Ansatt ${oppdatertAnsattDbo.id} ble koordinator for deltakerliste $deltakerlisteId")
+
+		return oppdatertAnsatt
 	}
 
 	fun fjernKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
@@ -160,7 +165,7 @@ class AnsattService(
 			return
 		}
 
-		val oppdatertAnsattDbo = oppdaterAnsatt(
+		val oppdatertAnsattDbo = oppdaterAnsattArrangorer(
 			ansattDbo = ansattDbo,
 			oppdatertArrangor = ansattArrangor.copy(veileder = ansattArrangor.veileder + VeilederDeltakerDbo(deltakerId, type))
 		)
@@ -171,7 +176,7 @@ class AnsattService(
 		logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId")
 	}
 
-	private fun oppdaterAnsatt(
+	private fun oppdaterAnsattArrangorer(
 		ansattDbo: AnsattDbo,
 		oppdatertArrangor: ArrangorDbo
 	): AnsattDbo {
