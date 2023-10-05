@@ -500,7 +500,6 @@ class AnsattServiceTest : IntegrationTest() {
 			veilederSomFjernes = emptyList()
 		)
 
-
 		ansattService.oppdaterVeiledereForDeltaker(koordinator.personident, deltakerId, request)
 
 		val oppdatertAnsatt = ansattRepository.get(ansatt.id)

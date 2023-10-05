@@ -66,7 +66,7 @@ class AnsattService(
 	private fun opprettKoordinatorTilgang(
 		arrangor: ArrangorDbo,
 		deltakerlisteId: UUID,
-		ansatt: AnsattDbo,
+		ansatt: AnsattDbo
 	): Ansatt {
 		val oppdatertDeltakerlisterForArrangor = arrangor.koordinator + KoordinatorsDeltakerlisteDbo(deltakerlisteId)
 		val oppdatertAnsattDbo = oppdaterAnsattArrangorer(ansatt, arrangor.copy(koordinator = oppdatertDeltakerlisterForArrangor))
