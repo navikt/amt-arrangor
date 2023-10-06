@@ -466,6 +466,54 @@ class AnsattServiceTest : IntegrationTest() {
 	}
 
 	@Test
+	fun `oppdaterVeileder - deaktivert tilgang for deltaker finnes - ny tilgang opprettes`() {
+		val deltakerId = UUID.randomUUID()
+		val koordinator = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+					veileder = listOf(),
+					koordinator = listOf()
+				)
+			)
+		)
+		val ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.VEILEDER, gyldigTil = ZonedDateTime.now().minusDays(7))),
+					koordinator = listOf()
+				)
+			)
+		)
+
+		val request = AnsattController.OppdaterVeiledereForDeltakerRequest(
+			arrangorId = arrangorOne.id,
+			veilederSomLeggesTil = listOf(
+				AnsattController.VeilederAnsatt(
+					ansatt.id,
+					VeilederType.VEILEDER
+				)
+			),
+			veilederSomFjernes = emptyList()
+		)
+
+		ansattService.oppdaterVeiledereForDeltaker(koordinator.personident, deltakerId, request)
+
+		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
+		val veileder = oppdatertAnsatt?.arrangorer?.first()?.veileder!!
+
+		veileder.size shouldBe 2
+		veileder[0].deltakerId shouldBe deltakerId
+		veileder[1].deltakerId shouldBe deltakerId
+
+		veileder.any { it.erGyldig() } shouldBe true
+		veileder.any { !it.erGyldig() } shouldBe true
+	}
+
+	@Test
 	fun `fjernKoordinatorForDeltakerliste - skal fjerne sette gyldigTil til nå`() {
 		val deltakerliste = KoordinatorsDeltakerlisteDbo(UUID.randomUUID())
 		val koordinator = db.insertAnsatt(
@@ -583,5 +631,79 @@ class AnsattServiceTest : IntegrationTest() {
 
 		ansattArrangor1Tilganger.veileder.first { it.deltakerId == deltaker1 }.erGyldig() shouldBe false
 		ansattArrangor1Tilganger.koordinator.first { it.deltakerlisteId == deltakerliste }.erGyldig() shouldBe false
+	}
+
+	@Test
+	fun `setKoordinator - ny deltakerliste - ny tilgang opprettes`() {
+		val ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+					veileder = emptyList(),
+					koordinator = emptyList()
+				)
+			)
+		)
+		val deltakerlisteId = UUID.randomUUID()
+
+		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
+
+		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
+		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator!!
+
+		koordinator.size shouldBe 1
+		koordinator.first().deltakerlisteId shouldBe deltakerlisteId
+		koordinator.first().erGyldig() shouldBe true
+	}
+
+	@Test
+	fun `setKoordinator - aktiv tilgang for deltakerliste finnes - tilgang opprettes ikke`() {
+		val deltakerlisteId = UUID.randomUUID()
+		val ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+					veileder = emptyList(),
+					koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerlisteId))
+				)
+			)
+		)
+
+		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
+
+		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
+		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator!!
+
+		koordinator.size shouldBe 1
+		koordinator.first().deltakerlisteId shouldBe deltakerlisteId
+		koordinator.first().erGyldig() shouldBe true
+	}
+
+	@Test
+	fun `setKoordinator - deaktivert tilgang for deltakerliste finnes - ny tilgang opprettes`() {
+		val deltakerlisteId = UUID.randomUUID()
+		val ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+					veileder = emptyList(),
+					koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerlisteId, gyldigTil = ZonedDateTime.now().minusDays(8)))
+				)
+			)
+		)
+
+		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
+
+		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
+		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator!!
+
+		koordinator.size shouldBe 2
+		koordinator[0].deltakerlisteId shouldBe deltakerlisteId
+		koordinator[1].deltakerlisteId shouldBe deltakerlisteId
+		koordinator.any { it.erGyldig() } shouldBe true
+		koordinator.any { !it.erGyldig() } shouldBe true
 	}
 }
