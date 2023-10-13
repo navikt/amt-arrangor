@@ -140,10 +140,9 @@ class AnsattRolleService(
 	) {
 		val arrangor = oppdaterteArrangorer.find { it.arrangorId == rolleOgArrangor.arrangorId }
 
-		val eksisterendeRolle = arrangor?.roller?.find { it.rolle == rolleOgArrangor.rolle }
-		if (eksisterendeRolle?.erGyldig() == true) {
-			return
-		}
+		val harGyldigRolle = arrangor?.roller?.any { it.rolle == rolleOgArrangor.rolle && it.erGyldig() }
+
+		if (harGyldigRolle == true) return
 
 		val oppdatertArrangor = arrangor?.copy(roller = arrangor.roller.plus(RolleDbo(rolleOgArrangor.rolle)))
 			?: ArrangorDbo(
