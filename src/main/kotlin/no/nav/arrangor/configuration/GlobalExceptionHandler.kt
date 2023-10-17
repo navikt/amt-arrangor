@@ -19,6 +19,7 @@ class GlobalExceptionHandler {
 		return when (ex) {
 			is JwtTokenUnauthorizedException -> buildResponse(HttpStatus.UNAUTHORIZED, ex)
 			is NoSuchElementException -> buildResponse(HttpStatus.NOT_FOUND, ex)
+			is IllegalArgumentException -> buildResponse(HttpStatus.BAD_REQUEST, ex)
 			is IllegalStateException -> buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex)
 			else -> {
 				log.error("Internal server error - ${ex.message} - ${request.method}: ${request.requestURI}", ex)

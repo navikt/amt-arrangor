@@ -121,6 +121,27 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 	}
 
 	@Test
+	fun `getAnsatt - autentisert, personident har feil format - returnerer 400 og oppretter ikke ansatt`() {
+		val personident = "123456789101"
+		val personId = UUID.randomUUID()
+		mockAltinnServer.addRoller(
+			personident,
+			emptyMap()
+		)
+		mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+
+		val response = sendRequest(
+			method = "POST",
+			path = "/api/service/ansatt",
+			body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
+			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
+		)
+
+		response.code shouldBe 400
+		ansattRepository.get(personident) shouldBe null
+	}
+
+	@Test
 	fun `getAnsatt (id) - ikke gyldig token - unauthorized`() {
 		val response = sendRequest(
 			method = "GET",

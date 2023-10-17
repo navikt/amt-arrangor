@@ -35,15 +35,28 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 	fun `getArrangor - ikke gyldig token - unauthorized`() {
 		val response = sendRequest(
 			method = "GET",
-			path = "/api/service/arrangor/organisasjonsnummer/12345"
+			path = "/api/service/arrangor/organisasjonsnummer/123456789"
 		)
 
 		response.code shouldBe 401
 	}
 
 	@Test
+	fun `getArrangor - autentisert, orgnummer har feil format - returnerer 400`() {
+		val orgnummer = "12345678910"
+
+		val response = sendRequest(
+			method = "GET",
+			path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
+			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
+		)
+
+		response.code shouldBe 400
+	}
+
+	@Test
 	fun `getArrangor - autentisert, arrangor har ikke overordnet arrangor - returnerer arrangor`() {
-		val orgnummer = "12345"
+		val orgnummer = "123456789"
 		db.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = null)
 
 		val response = sendRequest(
@@ -61,9 +74,9 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 
 	@Test
 	fun `getArrangor - autentisert, arrangor har overordnet arrangor - returnerer arrangor`() {
-		val orgnummerOverordnetArrangor = "98765"
+		val orgnummerOverordnetArrangor = "987654321"
 		val overordnetArrangor = db.insertArrangor(navn = "Overordnet", organisasjonsnummer = orgnummerOverordnetArrangor, overordnetArrangorId = null)
-		val orgnummer = "12345"
+		val orgnummer = "123456789"
 		db.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
 
 		val response = sendRequest(
@@ -104,9 +117,9 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 
 	@Test
 	fun `getArrangor (id) - autentisert, arrangor har overordnet arrangor - returnerer arrangor`() {
-		val orgnummerOverordnetArrangor = "98765"
+		val orgnummerOverordnetArrangor = "987654321"
 		val overordnetArrangor = db.insertArrangor(navn = "Overordnet", organisasjonsnummer = orgnummerOverordnetArrangor, overordnetArrangorId = null)
-		val orgnummer = "12345"
+		val orgnummer = "123456789"
 		val arrangor = db.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
 
 		val response = sendRequest(
