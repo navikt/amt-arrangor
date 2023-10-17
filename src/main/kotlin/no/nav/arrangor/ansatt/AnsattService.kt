@@ -244,16 +244,12 @@ class AnsattService(
 	}
 
 	fun oppdaterRoller(ansattDbo: AnsattDbo): Ansatt {
-		var updated = false
-
 		val ansattDboMedOppdaterteRoller = rolleService.getAnsattDboMedOppdaterteRoller(ansattDbo)
-			.also { if (it.isUpdated) updated = true }
-			.data
 
-		val oppdatertAnsattDbo = ansattRepository.insertOrUpdate(ansattDboMedOppdaterteRoller)
+		val oppdatertAnsattDbo = ansattRepository.insertOrUpdate(ansattDboMedOppdaterteRoller.data)
 
 		return mapToAnsatt(oppdatertAnsattDbo)
-			.also { if (updated) publishService.publishAnsatt(it) }
+			.also { if (ansattDboMedOppdaterteRoller.isUpdated) publishService.publishAnsatt(it) }
 	}
 
 	fun getAll(offset: Int, limit: Int): List<Ansatt> {

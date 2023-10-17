@@ -327,4 +327,42 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		ansattDbo.arrangorer[0].roller.any { it.rolle == AnsattRolle.KOORDINATOR && it.erGyldig() } shouldBe true
 		ansattDbo.arrangorer[0].roller.any { it.rolle == AnsattRolle.KOORDINATOR && !it.erGyldig() } shouldBe true
 	}
+
+	@Test
+	fun `getAnsattDboMedOppdaterteRoller - har samme rolle flere ganger og rollen er aktiv i altinn - ingen endringer`() {
+		ansatt = db.insertAnsatt(
+			arrangorer = listOf(
+				ArrangorDbo(
+					arrangorId = arrangorOne.id,
+					roller = listOf(
+						RolleDbo(AnsattRolle.KOORDINATOR, gyldigTil = ZonedDateTime.now().minusDays(7)),
+						RolleDbo(AnsattRolle.KOORDINATOR, gyldigTil = null)
+					),
+					veileder = emptyList(),
+					koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID()))
+				)
+			)
+		)
+
+		mockAltinnServer.addRoller(
+			ansatt.personident,
+			mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR))
+		)
+
+		val ansattDbo = rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			.also { it.isUpdated shouldBe false }
+			.data
+
+		ansattDbo.arrangorer.size shouldBe 1
+		ansattDbo.arrangorer[0].arrangorId shouldBe arrangorOne.id
+		ansattDbo.arrangorer[0].roller.size shouldBe 2
+
+		ansattDbo.arrangorer[0].roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+		ansattDbo.arrangorer[0].roller[0].gyldigTil shouldNotBe null
+
+		ansattDbo.arrangorer[0].roller[1].rolle shouldBe AnsattRolle.KOORDINATOR
+		ansattDbo.arrangorer[0].roller[1].gyldigTil shouldBe null
+
+		ansattDbo.arrangorer[0].koordinator[0].gyldigTil shouldBe null
+	}
 }
