@@ -35,12 +35,15 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
+    implementation("org.yaml:snakeyaml:2.2") // overstyrer sårbar dependency
     implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
 
     implementation("org.springframework.kafka:spring-kafka")
-    implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion")
+    implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion") {
+        exclude("org.xerial.snappy", "snappy-java")
+    }
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
@@ -56,6 +59,7 @@ dependencies {
     implementation("no.nav.common:job:$commonVersion")
 
     implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
+    implementation("com.squareup.okio:okio:3.6.0") // overstyrer sårbar dependency
 
     implementation("io.arrow-kt:arrow-core:$arrowVersion")
     implementation("io.arrow-kt:arrow-fx-coroutines:$arrowVersion")
