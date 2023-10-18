@@ -20,6 +20,7 @@ class AnsattControllerServiceUser(
 ) {
 	@PostMapping
 	fun getAnsatt(@RequestBody body: AnsattRequestBody): Ansatt {
+		body.validatePersonident()
 		return ansattService.get(body.personident) ?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
 	}
 
@@ -46,5 +47,11 @@ class AnsattControllerServiceUser(
 
 	data class AnsattRequestBody(
 		val personident: String
-	)
+	) {
+		fun validatePersonident() {
+			if (personident.trim().length != 11 || !personident.trim().matches("""\d{11}""".toRegex())) {
+				throw IllegalArgumentException("Ugyldig personident")
+			}
+		}
+	}
 }

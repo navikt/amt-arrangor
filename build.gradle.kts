@@ -18,7 +18,7 @@ repositories {
 val logstashEncoderVersion = "7.4"
 val kafkaClientsVersion = "3.6.0"
 val shedlockVersion = "5.9.0"
-val okHttpVersion = "4.11.0"
+val okHttpVersion = "4.12.0"
 val tokenSupportVersion = "3.1.7"
 val arrowVersion = "1.2.1"
 val kotestVersion = "5.7.2"
@@ -35,12 +35,15 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
+    implementation("org.yaml:snakeyaml:2.2") // overstyrer sårbar dependency
     implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
 
     implementation("org.springframework.kafka:spring-kafka")
-    implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion")
+    implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion") {
+        exclude("org.xerial.snappy", "snappy-java")
+    }
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
