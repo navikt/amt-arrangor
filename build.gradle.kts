@@ -17,7 +17,7 @@ repositories {
 
 val logstashEncoderVersion = "7.4"
 val kafkaClientsVersion = "3.6.0"
-val shedlockVersion = "5.9.0"
+val shedlockVersion = "5.9.1"
 val okHttpVersion = "4.12.0"
 val tokenSupportVersion = "3.1.7"
 val arrowVersion = "1.2.1"
@@ -25,7 +25,7 @@ val kotestVersion = "5.7.2"
 val testcontainersVersion = "1.19.1"
 val mockkVersion = "1.13.8"
 
-val commonVersion = "3.2023.09.13_04.55-a8ff452fbd94"
+val commonVersion = "3.2023.10.18_13.28-58db82ecb1a5"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
