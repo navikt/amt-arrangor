@@ -21,7 +21,7 @@ val shedlockVersion = "5.9.1"
 val okHttpVersion = "4.12.0"
 val tokenSupportVersion = "3.1.7"
 val arrowVersion = "1.2.1"
-val kotestVersion = "5.7.2"
+val kotestVersion = "5.8.0"
 val testcontainersVersion = "1.19.1"
 val mockkVersion = "1.13.8"
 
