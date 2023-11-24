@@ -1,7 +1,7 @@
 plugins {
     val kotlinVersion = "1.9.21"
 
-    id("org.springframework.boot") version "3.1.6"
+    id("org.springframework.boot") version "3.2.0"
     id("io.spring.dependency-management") version "1.1.4"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
     kotlin("jvm") version kotlinVersion
@@ -26,6 +26,7 @@ val arrowVersion = "1.2.1"
 val kotestVersion = "5.8.0"
 val testcontainersVersion = "1.19.3"
 val mockkVersion = "1.13.8"
+val mockOauth2ServerVersion = "2.0.1"
 
 val commonVersion = "3.2023.10.18_13.28-58db82ecb1a5"
 
@@ -77,6 +78,7 @@ dependencies {
     testImplementation("org.testcontainers:kafka:$testcontainersVersion")
     testImplementation("org.awaitility:awaitility")
     testImplementation("io.mockk:mockk:$mockkVersion")
+    testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
 }
 
 tasks.test {

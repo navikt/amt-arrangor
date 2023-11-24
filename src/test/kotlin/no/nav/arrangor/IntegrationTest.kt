@@ -9,7 +9,6 @@ import no.nav.arrangor.testutils.SingletonPostgresContainer
 import no.nav.arrangor.utils.Issuer
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
-import no.nav.security.token.support.spring.test.EnableMockOAuth2Server
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -18,7 +17,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.ActiveProfiles
@@ -31,13 +29,9 @@ import java.time.Duration
 import java.util.*
 
 @ActiveProfiles("test")
-@EnableMockOAuth2Server
 @ExtendWith(SpringExtension::class)
 @SpringBootTest(classes = [ArrangorApplication::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class IntegrationTest {
-
-	@Autowired
-	lateinit var mockOAuth2Server: MockOAuth2Server
 
 	@LocalServerPort
 	private var port: Int = 0
@@ -55,6 +49,7 @@ class IntegrationTest {
 	}
 
 	companion object {
+		val mockOAuth2Server = MockOAuth2Server()
 		val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer()
 		val mockMachineToMachineHttpServer = MockMachineToMachineHttpServer()
 		val mockAltinnServer = MockAltinnServer()
@@ -62,9 +57,19 @@ class IntegrationTest {
 
 		val postgresDataSource = SingletonPostgresContainer.getDataSource()
 
+		private fun getDiscoveryUrl(issuer: String = Issuer.TOKEN_X): String {
+			return mockOAuth2Server.wellKnownUrl(issuer).toString()
+		}
+
 		@JvmStatic
 		@DynamicPropertySource
 		fun registerProperties(registry: DynamicPropertyRegistry) {
+			mockOAuth2Server.start()
+			registry.add("no.nav.security.jwt.issuer.azuread.discovery-url") { getDiscoveryUrl(Issuer.AZURE_AD) }
+			registry.add("no.nav.security.jwt.issuer.azuread.accepted-audience") { "test-aud" }
+			registry.add("no.nav.security.jwt.issuer.tokenx.discovery-url") { getDiscoveryUrl(Issuer.TOKEN_X) }
+			registry.add("no.nav.security.jwt.issuer.tokenx.accepted-audience") { "amt-arrangor-client-id" }
+
 			mockMachineToMachineHttpServer.start()
 			registry.add("nais.env.azureOpenIdConfigTokenEndpoint") {
 				mockMachineToMachineHttpServer.serverUrl() + MockMachineToMachineHttpServer.tokenPath
