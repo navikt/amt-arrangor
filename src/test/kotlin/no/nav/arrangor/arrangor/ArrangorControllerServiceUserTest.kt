@@ -33,10 +33,11 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 
 	@Test
 	fun `getArrangor - ikke gyldig token - unauthorized`() {
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/arrangor/organisasjonsnummer/123456789"
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/arrangor/organisasjonsnummer/123456789",
+			)
 
 		response.code shouldBe 401
 	}
@@ -45,11 +46,12 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 	fun `getArrangor - autentisert, orgnummer har feil format - returnerer 400`() {
 		val orgnummer = "12345678910"
 
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 400
 	}
@@ -59,11 +61,12 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 		val orgnummer = "123456789"
 		db.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = null)
 
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 200
 		val arrangor = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body!!.string())
@@ -75,15 +78,21 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 	@Test
 	fun `getArrangor - autentisert, arrangor har overordnet arrangor - returnerer arrangor`() {
 		val orgnummerOverordnetArrangor = "987654321"
-		val overordnetArrangor = db.insertArrangor(navn = "Overordnet", organisasjonsnummer = orgnummerOverordnetArrangor, overordnetArrangorId = null)
+		val overordnetArrangor =
+			db.insertArrangor(
+				navn = "Overordnet",
+				organisasjonsnummer = orgnummerOverordnetArrangor,
+				overordnetArrangorId = null,
+			)
 		val orgnummer = "123456789"
 		db.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
 
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 200
 		val arrangor = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body!!.string())
@@ -96,21 +105,23 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 
 	@Test
 	fun `getArrangor (id) - ikke gyldig token - unauthorized`() {
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/arrangor/${UUID.randomUUID()}"
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/arrangor/${UUID.randomUUID()}",
+			)
 
 		response.code shouldBe 401
 	}
 
 	@Test
 	fun `getArrangor (id) - autentisert, arrangor finnes ikke - returnerer 404`() {
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/arrangor/${UUID.randomUUID()}",
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/arrangor/${UUID.randomUUID()}",
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 404
 	}
@@ -118,15 +129,21 @@ class ArrangorControllerServiceUserTest : IntegrationTest() {
 	@Test
 	fun `getArrangor (id) - autentisert, arrangor har overordnet arrangor - returnerer arrangor`() {
 		val orgnummerOverordnetArrangor = "987654321"
-		val overordnetArrangor = db.insertArrangor(navn = "Overordnet", organisasjonsnummer = orgnummerOverordnetArrangor, overordnetArrangorId = null)
+		val overordnetArrangor =
+			db.insertArrangor(
+				navn = "Overordnet",
+				organisasjonsnummer = orgnummerOverordnetArrangor,
+				overordnetArrangorId = null,
+			)
 		val orgnummer = "123456789"
 		val arrangor = db.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
 
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/arrangor/${arrangor.id}",
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/arrangor/${arrangor.id}",
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 200
 		val arrangorResponse = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body!!.string())

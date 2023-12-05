@@ -94,8 +94,8 @@ class ArrangorRepositoryTest {
 		repository.getArrangorerMedOrgnumre(
 			listOf(
 				arrangor1.organisasjonsnummer,
-				arrangor2.organisasjonsnummer
-			)
+				arrangor2.organisasjonsnummer,
+			),
 		) shouldBe listOf(arrangor1, arrangor2)
 	}
 

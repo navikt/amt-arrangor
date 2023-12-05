@@ -7,8 +7,10 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 
 class MockAltinnServer : MockHttpServer("altinn-server") {
-
-	fun addRoller(personident: String, roller: AltinnAclClient.ResponseWrapper) {
+	fun addRoller(
+		personident: String,
+		roller: AltinnAclClient.ResponseWrapper,
+	) {
 		val request = JsonUtils.toJson(AltinnAclClient.HentRollerRequest(personident))
 
 		val requestPredicate = { req: RecordedRequest ->
@@ -18,13 +20,17 @@ class MockAltinnServer : MockHttpServer("altinn-server") {
 		}
 		addResponseHandler(
 			requestPredicate,
-			response = MockResponse()
-				.setResponseCode(200)
-				.setBody(JsonUtils.toJson(roller))
+			response =
+				MockResponse()
+					.setResponseCode(200)
+					.setBody(JsonUtils.toJson(roller)),
 		)
 	}
 
-	fun addRoller(personident: String, roller: Map<String, List<AnsattRolle>>) {
+	fun addRoller(
+		personident: String,
+		roller: Map<String, List<AnsattRolle>>,
+	) {
 		val request = JsonUtils.toJson(AltinnAclClient.HentRollerRequest(personident))
 
 		val requestPredicate = { req: RecordedRequest ->
@@ -35,15 +41,16 @@ class MockAltinnServer : MockHttpServer("altinn-server") {
 
 		addResponseHandler(
 			requestPredicate,
-			response = MockResponse()
-				.setResponseCode(200)
-				.setBody(
-					JsonUtils.toJson(
-						AltinnAclClient.ResponseWrapper(
-							roller.map { AltinnAclClient.ResponseEntry(it.key, it.value.map { it.name }) }
-						)
-					)
-				)
+			response =
+				MockResponse()
+					.setResponseCode(200)
+					.setBody(
+						JsonUtils.toJson(
+							AltinnAclClient.ResponseWrapper(
+								roller.map { AltinnAclClient.ResponseEntry(it.key, it.value.map { it.name }) },
+							),
+						),
+					),
 		)
 	}
 }

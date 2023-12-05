@@ -12,7 +12,7 @@ import java.net.InetAddress
 
 @Component
 class LeaderElection(
-	@Value("\${elector.path}") private val electorPath: String
+	@Value("\${elector.path}") private val electorPath: String,
 ) {
 	private val client: OkHttpClient = RestClient.baseClient()
 	private val log = LoggerFactory.getLogger(javaClass)
@@ -28,12 +28,14 @@ class LeaderElection(
 	private fun kallElector(): Boolean {
 		val hostname: String = InetAddress.getLocalHost().hostName
 
-		val uriString = UriComponentsBuilder.fromHttpUrl(getHttpPath(electorPath))
-			.toUriString()
-		val request = Request.Builder()
-			.url(uriString)
-			.get()
-			.build()
+		val uriString =
+			UriComponentsBuilder.fromHttpUrl(getHttpPath(electorPath))
+				.toUriString()
+		val request =
+			Request.Builder()
+				.url(uriString)
+				.get()
+				.build()
 
 		client.newCall(request).execute().use { response ->
 			if (!response.isSuccessful) {

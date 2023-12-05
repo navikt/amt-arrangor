@@ -17,30 +17,32 @@ data class AnsattDbo(
 	val etternavn: String,
 	val arrangorer: List<ArrangorDbo>,
 	val modifiedAt: LocalDateTime = LocalDateTime.now(),
-	val lastSynchronized: LocalDateTime = LocalDateTime.now()
+	val lastSynchronized: LocalDateTime = LocalDateTime.now(),
 ) {
-	fun toPersonalia(): Personalia = Personalia(
-		personident = personident,
-		personId = personId,
-		navn = Navn(
-			fornavn = fornavn,
-			mellomnavn = mellomnavn,
-			etternavn = etternavn
+	fun toPersonalia(): Personalia =
+		Personalia(
+			personident = personident,
+			personId = personId,
+			navn =
+				Navn(
+					fornavn = fornavn,
+					mellomnavn = mellomnavn,
+					etternavn = etternavn,
+				),
 		)
-	)
 }
 
 data class ArrangorDbo(
 	val arrangorId: UUID,
 	val roller: List<RolleDbo>,
 	val veileder: List<VeilederDeltakerDbo>,
-	val koordinator: List<KoordinatorsDeltakerlisteDbo>
+	val koordinator: List<KoordinatorsDeltakerlisteDbo>,
 )
 
 data class RolleDbo(
 	val rolle: AnsattRolle,
 	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
-	var gyldigTil: ZonedDateTime? = null
+	var gyldigTil: ZonedDateTime? = null,
 ) {
 	fun erGyldig(): Boolean {
 		return gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
@@ -50,7 +52,7 @@ data class RolleDbo(
 data class KoordinatorsDeltakerlisteDbo(
 	val deltakerlisteId: UUID,
 	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
-	var gyldigTil: ZonedDateTime? = null
+	var gyldigTil: ZonedDateTime? = null,
 ) {
 	fun erGyldig(): Boolean {
 		return gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
@@ -61,7 +63,7 @@ data class VeilederDeltakerDbo(
 	val deltakerId: UUID,
 	val veilederType: VeilederType,
 	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
-	var gyldigTil: ZonedDateTime? = null
+	var gyldigTil: ZonedDateTime? = null,
 ) {
 	fun erGyldig(): Boolean {
 		return gyldigTil?.isAfter(ZonedDateTime.now()) ?: true

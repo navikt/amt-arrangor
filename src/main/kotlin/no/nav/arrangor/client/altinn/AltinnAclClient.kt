@@ -14,24 +14,25 @@ import java.util.function.Supplier
 class AltinnAclClient(
 	private val baseUrl: String,
 	private val tokenProvider: Supplier<String>,
-	private val client: OkHttpClient = RestClient.baseClient()
+	private val client: OkHttpClient = RestClient.baseClient(),
 ) {
-
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	fun hentRoller(personident: String): Result<List<AltinnRolle>> {
-		val request = Request.Builder()
-			.url("$baseUrl/api/v1/rolle/tiltaksarrangor")
-			.addHeader("Authorization", "Bearer ${tokenProvider.get()}")
-			.post(JsonUtils.toJson(HentRollerRequest(personident)).toRequestBody("application/json".toMediaType()))
-			.build()
+		val request =
+			Request.Builder()
+				.url("$baseUrl/api/v1/rolle/tiltaksarrangor")
+				.addHeader("Authorization", "Bearer ${tokenProvider.get()}")
+				.post(JsonUtils.toJson(HentRollerRequest(personident)).toRequestBody("application/json".toMediaType()))
+				.build()
 
-		val roller = client.newCall(request).execute()
-			.also { res -> isFailure(res, log)?.let { ex -> return Result.failure(ex) } }
-			.let { it.body?.string() ?: return Result.failure(IllegalStateException("Forventet body")) }
-			.let { JsonUtils.fromJson<ResponseWrapper>(it).roller }
-			.map { roller -> AltinnRolle(roller.organisasjonsnummer, roller.roller.map(::mapTiltaksarrangorRolle)) }
-			.also { log.debug("Hentet roller for person") }
+		val roller =
+			client.newCall(request).execute()
+				.also { res -> isFailure(res, log)?.let { ex -> return Result.failure(ex) } }
+				.let { it.body?.string() ?: return Result.failure(IllegalStateException("Forventet body")) }
+				.let { JsonUtils.fromJson<ResponseWrapper>(it).roller }
+				.map { roller -> AltinnRolle(roller.organisasjonsnummer, roller.roller.map(::mapTiltaksarrangorRolle)) }
+				.also { log.debug("Hentet roller for person") }
 
 		return Result.success(roller)
 	}
@@ -47,11 +48,11 @@ class AltinnAclClient(
 	data class HentRollerRequest(val personident: String)
 
 	data class ResponseWrapper(
-		val roller: List<ResponseEntry>
+		val roller: List<ResponseEntry>,
 	)
 
 	data class ResponseEntry(
 		val organisasjonsnummer: String,
-		val roller: List<String>
+		val roller: List<String>,
 	)
 }

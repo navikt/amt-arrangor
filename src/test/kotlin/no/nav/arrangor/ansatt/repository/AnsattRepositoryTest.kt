@@ -19,7 +19,6 @@ import java.time.ZonedDateTime
 import java.util.UUID
 
 class AnsattRepositoryTest {
-
 	private val datasource = SingletonPostgresContainer.getDataSource()
 	private val template = NamedParameterJdbcTemplate(datasource)
 
@@ -41,22 +40,24 @@ class AnsattRepositoryTest {
 		val ansattId = UUID.randomUUID()
 		val arrangorId = UUID.randomUUID()
 		val deltakerId = UUID.randomUUID()
-		val ansatt = AnsattDbo(
-			id = ansattId,
-			personident = "123456",
-			personId = UUID.randomUUID(),
-			fornavn = "Test",
-			mellomnavn = "Mellom",
-			etternavn = "Testersen",
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorId,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-					koordinator = emptyList()
-				)
+		val ansatt =
+			AnsattDbo(
+				id = ansattId,
+				personident = "123456",
+				personId = UUID.randomUUID(),
+				fornavn = "Test",
+				mellomnavn = "Mellom",
+				etternavn = "Testersen",
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorId,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
+							koordinator = emptyList(),
+						),
+					),
 			)
-		)
 
 		val inserted = repository.insertOrUpdate(ansatt)
 
@@ -82,39 +83,43 @@ class AnsattRepositoryTest {
 		val ansattId = UUID.randomUUID()
 		val arrangorId = UUID.randomUUID()
 		val deltakerId = UUID.randomUUID()
-		val oldAnsatt = AnsattDbo(
-			id = ansattId,
-			personident = "123456",
-			personId = UUID.randomUUID(),
-			fornavn = "Test",
-			mellomnavn = "Mellom",
-			etternavn = "Testersen",
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorId,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-					koordinator = emptyList()
-				)
+		val oldAnsatt =
+			AnsattDbo(
+				id = ansattId,
+				personident = "123456",
+				personId = UUID.randomUUID(),
+				fornavn = "Test",
+				mellomnavn = "Mellom",
+				etternavn = "Testersen",
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorId,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
+							koordinator = emptyList(),
+						),
+					),
 			)
-		)
 		repository.insertOrUpdate(oldAnsatt)
-		val oppdatertAnsatt = AnsattDbo(
-			id = ansattId,
-			personident = "123456",
-			personId = oldAnsatt.personId,
-			fornavn = "Test2",
-			mellomnavn = null,
-			etternavn = "Testersen2",
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorId,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-					koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID()))
-				)
+		val oppdatertAnsatt =
+			AnsattDbo(
+				id = ansattId,
+				personident = "123456",
+				personId = oldAnsatt.personId,
+				fornavn = "Test2",
+				mellomnavn = null,
+				etternavn = "Testersen2",
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorId,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
+							koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID())),
+						),
+					),
 			)
-		)
 
 		val new = repository.insertOrUpdate(oppdatertAnsatt)
 
@@ -140,22 +145,24 @@ class AnsattRepositoryTest {
 		val ansattId = UUID.randomUUID()
 		val arrangorId = UUID.randomUUID()
 		val deltakerId = UUID.randomUUID()
-		val stored = AnsattDbo(
-			id = ansattId,
-			personident = "123456",
-			personId = UUID.randomUUID(),
-			fornavn = "Test",
-			mellomnavn = "Mellom",
-			etternavn = "Testersen",
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorId,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-					koordinator = emptyList()
-				)
-			)
-		).let { repository.insertOrUpdate(it) }
+		val stored =
+			AnsattDbo(
+				id = ansattId,
+				personident = "123456",
+				personId = UUID.randomUUID(),
+				fornavn = "Test",
+				mellomnavn = "Mellom",
+				etternavn = "Testersen",
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorId,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
+							koordinator = emptyList(),
+						),
+					),
+			).let { repository.insertOrUpdate(it) }
 
 		repository.get(stored.id) shouldBe stored
 	}
@@ -170,22 +177,24 @@ class AnsattRepositoryTest {
 		val ansattId = UUID.randomUUID()
 		val arrangorId = UUID.randomUUID()
 		val deltakerId = UUID.randomUUID()
-		val stored = AnsattDbo(
-			id = ansattId,
-			personident = "123456",
-			personId = UUID.randomUUID(),
-			fornavn = "Test",
-			mellomnavn = "Mellom",
-			etternavn = "Testersen",
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorId,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-					koordinator = emptyList()
-				)
-			)
-		).let { repository.insertOrUpdate(it) }
+		val stored =
+			AnsattDbo(
+				id = ansattId,
+				personident = "123456",
+				personId = UUID.randomUUID(),
+				fornavn = "Test",
+				mellomnavn = "Mellom",
+				etternavn = "Testersen",
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorId,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
+							koordinator = emptyList(),
+						),
+					),
+			).let { repository.insertOrUpdate(it) }
 
 		repository.get(stored.personident) shouldBe stored
 	}
@@ -195,22 +204,24 @@ class AnsattRepositoryTest {
 		val ansattId = UUID.randomUUID()
 		val arrangorId = UUID.randomUUID()
 		val deltakerId = UUID.randomUUID()
-		val stored = AnsattDbo(
-			id = ansattId,
-			personident = "123456",
-			personId = UUID.randomUUID(),
-			fornavn = "Test",
-			mellomnavn = "Mellom",
-			etternavn = "Testersen",
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorId,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-					koordinator = emptyList()
-				)
-			)
-		).let { repository.insertOrUpdate(it) }
+		val stored =
+			AnsattDbo(
+				id = ansattId,
+				personident = "123456",
+				personId = UUID.randomUUID(),
+				fornavn = "Test",
+				mellomnavn = "Mellom",
+				etternavn = "Testersen",
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorId,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
+							koordinator = emptyList(),
+						),
+					),
+			).let { repository.insertOrUpdate(it) }
 
 		repository.getByPersonId(stored.personId) shouldBe stored
 	}
@@ -249,32 +260,36 @@ class AnsattRepositoryTest {
 		val deltaker2 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
 
-		val ansatt1 = db.ansatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangor,
-					listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+		val ansatt1 =
+			db.ansatt(
+				arrangorer =
 					listOf(
-						VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER),
-						VeilederDeltakerDbo(deltaker2, VeilederType.MEDVEILEDER)
+						ArrangorDbo(
+							arrangor,
+							listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+							listOf(
+								VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER),
+								VeilederDeltakerDbo(deltaker2, VeilederType.MEDVEILEDER),
+							),
+							emptyList(),
+						),
 					),
-					emptyList()
-				)
 			)
-		)
-		val ansatt2 = db.ansatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangor,
-					listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+		val ansatt2 =
+			db.ansatt(
+				arrangorer =
 					listOf(
-						VeilederDeltakerDbo(deltaker1, VeilederType.MEDVEILEDER),
-						VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER)
+						ArrangorDbo(
+							arrangor,
+							listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+							listOf(
+								VeilederDeltakerDbo(deltaker1, VeilederType.MEDVEILEDER),
+								VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER),
+							),
+							emptyList(),
+						),
 					),
-					emptyList()
-				)
 			)
-		)
 		repository.insertOrUpdate(ansatt1)
 		repository.insertOrUpdate(ansatt2)
 

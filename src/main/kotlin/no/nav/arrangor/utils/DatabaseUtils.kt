@@ -5,13 +5,11 @@ import java.sql.ResultSet
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.util.*
+import java.util.UUID
 
-fun <V> sqlParameters(vararg pairs: Pair<String, V>): MapSqlParameterSource =
-	MapSqlParameterSource().addValues(pairs.toMap())
+fun <V> sqlParameters(vararg pairs: Pair<String, V>): MapSqlParameterSource = MapSqlParameterSource().addValues(pairs.toMap())
 
-fun ResultSet.getNullableUUID(columnLabel: String): UUID? =
-	this.getString(columnLabel)?.let { UUID.fromString(it) }
+fun ResultSet.getNullableUUID(columnLabel: String): UUID? = this.getString(columnLabel)?.let { UUID.fromString(it) }
 
 fun ResultSet.getNullableZonedDateTime(columnLabel: String): ZonedDateTime? =
 	this.getTimestamp(columnLabel)?.let {

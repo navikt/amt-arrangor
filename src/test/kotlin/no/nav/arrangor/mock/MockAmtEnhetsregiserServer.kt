@@ -5,21 +5,25 @@ import no.nav.arrangor.utils.JsonUtils
 import okhttp3.mockwebserver.MockResponse
 
 class MockAmtEnhetsregiserServer : MockHttpServer("amt-enhetsregiser-server") {
-
 	fun addVirksomhet(virksomhet: Virksomhet) {
 		addResponseHandler(
 			path = "/api/enhet/${virksomhet.organisasjonsnummer}",
-			response = MockResponse()
-				.setResponseCode(200)
-				.setBody(JsonUtils.toJson(virksomhet))
+			response =
+				MockResponse()
+					.setResponseCode(200)
+					.setBody(JsonUtils.toJson(virksomhet)),
 		)
 	}
 
-	fun addVirksomhetFailure(orgNr: String, errorCode: Int = 500) {
+	fun addVirksomhetFailure(
+		orgNr: String,
+		errorCode: Int = 500,
+	) {
 		addResponseHandler(
 			path = "/api/enhet/$orgNr",
-			response = MockResponse()
-				.setResponseCode(errorCode)
+			response =
+				MockResponse()
+					.setResponseCode(errorCode),
 		)
 	}
 }

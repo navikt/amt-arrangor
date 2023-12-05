@@ -7,5 +7,5 @@ data class ArrangorMedOverordnetArrangor(
 	val id: UUID,
 	val navn: String,
 	val organisasjonsnummer: String,
-	val overordnetArrangor: Arrangor?
+	val overordnetArrangor: Arrangor?,
 )

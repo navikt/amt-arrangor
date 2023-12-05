@@ -12,12 +12,11 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @EnableJwtTokenValidation
 class ApplicationConfiguration {
-
 	@Bean
 	fun machineToMachineTokenClient(
 		@Value("\${nais.env.azureAppClientId}") azureAdClientId: String,
 		@Value("\${nais.env.azureOpenIdConfigTokenEndpoint}") azureTokenEndpoint: String,
-		@Value("\${nais.env.azureAppJWK}") azureAdJWK: String
+		@Value("\${nais.env.azureAppJWK}") azureAdJWK: String,
 	): MachineToMachineTokenClient {
 		return AzureAdTokenClientBuilder.builder()
 			.withClientId(azureAdClientId)

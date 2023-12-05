@@ -5,19 +5,19 @@ import java.util.UUID
 data class Ansatt(
 	val id: UUID,
 	val personalia: Personalia,
-	val arrangorer: List<TilknyttetArrangor>
+	val arrangorer: List<TilknyttetArrangor>,
 )
 
 data class Personalia(
 	val personident: String,
 	val personId: UUID?,
-	val navn: Navn
+	val navn: Navn,
 )
 
 data class Navn(
 	val fornavn: String,
 	val mellomnavn: String?,
-	val etternavn: String
+	val etternavn: String,
 )
 
 data class TilknyttetArrangor(
@@ -26,20 +26,20 @@ data class TilknyttetArrangor(
 	val overordnetArrangor: Arrangor?,
 	val roller: List<AnsattRolle>,
 	val veileder: List<Veileder>,
-	val koordinator: List<UUID>
+	val koordinator: List<UUID>,
 )
 
 data class Veileder(
 	val deltakerId: UUID,
-	val type: VeilederType
+	val type: VeilederType,
 )
 
 enum class AnsattRolle {
 	KOORDINATOR,
-	VEILEDER
+	VEILEDER,
 }
 
 enum class VeilederType {
 	VEILEDER,
-	MEDVEILEDER
+	MEDVEILEDER,
 }

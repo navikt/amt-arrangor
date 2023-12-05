@@ -29,13 +29,13 @@ class AnsattService(
 	private val rolleService: AnsattRolleService,
 	private val publishService: PublishService,
 	private val metricsService: MetricsService,
-	private val arrangorService: ArrangorService
+	private val arrangorService: ArrangorService,
 ) {
-
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	fun get(id: UUID): Ansatt? = ansattRepository.get(id)
-		?.let { getAndMaybeUpdateAnsatt(it) }
+	fun get(id: UUID): Ansatt? =
+		ansattRepository.get(id)
+			?.let { getAndMaybeUpdateAnsatt(it) }
 
 	fun get(personident: String): Ansatt? {
 		return ansattRepository.get(personident)
@@ -47,7 +47,11 @@ class AnsattService(
 		return ansattRepository.get(personident)?.id
 	}
 
-	fun setKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
+	fun setKoordinatorForDeltakerliste(
+		personident: String,
+		arrangorId: UUID,
+		deltakerlisteId: UUID,
+	): Ansatt {
 		val (ansatt, arrangor) = hentKoordinatorOgArrangor(personident, arrangorId)
 
 		val eksisterendeDeltakerliste = arrangor.koordinator.find { it.deltakerlisteId == deltakerlisteId }
@@ -66,7 +70,7 @@ class AnsattService(
 	private fun opprettKoordinatorTilgang(
 		arrangor: ArrangorDbo,
 		deltakerlisteId: UUID,
-		ansatt: AnsattDbo
+		ansatt: AnsattDbo,
 	): Ansatt {
 		val oppdatertDeltakerlisterForArrangor = arrangor.koordinator + KoordinatorsDeltakerlisteDbo(deltakerlisteId)
 		val oppdatertAnsattDbo = oppdaterAnsattArrangorer(ansatt, arrangor.copy(koordinator = oppdatertDeltakerlisterForArrangor))
@@ -80,7 +84,11 @@ class AnsattService(
 		return oppdatertAnsatt
 	}
 
-	fun fjernKoordinatorForDeltakerliste(personident: String, arrangorId: UUID, deltakerlisteId: UUID): Ansatt {
+	fun fjernKoordinatorForDeltakerliste(
+		personident: String,
+		arrangorId: UUID,
+		deltakerlisteId: UUID,
+	): Ansatt {
 		val (ansattDbo, arrangor) = hentKoordinatorOgArrangor(personident, arrangorId)
 
 		return fjernDeltakerlisteTilgang(arrangor, deltakerlisteId, ansattDbo)
@@ -89,7 +97,7 @@ class AnsattService(
 	private fun fjernDeltakerlisteTilgang(
 		arrangor: ArrangorDbo,
 		deltakerlisteId: UUID,
-		ansattDbo: AnsattDbo
+		ansattDbo: AnsattDbo,
 	): Ansatt {
 		arrangor.koordinator.find { it.deltakerlisteId == deltakerlisteId && it.erGyldig() }?.let {
 			it.gyldigTil = ZonedDateTime.now()
@@ -103,7 +111,10 @@ class AnsattService(
 		return getAndMaybeUpdateAnsatt(ansattDbo)
 	}
 
-	private fun hentKoordinatorOgArrangor(personident: String, arrangorId: UUID): Pair<AnsattDbo, ArrangorDbo> {
+	private fun hentKoordinatorOgArrangor(
+		personident: String,
+		arrangorId: UUID,
+	): Pair<AnsattDbo, ArrangorDbo> {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 
 		val arrangor = finnArrangorMedRolle(ansattDbo, arrangorId, AnsattRolle.KOORDINATOR).getOrThrow()
@@ -114,10 +125,11 @@ class AnsattService(
 	private fun finnArrangorMedRolle(
 		ansattDbo: AnsattDbo,
 		arrangorId: UUID,
-		rolle: AnsattRolle
+		rolle: AnsattRolle,
 	): Result<ArrangorDbo> {
-		val arrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
-			?: return Result.failure(IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId"))
+		val arrangor =
+			ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
+				?: return Result.failure(IllegalArgumentException("Ansatt har ikke tilgang til arrangør med id $arrangorId"))
 		if (arrangor.roller.find { it.erGyldig() && it.rolle == rolle } == null) {
 			return Result.failure(IllegalArgumentException("Ansatt har ikke ${rolle.name.lowercase()}tilgang for arrangør med id $arrangorId"))
 		}
@@ -127,7 +139,7 @@ class AnsattService(
 	fun oppdaterVeiledereForDeltaker(
 		personident: String,
 		deltakerId: UUID,
-		request: AnsattController.OppdaterVeiledereForDeltakerRequest
+		request: AnsattController.OppdaterVeiledereForDeltakerRequest,
 	) {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 		finnArrangorMedRolle(ansattDbo, request.arrangorId, AnsattRolle.KOORDINATOR).getOrThrow()
@@ -138,8 +150,9 @@ class AnsattService(
 				ansattDbo = ansatt,
 				arrangorId = request.arrangorId,
 				deltakerId = deltakerId,
-				type = request.veilederSomFjernes.find { it.ansattId == ansatt.id }?.type
-					?: throw IllegalStateException("Fant ikke ansatt fra listen, skal ikke kunne skje!")
+				type =
+					request.veilederSomFjernes.find { it.ansattId == ansatt.id }?.type
+						?: throw IllegalStateException("Fant ikke ansatt fra listen, skal ikke kunne skje!"),
 			)
 		}
 
@@ -149,14 +162,20 @@ class AnsattService(
 				ansattDbo = ansatt,
 				arrangorId = request.arrangorId,
 				deltakerId = deltakerId,
-				type = request.veilederSomLeggesTil.find { it.ansattId == ansatt.id }?.type
-					?: throw IllegalStateException("Fant ikke ansatt fra listen, skal ikke kunne skje!")
+				type =
+					request.veilederSomLeggesTil.find { it.ansattId == ansatt.id }?.type
+						?: throw IllegalStateException("Fant ikke ansatt fra listen, skal ikke kunne skje!"),
 			)
 		}
 		logger.info("Oppdatert veiledere for deltaker $deltakerId")
 	}
 
-	private fun setVeileder(ansattDbo: AnsattDbo, arrangorId: UUID, deltakerId: UUID, type: VeilederType) {
+	private fun setVeileder(
+		ansattDbo: AnsattDbo,
+		arrangorId: UUID,
+		deltakerId: UUID,
+		type: VeilederType,
+	) {
 		val ansattArrangor = finnArrangorMedRolle(ansattDbo, arrangorId, AnsattRolle.VEILEDER).getOrThrow()
 
 		val eksisterendeVeilederRelasjon = ansattArrangor.veileder.find { it.deltakerId == deltakerId && it.veilederType == type }
@@ -165,10 +184,11 @@ class AnsattService(
 			return
 		}
 
-		val oppdatertAnsattDbo = oppdaterAnsattArrangorer(
-			ansattDbo = ansattDbo,
-			oppdatertArrangor = ansattArrangor.copy(veileder = ansattArrangor.veileder + VeilederDeltakerDbo(deltakerId, type))
-		)
+		val oppdatertAnsattDbo =
+			oppdaterAnsattArrangorer(
+				ansattDbo = ansattDbo,
+				oppdatertArrangor = ansattArrangor.copy(veileder = ansattArrangor.veileder + VeilederDeltakerDbo(deltakerId, type)),
+			)
 
 		val oppdaterAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
 		publishService.publishAnsatt(oppdaterAnsatt)
@@ -178,15 +198,21 @@ class AnsattService(
 
 	private fun oppdaterAnsattArrangorer(
 		ansattDbo: AnsattDbo,
-		oppdatertArrangor: ArrangorDbo
+		oppdatertArrangor: ArrangorDbo,
 	): AnsattDbo {
-		val oppdaterteArrangorer = ansattDbo.arrangorer
-			.filter { it.arrangorId != oppdatertArrangor.arrangorId }
-			.plus(oppdatertArrangor)
+		val oppdaterteArrangorer =
+			ansattDbo.arrangorer
+				.filter { it.arrangorId != oppdatertArrangor.arrangorId }
+				.plus(oppdatertArrangor)
 		return ansattDbo.copy(arrangorer = oppdaterteArrangorer)
 	}
 
-	fun fjernVeileder(ansattDbo: AnsattDbo, arrangorId: UUID, deltakerId: UUID, type: VeilederType) {
+	fun fjernVeileder(
+		ansattDbo: AnsattDbo,
+		arrangorId: UUID,
+		deltakerId: UUID,
+		type: VeilederType,
+	) {
 		val ansattArrangor = ansattDbo.arrangorer.find { it.arrangorId == arrangorId }
 		if (ansattArrangor == null) {
 			logger.warn("Ansatt ${ansattDbo.id} har ingen tilganger hos arrangør $arrangorId, ingen deltakere å fjerne")
@@ -213,25 +239,27 @@ class AnsattService(
 
 		val arrangorer = rolleService.mapAltinnRollerTilArrangorListeForNyAnsatt(altinnRoller)
 
-		val ansattDbo = ansattRepository.insertOrUpdate(
-			AnsattDbo(
-				id = UUID.randomUUID(),
-				personident = personIdent,
-				personId = person.id,
-				fornavn = person.fornavn,
-				mellomnavn = person.mellomnavn,
-				etternavn = person.etternavn,
-				arrangorer = arrangorer
+		val ansattDbo =
+			ansattRepository.insertOrUpdate(
+				AnsattDbo(
+					id = UUID.randomUUID(),
+					personident = personIdent,
+					personId = person.id,
+					fornavn = person.fornavn,
+					mellomnavn = person.mellomnavn,
+					etternavn = person.etternavn,
+					arrangorer = arrangorer,
+				),
 			)
-		)
 		logger.info("Opprettet ny ansatt og lagret roller for ansattId ${ansattDbo.id}")
 		return mapToAnsatt(ansattDbo).also { publishService.publishAnsatt(it) }
 	}
 
-	fun oppdaterAnsattesRoller() = ansattRepository.getToSynchronize(
-		maxSize = 50,
-		synchronizedBefore = LocalDateTime.now().minusDays(7)
-	).forEach { oppdaterRoller(it) }
+	fun oppdaterAnsattesRoller() =
+		ansattRepository.getToSynchronize(
+			maxSize = 50,
+			synchronizedBefore = LocalDateTime.now().minusDays(7),
+		).forEach { oppdaterRoller(it) }
 
 	private fun getAndMaybeUpdateAnsatt(ansattDbo: AnsattDbo): Ansatt {
 		val shouldSynchronize = ansattDbo.lastSynchronized.isBefore(LocalDateTime.now().minusHours(1))
@@ -252,7 +280,10 @@ class AnsattService(
 			.also { if (ansattDboMedOppdaterteRoller.isUpdated) publishService.publishAnsatt(it) }
 	}
 
-	fun getAll(offset: Int, limit: Int): List<Ansatt> {
+	fun getAll(
+		offset: Int,
+		limit: Int,
+	): List<Ansatt> {
 		return ansattRepository.getAll(offset, limit).map { mapToAnsatt(it) }
 	}
 
@@ -260,7 +291,7 @@ class AnsattService(
 		return Ansatt(
 			id = ansattDbo.id,
 			personalia = ansattDbo.toPersonalia(),
-			arrangorer = mapToTilknyttetArrangorListe(ansattDbo.arrangorer)
+			arrangorer = mapToTilknyttetArrangorListe(ansattDbo.arrangorer),
 		)
 	}
 
@@ -278,21 +309,26 @@ class AnsattService(
 			}
 			TilknyttetArrangor(
 				arrangorId = arrangorDbo.arrangorId,
-				arrangor = Arrangor(
-					id = arrangor.id,
-					navn = arrangor.navn,
-					organisasjonsnummer = arrangor.organisasjonsnummer,
-					overordnetArrangorId = arrangor.overordnetArrangor?.id
-				),
+				arrangor =
+					Arrangor(
+						id = arrangor.id,
+						navn = arrangor.navn,
+						organisasjonsnummer = arrangor.organisasjonsnummer,
+						overordnetArrangorId = arrangor.overordnetArrangor?.id,
+					),
 				overordnetArrangor = arrangor.overordnetArrangor,
 				roller = arrangorDbo.roller.filter { it.erGyldig() }.map { it.rolle },
 				veileder = arrangorDbo.veileder.filter { it.erGyldig() }.map { Veileder(deltakerId = it.deltakerId, type = it.veilederType) },
-				koordinator = arrangorDbo.koordinator.filter { it.erGyldig() }.map { it.deltakerlisteId }
+				koordinator = arrangorDbo.koordinator.filter { it.erGyldig() }.map { it.deltakerlisteId },
 			)
 		}
 	}
 
-	fun deaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime, status: DeltakerStatus?) {
+	fun deaktiverVeiledereForDeltaker(
+		deltakerId: UUID,
+		deaktiveringsdato: ZonedDateTime,
+		status: DeltakerStatus?,
+	) {
 		val ansatteEndret = ansattRepository.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
 		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
 
@@ -301,7 +337,10 @@ class AnsattService(
 		}
 	}
 
-	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, status: DeltakerStatus) {
+	fun maybeReaktiverVeiledereForDeltaker(
+		deltakerId: UUID,
+		status: DeltakerStatus,
+	) {
 		val ansatteEndret = ansattRepository.maybeReaktiverVeiledereForDeltaker(deltakerId)
 		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
 
@@ -310,7 +349,11 @@ class AnsattService(
 		}
 	}
 
-	fun fjernTilgangerHosArrangor(deltakerlisteId: UUID, deltakerIder: List<UUID>, arrangorId: UUID) {
+	fun fjernTilgangerHosArrangor(
+		deltakerlisteId: UUID,
+		deltakerIder: List<UUID>,
+		arrangorId: UUID,
+	) {
 		val ansatte = ansattRepository.getAnsatteHosArrangor(arrangorId)
 
 		for (ansatt in ansatte) {
@@ -331,7 +374,7 @@ class AnsattService(
 
 	private fun fjernGamleVeilederTilganger(
 		arrangor: ArrangorDbo,
-		deltakerIder: List<UUID>
+		deltakerIder: List<UUID>,
 	): List<VeilederDeltakerDbo> {
 		val deltakere = arrangor.veileder.filter { it.erGyldig() && it.deltakerId in deltakerIder }
 		deltakere.forEach { it.gyldigTil = ZonedDateTime.now() }
@@ -341,7 +384,7 @@ class AnsattService(
 	private fun fjernGammelKoordinatorTilgang(
 		ansatt: AnsattDbo,
 		gammelArrangorId: UUID,
-		deltakerlisteId: UUID
+		deltakerlisteId: UUID,
 	) {
 		finnArrangorMedRolle(ansatt, gammelArrangorId, AnsattRolle.KOORDINATOR).onSuccess { arrangor ->
 			fjernDeltakerlisteTilgang(arrangor, deltakerlisteId, ansatt)

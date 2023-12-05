@@ -9,5 +9,5 @@ data class ArrangorDto(
 	val source: String?,
 	val navn: String,
 	val organisasjonsnummer: String,
-	val overordnetArrangorId: UUID?
+	val overordnetArrangorId: UUID?,
 )

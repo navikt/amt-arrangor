@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 
 @ControllerAdvice
 class GlobalExceptionHandler {
-
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	@ExceptionHandler(Exception::class)
-	fun handleException(ex: Exception, request: HttpServletRequest): ResponseEntity<Response> {
+	fun handleException(
+		ex: Exception,
+		request: HttpServletRequest,
+	): ResponseEntity<Response> {
 		return when (ex) {
 			is JwtTokenUnauthorizedException -> buildResponse(HttpStatus.UNAUTHORIZED, ex)
 			is NoSuchElementException -> buildResponse(HttpStatus.NOT_FOUND, ex)
@@ -30,7 +32,7 @@ class GlobalExceptionHandler {
 
 	private fun buildResponse(
 		status: HttpStatus,
-		exception: Throwable
+		exception: Throwable,
 	): ResponseEntity<Response> {
 		if (status.is4xxClientError) {
 			log.warn("Noe er feil med request: ${exception.message}, statuskode ${status.value()}", exception)
@@ -43,8 +45,8 @@ class GlobalExceptionHandler {
 				Response(
 					status = status.value(),
 					title = status,
-					detail = exception.message
-				)
+					detail = exception.message,
+				),
 			)
 	}
 
@@ -52,6 +54,6 @@ class GlobalExceptionHandler {
 	data class Response(
 		val status: Int,
 		val title: HttpStatus,
-		val detail: String?
+		val detail: String?,
 	)
 }

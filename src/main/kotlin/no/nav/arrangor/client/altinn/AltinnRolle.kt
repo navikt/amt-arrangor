@@ -4,5 +4,5 @@ import no.nav.arrangor.domain.AnsattRolle
 
 data class AltinnRolle(
 	val organisasjonsnummer: String,
-	val roller: List<AnsattRolle>
+	val roller: List<AnsattRolle>,
 )
