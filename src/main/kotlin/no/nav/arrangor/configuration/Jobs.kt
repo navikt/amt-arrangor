@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled
 @Configuration
 class Jobs(
 	private val leaderElection: LeaderElection,
-	private val ansattService: AnsattService
+	private val ansattService: AnsattService,
 ) {
 	@Scheduled(cron = "@hourly")
 	@SchedulerLock(name = "oppdater_roller", lockAtMostFor = "120m")

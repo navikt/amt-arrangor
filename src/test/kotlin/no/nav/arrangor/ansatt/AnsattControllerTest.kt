@@ -25,7 +25,6 @@ import java.util.UUID
 import javax.sql.DataSource
 
 class AnsattControllerTest : IntegrationTest() {
-
 	@Autowired
 	private lateinit var datasource: DataSource
 
@@ -75,9 +74,9 @@ class AnsattControllerTest : IntegrationTest() {
 					AnsattController.OppdaterVeiledereForDeltakerRequest(
 						arrangorId = UUID.randomUUID(),
 						veilederSomLeggesTil = listOf(AnsattController.VeilederAnsatt(UUID.randomUUID(), VeilederType.VEILEDER)),
-						veilederSomFjernes = emptyList()
-					)
-				).toJsonRequestBody()
+						veilederSomFjernes = emptyList(),
+					),
+				).toJsonRequestBody(),
 			)
 				.also { it.code shouldBe 401 }
 		}
@@ -86,7 +85,6 @@ class AnsattControllerTest : IntegrationTest() {
 	@Nested
 	@DisplayName("/api/ansatt/ tester")
 	inner class GetByPersonidentTests {
-
 		@Test
 		fun `getAnsattByPersonident - returnerer Ansatt`() {
 			val arrangorOne = db.insertArrangor()
@@ -98,8 +96,8 @@ class AnsattControllerTest : IntegrationTest() {
 				personident,
 				mapOf(
 					arrangorOne.organisasjonsnummer to listOf(KOORDINATOR),
-					arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
-				)
+					arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER),
+				),
 			)
 
 			mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
@@ -125,8 +123,8 @@ class AnsattControllerTest : IntegrationTest() {
 				personident,
 				mapOf(
 					arrangorOne.organisasjonsnummer to listOf(KOORDINATOR),
-					arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
-				)
+					arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER),
+				),
 			)
 
 			mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
@@ -139,8 +137,8 @@ class AnsattControllerTest : IntegrationTest() {
 				personident,
 				mapOf(
 					arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR),
-					arrangorThree.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER)
-				)
+					arrangorThree.organisasjonsnummer to listOf(KOORDINATOR, VEILEDER),
+				),
 			)
 
 			val nyAnsatt = getAnsatt(personident)
@@ -154,16 +152,20 @@ class AnsattControllerTest : IntegrationTest() {
 		}
 	}
 
-	private fun getRoller(ansatt: Ansatt, arrangorId: UUID): List<AnsattRolle> {
+	private fun getRoller(
+		ansatt: Ansatt,
+		arrangorId: UUID,
+	): List<AnsattRolle> {
 		return ansatt.arrangorer.find { it.arrangorId == arrangorId }!!.roller
 	}
 
-	private fun getAnsatt(personident: String): Ansatt = sendRequest(
-		method = "GET",
-		path = "/api/ansatt",
-		headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}")
-	)
-		.also { it.code shouldBe 200 }
-		.let { it.body?.string() ?: throw IllegalStateException("Body skal ikke være tom") }
-		.let { JsonUtils.fromJson(it) }
+	private fun getAnsatt(personident: String): Ansatt =
+		sendRequest(
+			method = "GET",
+			path = "/api/ansatt",
+			headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}"),
+		)
+			.also { it.code shouldBe 200 }
+			.let { it.body?.string() ?: throw IllegalStateException("Body skal ikke være tom") }
+			.let { JsonUtils.fromJson(it) }
 }

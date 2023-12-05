@@ -24,9 +24,8 @@ class IngestService(
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val metricsService: MetricsService,
-	private val publishService: PublishService
+	private val publishService: PublishService,
 ) {
-
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	fun handleVirksomhetEndring(virksomhetDto: VirksomhetDto?) {
@@ -35,15 +34,16 @@ class IngestService(
 		val arrangor = arrangorRepository.get(virksomhetDto.organisasjonsnummer)
 
 		if (arrangor != null) {
-			val overordnetArrangorId = virksomhetDto.overordnetEnhetOrganisasjonsnummer?.let {
-				getOverordnetArrangorId(overordnetEnhetOrganisasjonsnummer = it, arrangor = arrangor)
-			}
+			val overordnetArrangorId =
+				virksomhetDto.overordnetEnhetOrganisasjonsnummer?.let {
+					getOverordnetArrangorId(overordnetEnhetOrganisasjonsnummer = it, arrangor = arrangor)
+				}
 			arrangorRepository.insertOrUpdate(
 				arrangor.copy(
 					navn = virksomhetDto.navn,
 					organisasjonsnummer = virksomhetDto.organisasjonsnummer,
-					overordnetArrangorId = overordnetArrangorId
-				)
+					overordnetArrangorId = overordnetArrangorId,
+				),
 			)
 				.also { publishService.publishArrangor(it.toDomain()) }
 				.also { metricsService.incEndredeArrangorer() }
@@ -53,8 +53,9 @@ class IngestService(
 	}
 
 	fun handleAnsattPersonalia(ansattPersonalia: AnsattPersonaliaDto) {
-		val ansatt = ansattRepository.getByPersonId(ansattPersonalia.id)
-			?: return logger.warn("Mottok personalia men fant ikke ansatt med personId ${ansattPersonalia.id}")
+		val ansatt =
+			ansattRepository.getByPersonId(ansattPersonalia.id)
+				?: return logger.warn("Mottok personalia men fant ikke ansatt med personId ${ansattPersonalia.id}")
 
 		if (harPersonaliaEndringer(ansatt, ansattPersonalia)) {
 			ansattRepository.insertOrUpdate(
@@ -62,14 +63,17 @@ class IngestService(
 					fornavn = ansattPersonalia.fornavn,
 					mellomnavn = ansattPersonalia.mellomnavn,
 					etternavn = ansattPersonalia.etternavn,
-					personident = ansattPersonalia.personident
-				)
+					personident = ansattPersonalia.personident,
+				),
 			)
 			logger.info("Oppdaterte personalia for ansatt ${ansatt.id}")
 		}
 	}
 
-	private fun harPersonaliaEndringer(ansatt: AnsattDbo, ansattPersonalia: AnsattPersonaliaDto): Boolean {
+	private fun harPersonaliaEndringer(
+		ansatt: AnsattDbo,
+		ansattPersonalia: AnsattPersonaliaDto,
+	): Boolean {
 		return ansatt.personident != ansattPersonalia.personident ||
 			ansatt.fornavn != ansattPersonalia.fornavn ||
 			ansatt.mellomnavn != ansattPersonalia.mellomnavn ||
@@ -78,7 +82,7 @@ class IngestService(
 
 	private fun getOverordnetArrangorId(
 		overordnetEnhetOrganisasjonsnummer: String,
-		arrangor: ArrangorRepository.ArrangorDbo
+		arrangor: ArrangorRepository.ArrangorDbo,
 	): UUID? {
 		val overordnetArrangorFraDb = arrangorRepository.get(overordnetEnhetOrganisasjonsnummer)
 		if (overordnetArrangorFraDb?.id == arrangor.overordnetArrangorId) {
@@ -89,7 +93,10 @@ class IngestService(
 			logger.info("Arrangør ${arrangor.id} har fått ny overordnet arrangør med id ${overordnetArrangorFraDb.id}")
 			overordnetArrangorFraDb.id
 		} else {
-			logger.warn("Fant ikke overordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer, oppretter overordnet arrangør for arrangør ${arrangor.id}")
+			logger.warn(
+				"Fant ikke overordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer, oppretter overordnet " +
+					"arrangør for arrangør ${arrangor.id}",
+			)
 			val nyOverordnetArrangor =
 				enhetsregisterClient.hentVirksomhet(overordnetEnhetOrganisasjonsnummer).let { result ->
 					result.getOrNull()?.let {
@@ -98,8 +105,8 @@ class IngestService(
 								id = UUID.randomUUID(),
 								navn = it.navn,
 								organisasjonsnummer = it.organisasjonsnummer,
-								overordnetArrangorId = null
-							)
+								overordnetArrangorId = null,
+							),
 						)
 					}
 				}
@@ -114,7 +121,10 @@ class IngestService(
 		}
 	}
 
-	fun handleDeltakerEndring(id: UUID, deltaker: DeltakerDto?) {
+	fun handleDeltakerEndring(
+		id: UUID,
+		deltaker: DeltakerDto?,
+	) {
 		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER || deltaker.status.type in AVSLUTTENDE_STATUSER) {
 			val deaktiveringsdato = LocalDateTime.now().plusDays(20).atZone(ZoneId.systemDefault())
 			// Deltakere fjernes fra deltakeroversikten 14 dager etter avsluttende status er satt,
@@ -123,7 +133,7 @@ class IngestService(
 			ansattService.deaktiverVeiledereForDeltaker(
 				deltakerId = id,
 				deaktiveringsdato = deaktiveringsdato,
-				status = deltaker?.status?.type
+				status = deltaker?.status?.type,
 			)
 		} else {
 			ansattService.maybeReaktiverVeiledereForDeltaker(id, deltaker.status.type)

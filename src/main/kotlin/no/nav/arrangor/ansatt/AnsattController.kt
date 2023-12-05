@@ -22,7 +22,7 @@ import java.util.UUID
 @RequestMapping("/api/ansatt")
 class AnsattController(
 	private val ansattService: AnsattService,
-	private val contextHolder: TokenValidationContextHolder
+	private val contextHolder: TokenValidationContextHolder,
 ) {
 	@GetMapping
 	fun getByPersonident(): Ansatt =
@@ -34,29 +34,31 @@ class AnsattController(
 	@PostMapping("koordinator/{arrangorId}/{deltakerlisteId}")
 	fun setKoordinatorForDeltakerliste(
 		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
-		@PathVariable("arrangorId") arrangorId: UUID
-	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
-	}
+		@PathVariable("arrangorId") arrangorId: UUID,
+	): Ansatt =
+		hentPersonligIdentTilInnloggetBruker().let { personident ->
+			ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
+		}
 
 	@DeleteMapping("koordinator/{arrangorId}/{deltakerlisteId}")
 	fun fjernKoordinatorForDeltakerliste(
 		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
-		@PathVariable("arrangorId") arrangorId: UUID
-	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.fjernKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
-	}
+		@PathVariable("arrangorId") arrangorId: UUID,
+	): Ansatt =
+		hentPersonligIdentTilInnloggetBruker().let { personident ->
+			ansattService.fjernKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
+		}
 
 	@PostMapping("veiledere/{deltakerId}")
 	fun oppdaterVeiledereForDeltaker(
 		@PathVariable("deltakerId") deltakerId: UUID,
-		@RequestBody request: OppdaterVeiledereForDeltakerRequest
+		@RequestBody request: OppdaterVeiledereForDeltakerRequest,
 	) {
 		hentPersonligIdentTilInnloggetBruker().let { personident ->
 			ansattService.oppdaterVeiledereForDeltaker(
 				personident = personident,
 				deltakerId = deltakerId,
-				request = request
+				request = request,
 			)
 		}
 	}
@@ -64,9 +66,10 @@ class AnsattController(
 	private fun hentPersonligIdentTilInnloggetBruker(): String {
 		val context = contextHolder.tokenValidationContext
 
-		val token = context.firstValidToken.orElseThrow {
-			throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized, valid token is missing")
-		}
+		val token =
+			context.firstValidToken.orElseThrow {
+				throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized, valid token is missing")
+			}
 
 		return token.jwtTokenClaims["pid"]?.toString()
 			?.also {
@@ -75,18 +78,18 @@ class AnsattController(
 			}
 			?: throw ResponseStatusException(
 				HttpStatus.UNAUTHORIZED,
-				"PID is missing or is not a string"
+				"PID is missing or is not a string",
 			)
 	}
 
 	data class OppdaterVeiledereForDeltakerRequest(
 		val arrangorId: UUID,
 		val veilederSomLeggesTil: List<VeilederAnsatt>,
-		val veilederSomFjernes: List<VeilederAnsatt>
+		val veilederSomFjernes: List<VeilederAnsatt>,
 	)
 
 	data class VeilederAnsatt(
 		val ansattId: UUID,
-		val type: VeilederType
+		val type: VeilederType,
 	)
 }

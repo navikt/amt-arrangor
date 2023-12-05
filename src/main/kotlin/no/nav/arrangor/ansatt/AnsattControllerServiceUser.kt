@@ -16,37 +16,42 @@ import java.util.UUID
 @ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 @RequestMapping("/api/service/ansatt")
 class AnsattControllerServiceUser(
-	private val ansattService: AnsattService
+	private val ansattService: AnsattService,
 ) {
 	@PostMapping
-	fun getAnsatt(@RequestBody body: AnsattRequestBody): Ansatt {
+	fun getAnsatt(
+		@RequestBody body: AnsattRequestBody,
+	): Ansatt {
 		body.validatePersonident()
 		return ansattService.get(body.personident) ?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
 	}
 
 	@GetMapping("{id}")
-	fun get(@PathVariable("id") id: UUID): Ansatt = ansattService.get(id)
-		?: throw NoSuchElementException("Ansatt $id eksisterer ikke.")
+	fun get(
+		@PathVariable("id") id: UUID,
+	): Ansatt =
+		ansattService.get(id)
+			?: throw NoSuchElementException("Ansatt $id eksisterer ikke.")
 
 	@DeleteMapping("/tilganger")
 	fun fjernTilgangerHosArrangor(
-		@RequestBody request: FjernTilgangerHosArrangorRequest
+		@RequestBody request: FjernTilgangerHosArrangorRequest,
 	) {
 		ansattService.fjernTilgangerHosArrangor(
 			deltakerlisteId = request.deltakerlisteId,
 			deltakerIder = request.deltakerIder,
-			arrangorId = request.arrangorId
+			arrangorId = request.arrangorId,
 		)
 	}
 
 	data class FjernTilgangerHosArrangorRequest(
 		val arrangorId: UUID,
 		val deltakerlisteId: UUID,
-		val deltakerIder: List<UUID>
+		val deltakerIder: List<UUID>,
 	)
 
 	data class AnsattRequestBody(
-		val personident: String
+		val personident: String,
 	) {
 		fun validatePersonident() {
 			if (personident.trim().length != 11 || !personident.trim().matches("""\d{11}""".toRegex())) {

@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import java.util.UUID
 
 class ArrangorServiceTest : IntegrationTest() {
-
 	@Autowired
 	lateinit var service: ArrangorService
 
@@ -18,12 +17,13 @@ class ArrangorServiceTest : IntegrationTest() {
 
 	@Test
 	fun `getOrCreate(string) - overordnet arrangor mangler navn - oppretter ikke overordnet arrangor`() {
-		val virksomhet = Virksomhet(
-			organisasjonsnummer = randomOrgnr(),
-			navn = "Foo",
-			overordnetEnhetOrganisasjonsnummer = randomOrgnr(),
-			overordnetEnhetNavn = null
-		)
+		val virksomhet =
+			Virksomhet(
+				organisasjonsnummer = randomOrgnr(),
+				navn = "Foo",
+				overordnetEnhetOrganisasjonsnummer = randomOrgnr(),
+				overordnetEnhetNavn = null,
+			)
 		mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
 
 		val arrangor = service.getOrCreate(virksomhet.organisasjonsnummer)
@@ -34,12 +34,13 @@ class ArrangorServiceTest : IntegrationTest() {
 
 	@Test
 	fun `getOrCreate(string) - har ikke overordnet enhet - oppretter ikke overordnet arrangor`() {
-		val virksomhet = Virksomhet(
-			organisasjonsnummer = randomOrgnr(),
-			navn = "Foo",
-			overordnetEnhetOrganisasjonsnummer = null,
-			overordnetEnhetNavn = null
-		)
+		val virksomhet =
+			Virksomhet(
+				organisasjonsnummer = randomOrgnr(),
+				navn = "Foo",
+				overordnetEnhetOrganisasjonsnummer = null,
+				overordnetEnhetNavn = null,
+			)
 		mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
 
 		val arrangor = service.getOrCreate(virksomhet.organisasjonsnummer)
@@ -50,12 +51,13 @@ class ArrangorServiceTest : IntegrationTest() {
 
 	@Test
 	fun `getOrCreate(string) - har overordnet enhet - oppretter overordnet arrangor`() {
-		val virksomhet = Virksomhet(
-			organisasjonsnummer = randomOrgnr(),
-			navn = "Foo",
-			overordnetEnhetOrganisasjonsnummer = randomOrgnr(),
-			overordnetEnhetNavn = "Bar"
-		)
+		val virksomhet =
+			Virksomhet(
+				organisasjonsnummer = randomOrgnr(),
+				navn = "Foo",
+				overordnetEnhetOrganisasjonsnummer = randomOrgnr(),
+				overordnetEnhetNavn = "Bar",
+			)
 		mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
 
 		val arrangor = service.getOrCreate(virksomhet.organisasjonsnummer)
@@ -72,18 +74,20 @@ class ArrangorServiceTest : IntegrationTest() {
 
 	@Test
 	fun `getOrCreate(list) - en enhet er ikke opprettet - oppretter manglende arrangor og returnerer liste`() {
-		val manglendeArrangor = Virksomhet(
-			organisasjonsnummer = randomOrgnr(),
-			navn = "Foo",
-			overordnetEnhetOrganisasjonsnummer = null,
-			overordnetEnhetNavn = null
-		)
-		val eksisterendeArrangor = ArrangorRepository.ArrangorDbo(
-			id = UUID.randomUUID(),
-			navn = "Bar",
-			organisasjonsnummer = randomOrgnr(),
-			overordnetArrangorId = null
-		)
+		val manglendeArrangor =
+			Virksomhet(
+				organisasjonsnummer = randomOrgnr(),
+				navn = "Foo",
+				overordnetEnhetOrganisasjonsnummer = null,
+				overordnetEnhetNavn = null,
+			)
+		val eksisterendeArrangor =
+			ArrangorRepository.ArrangorDbo(
+				id = UUID.randomUUID(),
+				navn = "Bar",
+				organisasjonsnummer = randomOrgnr(),
+				overordnetArrangorId = null,
+			)
 		repository.insertOrUpdate(eksisterendeArrangor)
 		mockAmtEnhetsregiserServer.addVirksomhet(manglendeArrangor)
 

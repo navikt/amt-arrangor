@@ -26,21 +26,21 @@ import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
-import java.util.*
+import java.util.UUID
 
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension::class)
 @SpringBootTest(classes = [ArrangorApplication::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class IntegrationTest {
-
 	@LocalServerPort
 	private var port: Int = 0
 
 	fun serverUrl() = "http://localhost:$port"
 
-	private val client = OkHttpClient.Builder()
-		.callTimeout(Duration.ofMinutes(5))
-		.build()
+	private val client =
+		OkHttpClient.Builder()
+			.callTimeout(Duration.ofMinutes(5))
+			.build()
 
 	@AfterEach
 	fun cleanDatabase() {
@@ -72,7 +72,7 @@ class IntegrationTest {
 
 			mockMachineToMachineHttpServer.start()
 			registry.add("nais.env.azureOpenIdConfigTokenEndpoint") {
-				mockMachineToMachineHttpServer.serverUrl() + MockMachineToMachineHttpServer.tokenPath
+				mockMachineToMachineHttpServer.serverUrl() + MockMachineToMachineHttpServer.TOKEN_PATH
 			}
 
 			mockAmtEnhetsregiserServer.start()
@@ -111,11 +111,12 @@ class IntegrationTest {
 		method: String,
 		path: String,
 		body: RequestBody? = null,
-		headers: Map<String, String> = emptyMap()
+		headers: Map<String, String> = emptyMap(),
 	): Response {
-		val reqBuilder = Request.Builder()
-			.url("${serverUrl()}$path")
-			.method(method, body)
+		val reqBuilder =
+			Request.Builder()
+				.url("${serverUrl()}$path")
+				.method(method, body)
 
 		headers.forEach {
 			reqBuilder.addHeader(it.key, it.value)
@@ -129,12 +130,13 @@ class IntegrationTest {
 		audience: String = "amt-arrangor-client-id",
 		issuerId: String = Issuer.TOKEN_X,
 		clientId: String = "amt-tiltaksarrangor-bff",
-		claims: Map<String, Any> = mapOf(
-			"acr" to "Level4",
-			"idp" to "idporten",
-			"client_id" to clientId,
-			"pid" to fnr
-		)
+		claims: Map<String, Any> =
+			mapOf(
+				"acr" to "Level4",
+				"idp" to "idporten",
+				"client_id" to clientId,
+				"pid" to fnr,
+			),
 	): String {
 		return mockOAuth2Server.issueToken(
 			issuerId,
@@ -144,8 +146,8 @@ class IntegrationTest {
 				subject = UUID.randomUUID().toString(),
 				audience = listOf(audience),
 				claims = claims,
-				expiry = 3600
-			)
+				expiry = 3600,
+			),
 		).serialize()
 	}
 
@@ -153,7 +155,7 @@ class IntegrationTest {
 		subject: String = "test",
 		audience: String = "test-aud",
 		issuerId: String = Issuer.AZURE_AD,
-		claims: Map<String, Any> = emptyMap()
+		claims: Map<String, Any> = emptyMap(),
 	): String {
 		return mockOAuth2Server.issueToken(issuerId, subject, audience, claims).serialize()
 	}
@@ -165,10 +167,11 @@ fun String.toJsonRequestBody(): RequestBody {
 }
 
 private fun getKafkaImage(): String {
-	val tag = when (System.getProperty("os.arch")) {
-		"aarch64" -> "7.2.2-1-ubi8.arm64"
-		else -> "7.2.2"
-	}
+	val tag =
+		when (System.getProperty("os.arch")) {
+			"aarch64" -> "7.2.2-1-ubi8.arm64"
+			else -> "7.2.2"
+		}
 
 	return "confluentinc/cp-kafka:$tag"
 }

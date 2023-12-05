@@ -4,5 +4,5 @@ data class Virksomhet(
 	val organisasjonsnummer: String,
 	val navn: String,
 	val overordnetEnhetOrganisasjonsnummer: String?,
-	val overordnetEnhetNavn: String?
+	val overordnetEnhetNavn: String?,
 )

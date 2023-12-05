@@ -13,16 +13,20 @@ import java.util.UUID
 @ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 @RequestMapping("/api/service/arrangor")
 class ArrangorControllerServiceUser(
-	private val arrangorService: ArrangorService
+	private val arrangorService: ArrangorService,
 ) {
 	@GetMapping("/organisasjonsnummer/{orgnummer}")
-	fun getArrangor(@PathVariable("orgnummer") orgnummer: String): ArrangorMedOverordnetArrangor {
+	fun getArrangor(
+		@PathVariable("orgnummer") orgnummer: String,
+	): ArrangorMedOverordnetArrangor {
 		validerOrganisasjonsnummer(orgnummer)
 		return arrangorService.getArrangorMedOverordnetArrangor(orgnummer)
 	}
 
 	@GetMapping("{id}")
-	fun get(@PathVariable("id") id: UUID): ArrangorMedOverordnetArrangor {
+	fun get(
+		@PathVariable("id") id: UUID,
+	): ArrangorMedOverordnetArrangor {
 		return arrangorService.getArrangorMedOverordnetArrangor(id)
 			?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 	}

@@ -8,14 +8,13 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class EnhetsregisterClientConfiguration(
 	@Value("\${amt-enhetsregister.url}") private val baseUrl: String,
-	@Value("\${amt-enhetsregister.scope}") private val scope: String
+	@Value("\${amt-enhetsregister.scope}") private val scope: String,
 ) {
-
 	@Bean
 	fun enhetsregisterClient(machineToMachineTokenClient: MachineToMachineTokenClient): EnhetsregisterClient {
 		return EnhetsregisterClient(
 			baseUrl = baseUrl,
-			tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) }
+			tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
 		)
 	}
 }

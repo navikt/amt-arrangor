@@ -15,9 +15,8 @@ class ArrangorService(
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val publishService: PublishService,
-	private val metricsService: MetricsService
+	private val metricsService: MetricsService,
 ) {
-
 	private val logger = LoggerFactory.getLogger(javaClass)
 
 	fun getOrCreate(orgNr: String): Arrangor {
@@ -32,8 +31,9 @@ class ArrangorService(
 	}
 
 	fun getOrCreate(orgnumre: List<String>): List<Arrangor> {
-		val lagredeArrangorer = arrangorRepository.getArrangorerMedOrgnumre(orgnumre)
-			.map { it.toDomain() }
+		val lagredeArrangorer =
+			arrangorRepository.getArrangorerMedOrgnumre(orgnumre)
+				.map { it.toDomain() }
 		val orgnummerSomMangler =
 			orgnumre.filterNot { orgnummer -> lagredeArrangorer.any { it.organisasjonsnummer == orgnummer } }
 		val nyeArrangorer = orgnummerSomMangler.map { insertArrangor(it).toDomain() }
@@ -47,7 +47,7 @@ class ArrangorService(
 			id = arrangor.id,
 			navn = arrangor.navn,
 			organisasjonsnummer = arrangor.organisasjonsnummer,
-			overordnetArrangor = overordnetArrangor
+			overordnetArrangor = overordnetArrangor,
 		)
 	}
 
@@ -59,7 +59,7 @@ class ArrangorService(
 			id = arrangor.id,
 			navn = arrangor.navn,
 			organisasjonsnummer = arrangor.organisasjonsnummer,
-			overordnetArrangor = overordnetArrangor
+			overordnetArrangor = overordnetArrangor,
 		)
 	}
 
@@ -73,17 +73,18 @@ class ArrangorService(
 				id = arrangorDbo.id,
 				navn = arrangorDbo.navn,
 				organisasjonsnummer = arrangorDbo.organisasjonsnummer,
-				overordnetArrangor = arrangorDbo.overordnetArrangorId?.let { overordnetArrangorId ->
-					val overordnetArrangor = overordnedeArrangorer.find { overordnetArrangorId == it.id }
-					overordnetArrangor?.let {
-						Arrangor(
-							id = it.id,
-							navn = it.navn,
-							organisasjonsnummer = it.organisasjonsnummer,
-							overordnetArrangorId = it.overordnetArrangorId
-						)
-					}
-				}
+				overordnetArrangor =
+					arrangorDbo.overordnetArrangorId?.let { overordnetArrangorId ->
+						val overordnetArrangor = overordnedeArrangorer.find { overordnetArrangorId == it.id }
+						overordnetArrangor?.let {
+							Arrangor(
+								id = it.id,
+								navn = it.navn,
+								organisasjonsnummer = it.organisasjonsnummer,
+								overordnetArrangorId = it.overordnetArrangorId,
+							)
+						}
+					},
 			)
 		}
 	}
@@ -91,14 +92,15 @@ class ArrangorService(
 	private fun insertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
 		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(getDefaultVirksomhet(orgNr))
 		val overordnetArrangor = getOverordnetArrangor(virksomhet)
-		val arrangor = arrangorRepository.insertOrUpdate(
-			ArrangorRepository.ArrangorDbo(
-				id = UUID.randomUUID(),
-				navn = virksomhet.navn,
-				organisasjonsnummer = virksomhet.organisasjonsnummer,
-				overordnetArrangorId = overordnetArrangor?.id
+		val arrangor =
+			arrangorRepository.insertOrUpdate(
+				ArrangorRepository.ArrangorDbo(
+					id = UUID.randomUUID(),
+					navn = virksomhet.navn,
+					organisasjonsnummer = virksomhet.organisasjonsnummer,
+					overordnetArrangorId = overordnetArrangor?.id,
+				),
 			)
-		)
 		publishService.publishArrangor(arrangor.toDomain())
 		metricsService.incEndredeArrangorer()
 		return arrangor
@@ -106,14 +108,15 @@ class ArrangorService(
 
 	private fun getOverordnetArrangor(virksomhet: Virksomhet): ArrangorRepository.ArrangorDbo? {
 		if (virksomhet.overordnetEnhetOrganisasjonsnummer == null || virksomhet.overordnetEnhetNavn == null) return null
-		val overordnetArrangor = arrangorRepository.insertOrUpdate(
-			ArrangorRepository.ArrangorDbo(
-				id = UUID.randomUUID(),
-				navn = virksomhet.overordnetEnhetNavn,
-				organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
-				overordnetArrangorId = null
+		val overordnetArrangor =
+			arrangorRepository.insertOrUpdate(
+				ArrangorRepository.ArrangorDbo(
+					id = UUID.randomUUID(),
+					navn = virksomhet.overordnetEnhetNavn,
+					organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
+					overordnetArrangorId = null,
+				),
 			)
-		)
 		publishService.publishArrangor(overordnetArrangor.toDomain())
 		metricsService.incEndredeArrangorer()
 		return overordnetArrangor
@@ -124,7 +127,7 @@ class ArrangorService(
 			organisasjonsnummer = organisasjonsnummer,
 			navn = "Ukjent virksomhet",
 			overordnetEnhetOrganisasjonsnummer = null,
-			overordnetEnhetNavn = null
+			overordnetEnhetNavn = null,
 		)
 	}
 }

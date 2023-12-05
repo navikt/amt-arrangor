@@ -44,11 +44,12 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 
 	@Test
 	fun `getAnsatt - ikke gyldig token - unauthorized`() {
-		val response = sendRequest(
-			method = "POST",
-			path = "/api/service/ansatt",
-			body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody("12345678910")).toJsonRequestBody()
-		)
+		val response =
+			sendRequest(
+				method = "POST",
+				path = "/api/service/ansatt",
+				body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody("12345678910")).toJsonRequestBody(),
+			)
 
 		response.code shouldBe 401
 	}
@@ -65,7 +66,7 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 			method = "DELETE",
 			path = "/api/service/ansatt/tilganger",
 			body = "".toJsonRequestBody(),
-			headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "foobar")}")
+			headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "foobar")}"),
 		)
 			.also { it.code shouldBe 401 }
 	}
@@ -80,17 +81,18 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 			personident,
 			mapOf(
 				arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR),
-				arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
-			)
+				arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER),
+			),
 		)
 		mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
 
-		val response = sendRequest(
-			method = "POST",
-			path = "/api/service/ansatt",
-			body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "POST",
+				path = "/api/service/ansatt",
+				body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 200
 		val ansatt = JsonUtils.fromJson<Ansatt>(response.body!!.string())
@@ -105,16 +107,17 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 		val personId = UUID.randomUUID()
 		mockAltinnServer.addRoller(
 			personident,
-			emptyMap()
+			emptyMap(),
 		)
 		mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
 
-		val response = sendRequest(
-			method = "POST",
-			path = "/api/service/ansatt",
-			body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "POST",
+				path = "/api/service/ansatt",
+				body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 404
 		ansattRepository.get(personident) shouldBe null
@@ -126,16 +129,17 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 		val personId = UUID.randomUUID()
 		mockAltinnServer.addRoller(
 			personident,
-			emptyMap()
+			emptyMap(),
 		)
 		mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
 
-		val response = sendRequest(
-			method = "POST",
-			path = "/api/service/ansatt",
-			body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "POST",
+				path = "/api/service/ansatt",
+				body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 400
 		ansattRepository.get(personident) shouldBe null
@@ -143,10 +147,11 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 
 	@Test
 	fun `getAnsatt (id) - ikke gyldig token - unauthorized`() {
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/ansatt/${UUID.randomUUID()}"
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/ansatt/${UUID.randomUUID()}",
+			)
 
 		response.code shouldBe 401
 	}
@@ -165,23 +170,25 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 				fornavn = "Test",
 				mellomnavn = null,
 				etternavn = "Testersen",
-				arrangorer = listOf(
-					ArrangorDbo(
-						arrangorId = arrangorOne.id,
-						roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-						koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID())),
-						veileder = emptyList()
-					)
-				)
-			)
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID())),
+							veileder = emptyList(),
+						),
+					),
+			),
 		)
 		mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
 
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/ansatt/$ansattId",
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/ansatt/$ansattId",
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 200
 		val ansatt = JsonUtils.fromJson<Ansatt>(response.body!!.string())
@@ -194,11 +201,12 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 	fun `getAnsatt (id) - autentisert, ansatt finnes ikke - returnerer 404 og oppretter ikke ansatt`() {
 		val ansattId = UUID.randomUUID()
 
-		val response = sendRequest(
-			method = "GET",
-			path = "/api/service/ansatt/$ansattId",
-			headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}")
-		)
+		val response =
+			sendRequest(
+				method = "GET",
+				path = "/api/service/ansatt/$ansattId",
+				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+			)
 
 		response.code shouldBe 404
 		ansattRepository.get(ansattId) shouldBe null

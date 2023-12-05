@@ -7,8 +7,13 @@ import okhttp3.mockwebserver.RecordedRequest
 import java.util.UUID
 
 class MockPersonServer : MockHttpServer("amt-person") {
-
-	fun setPerson(personident: String, personId: UUID, fornavn: String, mellomnavn: String? = null, etternavn: String) {
+	fun setPerson(
+		personident: String,
+		personId: UUID,
+		fornavn: String,
+		mellomnavn: String? = null,
+		etternavn: String,
+	) {
 		resetHttpServer()
 
 		addResponseHandler(
@@ -16,20 +21,21 @@ class MockPersonServer : MockHttpServer("amt-person") {
 				req.path == "/api/arrangor-ansatt" &&
 					req.method == "POST"
 			},
-			response = MockResponse()
-				.setResponseCode(200)
-				.setBody(
-					JsonUtils.toJson(
-						PersonClient.PersonResponse(
-							id = personId,
-							personident = personident,
-							fornavn,
-							mellomnavn,
-							etternavn
-						)
+			response =
+				MockResponse()
+					.setResponseCode(200)
+					.setBody(
+						JsonUtils.toJson(
+							PersonClient.PersonResponse(
+								id = personId,
+								personident = personident,
+								fornavn,
+								mellomnavn,
+								etternavn,
+							),
+						),
 					)
-				)
-				.setHeader("content-type", "application/json")
+					.setHeader("content-type", "application/json"),
 		)
 	}
 }

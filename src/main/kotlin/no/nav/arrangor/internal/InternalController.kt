@@ -18,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException
 @RequestMapping("/internal")
 class InternalController(
 	private val ansattService: AnsattService,
-	private val publishService: PublishService
+	private val publishService: PublishService,
 ) {
 	private val log = LoggerFactory.getLogger(InternalController::class.java)
 
@@ -26,7 +26,7 @@ class InternalController(
 	@GetMapping("/ansatte/republiser")
 	fun republiserAnsatte(
 		servlet: HttpServletRequest,
-		@RequestParam(value = "startFromOffset", required = false) startFromOffset: Int?
+		@RequestParam(value = "startFromOffset", required = false) startFromOffset: Int?,
 	) {
 		if (isInternal(servlet)) {
 			JobRunner.runAsync("republiser-ansatte") {

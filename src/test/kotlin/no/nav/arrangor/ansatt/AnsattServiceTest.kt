@@ -74,15 +74,17 @@ class AnsattServiceTest : IntegrationTest() {
 
 	@Test
 	fun `oppdaterRoller - ansatt mister eneste rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten arrangoren`() {
-		val ansattDbo = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList()),
-				ArrangorDbo(arrangorTwo.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList())
+		val ansattDbo =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList()),
+						ArrangorDbo(arrangorTwo.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList()),
+					),
 			)
-		)
 		mockAltinnServer.addRoller(
 			ansattDbo.personident,
-			mapOf(arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.VEILEDER))
+			mapOf(arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)),
 		)
 
 		ansattService.oppdaterRoller(ansattDbo)
@@ -93,24 +95,28 @@ class AnsattServiceTest : IntegrationTest() {
 			?.erGyldig() shouldBe false
 		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorTwo.id }?.roller?.first()?.erGyldig() shouldBe true
 
-		verify(exactly = 1) { publishService.publishAnsatt(match { it.arrangorer.size == 1 && it.arrangorer.first().arrangorId == arrangorTwo.id }) }
+		verify(exactly = 1) {
+			publishService.publishAnsatt(match { it.arrangorer.size == 1 && it.arrangorer.first().arrangorId == arrangorTwo.id })
+		}
 	}
 
 	@Test
 	fun `oppdaterRoller - ansatt mister en rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten rollen`() {
-		val ansattDbo = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorOne.id,
-					listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
-					emptyList(),
-					emptyList()
-				)
+		val ansattDbo =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorOne.id,
+							listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
+							emptyList(),
+							emptyList(),
+						),
+					),
 			)
-		)
 		mockAltinnServer.addRoller(
 			ansattDbo.personident,
-			mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER))
+			mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)),
 		)
 
 		ansattService.oppdaterRoller(ansattDbo)
@@ -128,7 +134,7 @@ class AnsattServiceTest : IntegrationTest() {
 				match {
 					it.arrangorer.first().roller.size == 1 &&
 						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER
-				}
+				},
 			)
 		}
 	}
@@ -136,18 +142,20 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `oppdaterRoller - ansatt mister en rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten koordinator for`() {
 		val koordinatorFor = UUID.randomUUID()
-		val ansattDbo = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorOne.id,
-					listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
-					emptyList(),
+		val ansattDbo =
+			db.insertAnsatt(
+				arrangorer =
 					listOf(
-						KoordinatorsDeltakerlisteDbo(koordinatorFor)
-					)
-				)
+						ArrangorDbo(
+							arrangorOne.id,
+							listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
+							emptyList(),
+							listOf(
+								KoordinatorsDeltakerlisteDbo(koordinatorFor),
+							),
+						),
+					),
 			)
-		)
 		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
 
 		ansattService.oppdaterRoller(ansattDbo)
@@ -165,23 +173,25 @@ class AnsattServiceTest : IntegrationTest() {
 					it.arrangorer.first().roller.size == 1 &&
 						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER &&
 						it.arrangorer.first().koordinator.isEmpty()
-				}
+				},
 			)
 		}
 	}
 
 	@Test
 	fun `oppdaterRoller - ansatt får tilbake deaktivert rolle - oppretter ny rolle og publiserer ansatt`() {
-		val ansattDbo = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorOne.id,
-					listOf(RolleDbo(AnsattRolle.VEILEDER, gyldigTil = ZonedDateTime.now().minusDays(7))),
-					emptyList(),
-					emptyList()
-				)
+		val ansattDbo =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorOne.id,
+							listOf(RolleDbo(AnsattRolle.VEILEDER, gyldigTil = ZonedDateTime.now().minusDays(7))),
+							emptyList(),
+							emptyList(),
+						),
+					),
 			)
-		)
 		mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
 
 		ansattService.oppdaterRoller(ansattDbo)
@@ -198,23 +208,25 @@ class AnsattServiceTest : IntegrationTest() {
 					it.arrangorer.first().roller.size == 1 &&
 						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER &&
 						it.arrangorer.first().koordinator.isEmpty()
-				}
+				},
 			)
 		}
 	}
 
 	@Test
 	fun `oppdaterVeiledereForDeltaker - ansatt har ikke koordinatortilgang - kaster feil`() {
-		val ansatt = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorOne.id,
-					listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					emptyList(),
-					emptyList()
-				)
+		val ansatt =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorOne.id,
+							listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							emptyList(),
+							emptyList(),
+						),
+					),
 			)
-		)
 
 		assertThrows<IllegalArgumentException> {
 			ansattService.oppdaterVeiledereForDeltaker(
@@ -222,14 +234,15 @@ class AnsattServiceTest : IntegrationTest() {
 				UUID.randomUUID(),
 				AnsattController.OppdaterVeiledereForDeltakerRequest(
 					arrangorId = arrangorOne.id,
-					veilederSomLeggesTil = listOf(
-						AnsattController.VeilederAnsatt(
-							UUID.randomUUID(),
-							VeilederType.VEILEDER
-						)
-					),
-					veilederSomFjernes = emptyList()
-				)
+					veilederSomLeggesTil =
+						listOf(
+							AnsattController.VeilederAnsatt(
+								UUID.randomUUID(),
+								VeilederType.VEILEDER,
+							),
+						),
+					veilederSomFjernes = emptyList(),
+				),
 			)
 		}
 	}
@@ -237,268 +250,326 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `oppdaterVeiledereForDeltaker - skal legge til ansatt som veileder - ansatt blir oppdatert`() {
 		val deltakerId = UUID.randomUUID()
-		val koordinator = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = emptyList(),
-					koordinator = emptyList()
-				)
-			)
-		)
-		val veileder1 = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(
-						VeilederDeltakerDbo(
-							deltakerId = deltakerId,
-							veilederType = VeilederType.MEDVEILEDER
-						)
+		val koordinator =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = emptyList(),
+							koordinator = emptyList(),
+						),
 					),
-					koordinator = emptyList()
-				)
 			)
-		)
-		val veileder2 = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = emptyList(),
-					koordinator = emptyList()
-				)
+		val veileder1 =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder =
+								listOf(
+									VeilederDeltakerDbo(
+										deltakerId = deltakerId,
+										veilederType = VeilederType.MEDVEILEDER,
+									),
+								),
+							koordinator = emptyList(),
+						),
+					),
 			)
-		)
-		val request = AnsattController.OppdaterVeiledereForDeltakerRequest(
-			arrangorId = arrangorOne.id,
-			veilederSomLeggesTil = listOf(
-				AnsattController.VeilederAnsatt(
-					veileder2.id,
-					VeilederType.VEILEDER
-				)
-			),
-			veilederSomFjernes = emptyList()
-		)
+		val veileder2 =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder = emptyList(),
+							koordinator = emptyList(),
+						),
+					),
+			)
+		val request =
+			AnsattController.OppdaterVeiledereForDeltakerRequest(
+				arrangorId = arrangorOne.id,
+				veilederSomLeggesTil =
+					listOf(
+						AnsattController.VeilederAnsatt(
+							veileder2.id,
+							VeilederType.VEILEDER,
+						),
+					),
+				veilederSomFjernes = emptyList(),
+			)
 
 		ansattService.oppdaterVeiledereForDeltaker(koordinator.personident, deltakerId, request)
 
 		val veileder1Db = ansattRepository.get(veileder1.id)
 		val veileder1Arrangor = veileder1Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
 		veileder1Arrangor?.veileder?.size shouldBe 1
-		veileder1Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig() } shouldNotBe null
+		veileder1Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig()
+		} shouldNotBe null
 
 		val veileder2Db = ansattRepository.get(veileder2.id)
 		val veileder2Arrangor = veileder2Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
 		veileder2Arrangor?.veileder?.size shouldBe 1
-		veileder2Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig() } shouldNotBe null
+		veileder2Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig()
+		} shouldNotBe null
 	}
 
 	@Test
 	fun `oppdaterVeiledereForDeltaker - skal fjerne ansatt som veileder - ansatt blir oppdatert`() {
 		val deltakerId = UUID.randomUUID()
-		val koordinator = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = emptyList(),
-					koordinator = emptyList()
-				)
-			)
-		)
-		val veileder1 = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(
-						VeilederDeltakerDbo(
-							deltakerId = deltakerId,
-							veilederType = VeilederType.MEDVEILEDER
-						)
+		val koordinator =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = emptyList(),
+							koordinator = emptyList(),
+						),
 					),
-					koordinator = emptyList()
-				)
 			)
-		)
-		val veileder2 = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(
-						VeilederDeltakerDbo(
-							deltakerId = deltakerId,
-							veilederType = VeilederType.VEILEDER
-						)
+		val veileder1 =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder =
+								listOf(
+									VeilederDeltakerDbo(
+										deltakerId = deltakerId,
+										veilederType = VeilederType.MEDVEILEDER,
+									),
+								),
+							koordinator = emptyList(),
+						),
 					),
-					koordinator = emptyList()
-				)
 			)
-		)
-		val request = AnsattController.OppdaterVeiledereForDeltakerRequest(
-			arrangorId = arrangorOne.id,
-			veilederSomLeggesTil = emptyList(),
-			veilederSomFjernes = listOf(
-				AnsattController.VeilederAnsatt(
-					veileder1.id,
-					VeilederType.MEDVEILEDER
-				)
+		val veileder2 =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder =
+								listOf(
+									VeilederDeltakerDbo(
+										deltakerId = deltakerId,
+										veilederType = VeilederType.VEILEDER,
+									),
+								),
+							koordinator = emptyList(),
+						),
+					),
 			)
-		)
+		val request =
+			AnsattController.OppdaterVeiledereForDeltakerRequest(
+				arrangorId = arrangorOne.id,
+				veilederSomLeggesTil = emptyList(),
+				veilederSomFjernes =
+					listOf(
+						AnsattController.VeilederAnsatt(
+							veileder1.id,
+							VeilederType.MEDVEILEDER,
+						),
+					),
+			)
 
 		ansattService.oppdaterVeiledereForDeltaker(koordinator.personident, deltakerId, request)
 
 		val veileder1Db = ansattRepository.get(veileder1.id)
 		val veileder1Arrangor = veileder1Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
 		veileder1Arrangor?.veileder?.size shouldBe 1
-		veileder1Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig() } shouldBe null
-		veileder1Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && !it.erGyldig() } shouldNotBe null
+		veileder1Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig()
+		} shouldBe null
+		veileder1Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && !it.erGyldig()
+		} shouldNotBe null
 
 		val veileder2Db = ansattRepository.get(veileder2.id)
 		val veileder2Arrangor = veileder2Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
 		veileder2Arrangor?.veileder?.size shouldBe 1
-		veileder2Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig() } shouldNotBe null
+		veileder2Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig()
+		} shouldNotBe null
 	}
 
 	@Test
 	fun `oppdaterVeiledereForDeltaker - skal legge til og fjerne ansatt som veileder - ansatte blir oppdatert`() {
 		val deltakerId = UUID.randomUUID()
-		val koordinator = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = emptyList(),
-					koordinator = emptyList()
-				)
-			)
-		)
-		val veileder1 = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(
-						VeilederDeltakerDbo(
-							deltakerId = deltakerId,
-							veilederType = VeilederType.MEDVEILEDER
-						)
+		val koordinator =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = emptyList(),
+							koordinator = emptyList(),
+						),
 					),
-					koordinator = emptyList()
-				)
 			)
-		)
-		val veileder2 = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(
-						VeilederDeltakerDbo(
-							deltakerId = deltakerId,
-							veilederType = VeilederType.VEILEDER
-						)
+		val veileder1 =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder =
+								listOf(
+									VeilederDeltakerDbo(
+										deltakerId = deltakerId,
+										veilederType = VeilederType.MEDVEILEDER,
+									),
+								),
+							koordinator = emptyList(),
+						),
 					),
-					koordinator = emptyList()
-				)
 			)
-		)
-		val veileder3 = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = emptyList(),
-					koordinator = emptyList()
-				)
+		val veileder2 =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder =
+								listOf(
+									VeilederDeltakerDbo(
+										deltakerId = deltakerId,
+										veilederType = VeilederType.VEILEDER,
+									),
+								),
+							koordinator = emptyList(),
+						),
+					),
 			)
-		)
-		val request = AnsattController.OppdaterVeiledereForDeltakerRequest(
-			arrangorId = arrangorOne.id,
-			veilederSomLeggesTil = listOf(
-				AnsattController.VeilederAnsatt(
-					veileder1.id,
-					VeilederType.VEILEDER
-				),
-				AnsattController.VeilederAnsatt(
-					veileder2.id,
-					VeilederType.MEDVEILEDER
-				),
-				AnsattController.VeilederAnsatt(
-					veileder3.id,
-					VeilederType.MEDVEILEDER
-				)
-			),
-			veilederSomFjernes = listOf(
-				AnsattController.VeilederAnsatt(
-					veileder1.id,
-					VeilederType.MEDVEILEDER
-				),
-				AnsattController.VeilederAnsatt(
-					veileder2.id,
-					VeilederType.VEILEDER
-				)
+		val veileder3 =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder = emptyList(),
+							koordinator = emptyList(),
+						),
+					),
 			)
-		)
+		val request =
+			AnsattController.OppdaterVeiledereForDeltakerRequest(
+				arrangorId = arrangorOne.id,
+				veilederSomLeggesTil =
+					listOf(
+						AnsattController.VeilederAnsatt(
+							veileder1.id,
+							VeilederType.VEILEDER,
+						),
+						AnsattController.VeilederAnsatt(
+							veileder2.id,
+							VeilederType.MEDVEILEDER,
+						),
+						AnsattController.VeilederAnsatt(
+							veileder3.id,
+							VeilederType.MEDVEILEDER,
+						),
+					),
+				veilederSomFjernes =
+					listOf(
+						AnsattController.VeilederAnsatt(
+							veileder1.id,
+							VeilederType.MEDVEILEDER,
+						),
+						AnsattController.VeilederAnsatt(
+							veileder2.id,
+							VeilederType.VEILEDER,
+						),
+					),
+			)
 
 		ansattService.oppdaterVeiledereForDeltaker(koordinator.personident, deltakerId, request)
 
 		val veileder1Db = ansattRepository.get(veileder1.id)
 		val veileder1Arrangor = veileder1Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
 		veileder1Arrangor?.veileder?.size shouldBe 2
-		veileder1Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig() } shouldNotBe null
-		veileder1Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && !it.erGyldig() } shouldNotBe null
+		veileder1Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig()
+		} shouldNotBe null
+		veileder1Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && !it.erGyldig()
+		} shouldNotBe null
 
 		val veileder2Db = ansattRepository.get(veileder2.id)
 		val veileder2Arrangor = veileder2Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
 		veileder2Arrangor?.veileder?.size shouldBe 2
-		veileder2Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && !it.erGyldig() } shouldNotBe null
-		veileder2Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig() } shouldNotBe null
+		veileder2Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && !it.erGyldig()
+		} shouldNotBe null
+		veileder2Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig()
+		} shouldNotBe null
 
 		val veileder3Db = ansattRepository.get(veileder3.id)
 		val veileder3Arrangor = veileder3Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
 		veileder3Arrangor?.veileder?.size shouldBe 1
-		veileder3Arrangor?.veileder?.find { it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig() } shouldNotBe null
+		veileder3Arrangor?.veileder?.find {
+			it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig()
+		} shouldNotBe null
 	}
 
 	@Test
 	fun `oppdaterVeileder - deaktivert tilgang for deltaker finnes - ny tilgang opprettes`() {
 		val deltakerId = UUID.randomUUID()
-		val koordinator = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = listOf(),
-					koordinator = listOf()
-				)
+		val koordinator =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = listOf(),
+							koordinator = listOf(),
+						),
+					),
 			)
-		)
-		val ansatt = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-					veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.VEILEDER, gyldigTil = ZonedDateTime.now().minusDays(7))),
-					koordinator = listOf()
-				)
+		val ansatt =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.VEILEDER, gyldigTil = ZonedDateTime.now().minusDays(7))),
+							koordinator = listOf(),
+						),
+					),
 			)
-		)
 
-		val request = AnsattController.OppdaterVeiledereForDeltakerRequest(
-			arrangorId = arrangorOne.id,
-			veilederSomLeggesTil = listOf(
-				AnsattController.VeilederAnsatt(
-					ansatt.id,
-					VeilederType.VEILEDER
-				)
-			),
-			veilederSomFjernes = emptyList()
-		)
+		val request =
+			AnsattController.OppdaterVeiledereForDeltakerRequest(
+				arrangorId = arrangorOne.id,
+				veilederSomLeggesTil =
+					listOf(
+						AnsattController.VeilederAnsatt(
+							ansatt.id,
+							VeilederType.VEILEDER,
+						),
+					),
+				veilederSomFjernes = emptyList(),
+			)
 
 		ansattService.oppdaterVeiledereForDeltaker(koordinator.personident, deltakerId, request)
 
@@ -516,21 +587,23 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `fjernKoordinatorForDeltakerliste - skal fjerne sette gyldigTil til nå`() {
 		val deltakerliste = KoordinatorsDeltakerlisteDbo(UUID.randomUUID())
-		val koordinator = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = emptyList(),
-					koordinator = listOf(deltakerliste)
-				)
+		val koordinator =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = emptyList(),
+							koordinator = listOf(deltakerliste),
+						),
+					),
 			)
-		)
 
 		ansattService.fjernKoordinatorForDeltakerliste(
 			koordinator.personident,
 			koordinator.arrangorer[0].arrangorId,
-			deltakerliste.deltakerlisteId
+			deltakerliste.deltakerlisteId,
 		)
 
 		ansattRepository.get(koordinator.id)!!.arrangorer[0].koordinator[0].gyldigTil shouldNotBe null
@@ -551,12 +624,14 @@ class AnsattServiceTest : IntegrationTest() {
 		val deltakerliste1 = UUID.randomUUID()
 		val deltakerliste2 = UUID.randomUUID()
 
-		val arrangor = db.ansattArrangorDbo(
-			koordinator = listOf(
-				KoordinatorsDeltakerlisteDbo(deltakerliste1),
-				KoordinatorsDeltakerlisteDbo(deltakerliste2)
+		val arrangor =
+			db.ansattArrangorDbo(
+				koordinator =
+					listOf(
+						KoordinatorsDeltakerlisteDbo(deltakerliste1),
+						KoordinatorsDeltakerlisteDbo(deltakerliste2),
+					),
 			)
-		)
 		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste1, emptyList(), arrangor.arrangorId)
@@ -569,10 +644,11 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `fjernTilgangerHosArrangor - veileder skal fjernes`() {
 		val deltaker = UUID.randomUUID()
-		val arrangor = db.ansattArrangorDbo(
-			roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-			veileder = listOf(VeilederDeltakerDbo(deltaker, VeilederType.VEILEDER))
-		)
+		val arrangor =
+			db.ansattArrangorDbo(
+				roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+				veileder = listOf(VeilederDeltakerDbo(deltaker, VeilederType.VEILEDER)),
+			)
 		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker), arrangor.arrangorId)
@@ -585,19 +661,23 @@ class AnsattServiceTest : IntegrationTest() {
 		val deltaker2 = UUID.randomUUID()
 		val deltaker3 = UUID.randomUUID()
 
-		val arrangor1 = db.ansattArrangorDbo(
-			roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-			veileder = listOf(
-				VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER),
-				VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER)
+		val arrangor1 =
+			db.ansattArrangorDbo(
+				roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+				veileder =
+					listOf(
+						VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER),
+						VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER),
+					),
 			)
-		)
-		val arrangor2 = db.ansattArrangorDbo(
-			roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-			veileder = listOf(
-				VeilederDeltakerDbo(deltaker3, VeilederType.VEILEDER)
+		val arrangor2 =
+			db.ansattArrangorDbo(
+				roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+				veileder =
+					listOf(
+						VeilederDeltakerDbo(deltaker3, VeilederType.VEILEDER),
+					),
 			)
-		)
 		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor1, arrangor2))
 
 		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker1, deltaker2), arrangor1.arrangorId)
@@ -617,13 +697,15 @@ class AnsattServiceTest : IntegrationTest() {
 
 		val deltakerliste = UUID.randomUUID()
 
-		val arrangor1 = db.ansattArrangorDbo(
-			roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR), RolleDbo(AnsattRolle.VEILEDER)),
-			veileder = listOf(
-				VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER)
-			),
-			koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste))
-		)
+		val arrangor1 =
+			db.ansattArrangorDbo(
+				roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR), RolleDbo(AnsattRolle.VEILEDER)),
+				veileder =
+					listOf(
+						VeilederDeltakerDbo(deltaker1, VeilederType.VEILEDER),
+					),
+				koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste)),
+			)
 		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor1))
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste, listOf(deltaker1), arrangor1.arrangorId)
@@ -635,16 +717,18 @@ class AnsattServiceTest : IntegrationTest() {
 
 	@Test
 	fun `setKoordinator - ny deltakerliste - ny tilgang opprettes`() {
-		val ansatt = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = emptyList(),
-					koordinator = emptyList()
-				)
+		val ansatt =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = emptyList(),
+							koordinator = emptyList(),
+						),
+					),
 			)
-		)
 		val deltakerlisteId = UUID.randomUUID()
 
 		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
@@ -660,16 +744,18 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `setKoordinator - aktiv tilgang for deltakerliste finnes - tilgang opprettes ikke`() {
 		val deltakerlisteId = UUID.randomUUID()
-		val ansatt = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = emptyList(),
-					koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerlisteId))
-				)
+		val ansatt =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = emptyList(),
+							koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerlisteId)),
+						),
+					),
 			)
-		)
 
 		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
 
@@ -684,16 +770,18 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `setKoordinator - deaktivert tilgang for deltakerliste finnes - ny tilgang opprettes`() {
 		val deltakerlisteId = UUID.randomUUID()
-		val ansatt = db.insertAnsatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangorId = arrangorOne.id,
-					roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
-					veileder = emptyList(),
-					koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerlisteId, gyldigTil = ZonedDateTime.now().minusDays(8)))
-				)
+		val ansatt =
+			db.insertAnsatt(
+				arrangorer =
+					listOf(
+						ArrangorDbo(
+							arrangorId = arrangorOne.id,
+							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+							veileder = emptyList(),
+							koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerlisteId, gyldigTil = ZonedDateTime.now().minusDays(8))),
+						),
+					),
 			)
-		)
 
 		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
 

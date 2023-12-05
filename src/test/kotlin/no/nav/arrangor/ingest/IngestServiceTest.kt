@@ -32,7 +32,6 @@ import java.util.UUID
 import javax.sql.DataSource
 
 class IngestServiceTest : IntegrationTest() {
-
 	@Autowired
 	private lateinit var datasource: DataSource
 
@@ -71,8 +70,8 @@ class IngestServiceTest : IntegrationTest() {
 				id = overordnetArrangorId,
 				navn = "Overordnet arrangør",
 				organisasjonsnummer = overordnetOrgnummer,
-				overordnetArrangorId = null
-			)
+				overordnetArrangorId = null,
+			),
 		)
 
 		val arrangorId = UUID.randomUUID()
@@ -82,24 +81,24 @@ class IngestServiceTest : IntegrationTest() {
 				organisasjonsnummer = orgnummer,
 				navn = "Arrangør",
 				overordnetEnhetOrganisasjonsnummer = overordnetOrgnummer,
-				overordnetEnhetNavn = "Overordnet arrangør"
-			)
+				overordnetEnhetNavn = "Overordnet arrangør",
+			),
 		)
 		arrangorRepository.insertOrUpdate(
 			ArrangorRepository.ArrangorDbo(
 				id = arrangorId,
 				navn = UUID.randomUUID().toString(),
 				organisasjonsnummer = orgnummer,
-				overordnetArrangorId = overordnetArrangorId
-			)
+				overordnetArrangorId = overordnetArrangorId,
+			),
 		)
 
 		ingestService.handleVirksomhetEndring(
 			VirksomhetDto(
 				organisasjonsnummer = orgnummer,
 				navn = "Nytt navn",
-				overordnetEnhetOrganisasjonsnummer = overordnetOrgnummer
-			)
+				overordnetEnhetOrganisasjonsnummer = overordnetOrgnummer,
+			),
 		)
 
 		val oppdatertArrangor = arrangorRepository.get(arrangorId)
@@ -108,7 +107,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleVirksomhetEndring - finnes i db med annen overordnet arrangor og ny overordnet arrangor finnes i db - overordnet arrangor oppdateres i db`() {
+	fun `handleVirksomhetEndring - finnes med annen overordnet arrangor, ny overordnet arrangor finnes - overordnet arrangor oppdateres`() {
 		val overordnetArrangorId = UUID.randomUUID()
 		val overordnetOrgnummer = "888887776"
 		val nyOverordnetArrangorId = UUID.randomUUID()
@@ -120,32 +119,32 @@ class IngestServiceTest : IntegrationTest() {
 				id = overordnetArrangorId,
 				navn = "Overordnet navn",
 				organisasjonsnummer = overordnetOrgnummer,
-				overordnetArrangorId = null
-			)
+				overordnetArrangorId = null,
+			),
 		)
 		arrangorRepository.insertOrUpdate(
 			ArrangorRepository.ArrangorDbo(
 				id = nyOverordnetArrangorId,
 				navn = "Ny overordnet navn",
 				organisasjonsnummer = nyOverordnetOrgnummer,
-				overordnetArrangorId = null
-			)
+				overordnetArrangorId = null,
+			),
 		)
 		arrangorRepository.insertOrUpdate(
 			ArrangorRepository.ArrangorDbo(
 				id = arrangorId,
 				navn = "Navn",
 				organisasjonsnummer = orgnummer,
-				overordnetArrangorId = overordnetArrangorId
-			)
+				overordnetArrangorId = overordnetArrangorId,
+			),
 		)
 
 		ingestService.handleVirksomhetEndring(
 			VirksomhetDto(
 				organisasjonsnummer = orgnummer,
 				navn = "Nytt navn",
-				overordnetEnhetOrganisasjonsnummer = nyOverordnetOrgnummer
-			)
+				overordnetEnhetOrganisasjonsnummer = nyOverordnetOrgnummer,
+			),
 		)
 
 		val oppdatertArrangor = arrangorRepository.get(arrangorId)
@@ -154,7 +153,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleVirksomhetEndring - finnes i db med annen overordnet arrangor og ny overordnet arrangor finnes ikke i db - ny overordnet arrangor lagres i db`() {
+	fun `handleVirksomhetEndring - finnes med annen overordnet arrangor,ny overordnet arrangor finnes ikke - ny overordnet arrangor lagres`() {
 		val overordnetArrangorId = UUID.randomUUID()
 		val overordnetOrgnummer = "888887776"
 		val nyOverordnetOrgnummer = "111122222"
@@ -165,32 +164,32 @@ class IngestServiceTest : IntegrationTest() {
 				organisasjonsnummer = nyOverordnetOrgnummer,
 				navn = "Ny Overordnet arrangør",
 				overordnetEnhetOrganisasjonsnummer = null,
-				overordnetEnhetNavn = null
-			)
+				overordnetEnhetNavn = null,
+			),
 		)
 		arrangorRepository.insertOrUpdate(
 			ArrangorRepository.ArrangorDbo(
 				id = overordnetArrangorId,
 				navn = "Overordnet navn",
 				organisasjonsnummer = overordnetOrgnummer,
-				overordnetArrangorId = null
-			)
+				overordnetArrangorId = null,
+			),
 		)
 		arrangorRepository.insertOrUpdate(
 			ArrangorRepository.ArrangorDbo(
 				id = arrangorId,
 				navn = "Navn",
 				organisasjonsnummer = orgnummer,
-				overordnetArrangorId = overordnetArrangorId
-			)
+				overordnetArrangorId = overordnetArrangorId,
+			),
 		)
 
 		ingestService.handleVirksomhetEndring(
 			VirksomhetDto(
 				organisasjonsnummer = orgnummer,
 				navn = "Nytt navn",
-				overordnetEnhetOrganisasjonsnummer = nyOverordnetOrgnummer
-			)
+				overordnetEnhetOrganisasjonsnummer = nyOverordnetOrgnummer,
+			),
 		)
 
 		val oppdatertArrangor = arrangorRepository.get(arrangorId)
@@ -204,24 +203,26 @@ class IngestServiceTest : IntegrationTest() {
 
 	@Test
 	fun `handleAnsattPersonalia - ansatt har endringer - oppdaterer ansatt`() {
-		val ansatt = AnsattDbo(
-			id = UUID.randomUUID(),
-			personident = "123456",
-			personId = UUID.randomUUID(),
-			fornavn = "Test",
-			mellomnavn = "Mellom",
-			etternavn = "Testersen",
-			arrangorer = emptyList()
-		)
+		val ansatt =
+			AnsattDbo(
+				id = UUID.randomUUID(),
+				personident = "123456",
+				personId = UUID.randomUUID(),
+				fornavn = "Test",
+				mellomnavn = "Mellom",
+				etternavn = "Testersen",
+				arrangorer = emptyList(),
+			)
 		ansattRepository.insertOrUpdate(ansatt)
 
-		val nyPersonalia = AnsattPersonaliaDto(
-			ansatt.personId,
-			"ny ident",
-			"nytt",
-			null,
-			"navn"
-		)
+		val nyPersonalia =
+			AnsattPersonaliaDto(
+				ansatt.personId,
+				"ny ident",
+				"nytt",
+				null,
+				"navn",
+			)
 
 		ingestService.handleAnsattPersonalia(nyPersonalia)
 
@@ -234,26 +235,27 @@ class IngestServiceTest : IntegrationTest() {
 
 	@Test
 	fun `handleAnsattPersonalia - ansatt har ikke endringer - oppdaterer ikke ansatt`() {
-		val ansatt = AnsattDbo(
-			id = UUID.randomUUID(),
-			personident = "123456",
-			personId = UUID.randomUUID(),
-			fornavn = "Test",
-			mellomnavn = "Mellom",
-			etternavn = "Testersen",
-			arrangorer = emptyList(),
-			modifiedAt = LocalDateTime.now().minusMonths(1)
-
-		)
+		val ansatt =
+			AnsattDbo(
+				id = UUID.randomUUID(),
+				personident = "123456",
+				personId = UUID.randomUUID(),
+				fornavn = "Test",
+				mellomnavn = "Mellom",
+				etternavn = "Testersen",
+				arrangorer = emptyList(),
+				modifiedAt = LocalDateTime.now().minusMonths(1),
+			)
 		ansattRepository.insertOrUpdate(ansatt)
 
-		val personalia = AnsattPersonaliaDto(
-			ansatt.personId,
-			ansatt.personident,
-			ansatt.fornavn,
-			ansatt.mellomnavn,
-			ansatt.etternavn
-		)
+		val personalia =
+			AnsattPersonaliaDto(
+				ansatt.personId,
+				ansatt.personident,
+				ansatt.fornavn,
+				ansatt.mellomnavn,
+				ansatt.etternavn,
+			)
 
 		ingestService.handleAnsattPersonalia(personalia)
 
@@ -266,186 +268,198 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker 20 dager frem i tid`() {
+	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på aktive veiledere 20 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val deltakerId2 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
 
-		val ansatt1 = veileder(
-			arrangor,
-			listOf(
-				VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER),
-				VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER)
-			)
-		)
-		val ansatt2 = veileder(
-			arrangor,
-			listOf(
-				VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
-				VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER)
-			)
-		)
-		ansattRepository.insertOrUpdate(ansatt1)
-		ansattRepository.insertOrUpdate(ansatt2)
-
-		val deltakerDto = DeltakerDto(
-			id = deltakerId1,
-			status = DeltakerStatusDto(DeltakerStatus.HAR_SLUTTET, LocalDateTime.now(), LocalDateTime.now())
-		)
-
-		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
-
-		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
-
-		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
-				.gyldigTil!!
-				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
-
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
-		}
-
-		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
-				.gyldigTil!!
-				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
-
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
-		}
-	}
-
-	@Test
-	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til 20 dager frem i tid`() {
-		val deltakerId1 = UUID.randomUUID()
-		val deltakerId2 = UUID.randomUUID()
-		val arrangor = UUID.randomUUID()
-
-		val ansatt1 = veileder(
-			arrangor,
-			listOf(
-				VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER),
-				VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER)
-			)
-		)
-		val ansatt2 = veileder(
-			arrangor,
-			listOf(
-				VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
-				VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER)
-			)
-		)
-		ansattRepository.insertOrUpdate(ansatt1)
-		ansattRepository.insertOrUpdate(ansatt2)
-
-		val deltakerDto = DeltakerDto(
-			id = deltakerId1,
-			status = DeltakerStatusDto(DeltakerStatus.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now())
-		)
-
-		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
-
-		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
-
-		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
-				.gyldigTil!!
-				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
-
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
-		}
-
-		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
-				.gyldigTil!!
-				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
-
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
-		}
-	}
-
-	@Test
-	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på alle aktive veiledere for deltaker til 20 dager frem i tid`() {
-		val deltakerId1 = UUID.randomUUID()
-		val arrangor = UUID.randomUUID()
-
-		val ansatt1 = veileder(
-			arrangor,
-			listOf(
-				VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER)
-			)
-		)
-		val ansatt2 = veileder(
-			arrangor,
-			listOf(
-				VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER)
-			)
-		)
-		ansattRepository.insertOrUpdate(ansatt1)
-		ansattRepository.insertOrUpdate(ansatt2)
-
-		val deltakerDto = DeltakerDto(
-			id = deltakerId1,
-			status = DeltakerStatusDto(DeltakerStatus.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now())
-		)
-
-		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
-
-		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
-
-		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
-				.gyldigTil!!
-				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
-		}
-
-		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
-				.gyldigTil!!
-				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
-		}
-	}
-
-	@Test
-	fun `handleDeltakerEndret - fra avsluttende status, inaktive veiledere frem i tid, til aktiv status - fjerner gyldigTil som ikke er passert for veiledere for deltaker`() {
-		val deltakerId1 = UUID.randomUUID()
-		val deltakerId2 = UUID.randomUUID()
-		val arrangor = UUID.randomUUID()
-
-		val ansatt1 = veileder(
-			arrangor,
-			listOf(
-				VeilederDeltakerDbo(
-					deltakerId1,
-					VeilederType.MEDVEILEDER,
-					gyldigTil = ZonedDateTime.now().plusDays(8)
+		val ansatt1 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER),
 				),
-				VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER)
 			)
-		)
-		val ansatt2 = veileder(
-			arrangor,
-			listOf(
-				VeilederDeltakerDbo(
-					deltakerId1,
-					VeilederType.VEILEDER,
-					gyldigTil = ZonedDateTime.now().minusDays(2)
+		val ansatt2 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
 				),
-				VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER)
 			)
-		)
 		ansattRepository.insertOrUpdate(ansatt1)
 		ansattRepository.insertOrUpdate(ansatt2)
 
-		val deltakerDto = DeltakerDto(
-			id = deltakerId1,
-			status = DeltakerStatusDto(DeltakerStatus.DELTAR, LocalDateTime.now(), LocalDateTime.now())
-		)
+		val deltakerDto =
+			DeltakerDto(
+				id = deltakerId1,
+				status = DeltakerStatusDto(DeltakerStatus.HAR_SLUTTET, LocalDateTime.now(), LocalDateTime.now()),
+			)
+
+		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+	}
+
+	@Test
+	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på aktive veiledere til 20 dager frem i tid`() {
+		val deltakerId1 = UUID.randomUUID()
+		val deltakerId2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER),
+				),
+			)
+		val ansatt2 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
+				),
+			)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltakerDto =
+			DeltakerDto(
+				id = deltakerId1,
+				status = DeltakerStatusDto(DeltakerStatus.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now()),
+			)
+
+		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+	}
+
+	@Test
+	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på aktive veiledere til 20 dager frem i tid`() {
+		val deltakerId1 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER),
+				),
+			)
+		val ansatt2 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
+				),
+			)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltakerDto =
+			DeltakerDto(
+				id = deltakerId1,
+				status = DeltakerStatusDto(DeltakerStatus.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now()),
+			)
+
+		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil!!
+				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
+		}
+	}
+
+	@Test
+	fun `handleDeltakerEndret - avsluttet status, inaktive veiledere frem i tid, til DELTAR - fjerner ikke passert gyldigTil for veiledere`() {
+		val deltakerId1 = UUID.randomUUID()
+		val deltakerId2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(
+						deltakerId1,
+						VeilederType.MEDVEILEDER,
+						gyldigTil = ZonedDateTime.now().plusDays(8),
+					),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER),
+				),
+			)
+		val ansatt2 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(
+						deltakerId1,
+						VeilederType.VEILEDER,
+						gyldigTil = ZonedDateTime.now().minusDays(2),
+					),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
+				),
+			)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltakerDto =
+			DeltakerDto(
+				id = deltakerId1,
+				status = DeltakerStatusDto(DeltakerStatus.DELTAR, LocalDateTime.now(), LocalDateTime.now()),
+			)
 
 		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
 
@@ -470,17 +484,18 @@ class IngestServiceTest : IntegrationTest() {
 
 	private fun veileder(
 		arrangor: UUID,
-		veilderDeltakere: List<VeilederDeltakerDbo>
+		veilderDeltakere: List<VeilederDeltakerDbo>,
 	): AnsattDbo {
 		return db.ansatt(
-			arrangorer = listOf(
-				ArrangorDbo(
-					arrangor,
-					listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
-					veilderDeltakere,
-					emptyList()
-				)
-			)
+			arrangorer =
+				listOf(
+					ArrangorDbo(
+						arrangor,
+						listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+						veilderDeltakere,
+						emptyList(),
+					),
+				),
 		)
 	}
 }
