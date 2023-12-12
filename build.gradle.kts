@@ -3,7 +3,7 @@ plugins {
 
     id("org.springframework.boot") version "3.2.0"
     id("io.spring.dependency-management") version "1.1.4"
-    id("org.jlleitschuh.gradle.ktlint") version "12.0.2"
+    id("org.jlleitschuh.gradle.ktlint") version "12.0.3"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
 }
@@ -26,9 +26,9 @@ val arrowVersion = "1.2.1"
 val kotestVersion = "5.8.0"
 val testcontainersVersion = "1.19.3"
 val mockkVersion = "1.13.8"
-val mockOauth2ServerVersion = "2.0.1"
+val mockOauth2ServerVersion = "2.1.0"
 
-val commonVersion = "3.2023.10.18_13.28-58db82ecb1a5"
+val commonVersion = "3.2023.12.12_13.53-510909d4aa1a"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
