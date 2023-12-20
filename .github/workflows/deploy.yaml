@@ -44,13 +44,14 @@ jobs:
     name: Deploy application to dev
     needs: test-build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      id-token: "write"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Deploy application
-        uses: nais/deploy/actions/deploy@master
+        uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-gcp
           RESOURCE: .nais/nais-dev.yaml
           VAR: image=${{ needs.test-build-and-push.outputs.image }}
@@ -60,21 +61,14 @@ jobs:
     needs: [ test-build-and-push, deploy-dev ]
     runs-on: ubuntu-latest
     permissions:
-      contents: "write"
+      id-token: "write"
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Deploy application
-        uses: nais/deploy/actions/deploy@master
+        uses: nais/deploy/actions/deploy@v2
         env:
-          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: prod-gcp
           RESOURCE: .nais/nais-prod.yaml
           VAR: image=${{ needs.test-build-and-push.outputs.image }}
-      - name: Create release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: Release ${{ github.sha }}
-          tag_name: release_${{ github.sha }}
-          prerelease: false

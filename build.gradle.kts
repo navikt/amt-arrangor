@@ -38,7 +38,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
-    implementation("org.yaml:snakeyaml:2.2") // overstyrer sårbar dependency
     implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
