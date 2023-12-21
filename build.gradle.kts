@@ -30,6 +30,8 @@ val mockOauth2ServerVersion = "2.1.0"
 
 val commonVersion = "3.2023.12.12_13.53-510909d4aa1a"
 
+extra["logback.version"] = "1.4.14"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
