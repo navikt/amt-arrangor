@@ -63,18 +63,12 @@ spec:
         - application: amt-tiltaksarrangor-bff
         - application: amt-aktivitetskort-publisher
         - application: amt-deltaker-bff
-        - application: debug-dings
-          namespace: plattformsikkerhet
-          cluster: dev-gcp
     outbound:
       rules:
         - application: amt-enhetsregister
           namespace: amt
           cluster: dev-gcp
         - application: amt-altinn-acl
-          namespace: amt
-          cluster: dev-gcp
-        - application: amt-tiltak
           namespace: amt
           cluster: dev-gcp
         - application: amt-person-service

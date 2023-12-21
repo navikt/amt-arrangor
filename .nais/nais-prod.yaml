@@ -72,9 +72,6 @@ spec:
         - application: amt-altinn-acl
           namespace: amt
           cluster: prod-gcp
-        - application: amt-tiltak
-          namespace: amt
-          cluster: prod-gcp
         - application: amt-person-service
           namespace: amt
           cluster: prod-gcp
