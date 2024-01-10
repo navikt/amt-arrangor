@@ -64,14 +64,13 @@ class AnsattController(
 	}
 
 	private fun hentPersonligIdentTilInnloggetBruker(): String {
-		val context = contextHolder.tokenValidationContext
+		val context = contextHolder.getTokenValidationContext()
 
 		val token =
-			context.firstValidToken.orElseThrow {
-				throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized, valid token is missing")
-			}
+			context.firstValidToken
+				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized, valid token is missing")
 
-		return token.jwtTokenClaims["pid"]?.toString()
+		return token.jwtTokenClaims.getStringClaim("pid")
 			?.also {
 				ansattService.getAnsattIdForPersonident(it)
 					?.let { id -> MDC.put("ansatt-id", id.toString()) }
