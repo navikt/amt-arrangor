@@ -90,7 +90,7 @@ class ArrangorService(
 	}
 
 	private fun insertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
-		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrDefault(getDefaultVirksomhet(orgNr))
+		val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrThrow()
 		val overordnetArrangor = getOverordnetArrangor(virksomhet)
 		val arrangor =
 			arrangorRepository.insertOrUpdate(
@@ -120,14 +120,5 @@ class ArrangorService(
 		publishService.publishArrangor(overordnetArrangor.toDomain())
 		metricsService.incEndredeArrangorer()
 		return overordnetArrangor
-	}
-
-	private fun getDefaultVirksomhet(organisasjonsnummer: String): Virksomhet {
-		return Virksomhet(
-			organisasjonsnummer = organisasjonsnummer,
-			navn = "Ukjent virksomhet",
-			overordnetEnhetOrganisasjonsnummer = null,
-			overordnetEnhetNavn = null,
-		)
 	}
 }
