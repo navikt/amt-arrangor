@@ -63,6 +63,7 @@ spec:
         - application: amt-tiltaksarrangor-bff
         - application: amt-aktivitetskort-publisher
         - application: amt-deltaker-bff
+        - application: amt-deltaker
     outbound:
       rules:
         - application: amt-enhetsregister
