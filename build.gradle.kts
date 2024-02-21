@@ -30,7 +30,7 @@ val mockOauth2ServerVersion = "2.1.2"
 
 val commonVersion = "3.2023.12.12_13.53-510909d4aa1a"
 
-extra["logback.version"] = "1.4.14"
+extra["postgresql.version"] = "42.7.2"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
