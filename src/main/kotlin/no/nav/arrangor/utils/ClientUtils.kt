@@ -5,10 +5,7 @@ import org.slf4j.Logger
 import org.springframework.http.HttpStatusCode
 import org.springframework.web.client.HttpClientErrorException
 
-fun isFailure(
-	response: Response,
-	log: Logger,
-): Exception? {
+fun isFailure(response: Response, log: Logger): Exception? {
 	if (response.code == 404) {
 		log.warn("Fikk responskode 404 på utgående kall")
 		return NoSuchElementException("[${response.request.method}] ${response.request.url}: 404").also { response.close() }

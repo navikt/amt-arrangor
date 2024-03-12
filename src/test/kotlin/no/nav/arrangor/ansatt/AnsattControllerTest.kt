@@ -152,20 +152,16 @@ class AnsattControllerTest : IntegrationTest() {
 		}
 	}
 
-	private fun getRoller(
-		ansatt: Ansatt,
-		arrangorId: UUID,
-	): List<AnsattRolle> {
+	private fun getRoller(ansatt: Ansatt, arrangorId: UUID): List<AnsattRolle> {
 		return ansatt.arrangorer.find { it.arrangorId == arrangorId }!!.roller
 	}
 
-	private fun getAnsatt(personident: String): Ansatt =
-		sendRequest(
-			method = "GET",
-			path = "/api/ansatt",
-			headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}"),
-		)
-			.also { it.code shouldBe 200 }
-			.let { it.body?.string() ?: throw IllegalStateException("Body skal ikke være tom") }
-			.let { JsonUtils.fromJson(it) }
+	private fun getAnsatt(personident: String): Ansatt = sendRequest(
+		method = "GET",
+		path = "/api/ansatt",
+		headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}"),
+	)
+		.also { it.code shouldBe 200 }
+		.let { it.body?.string() ?: throw IllegalStateException("Body skal ikke være tom") }
+		.let { JsonUtils.fromJson(it) }
 }

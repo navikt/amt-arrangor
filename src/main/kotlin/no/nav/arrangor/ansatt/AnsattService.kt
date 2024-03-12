@@ -33,9 +33,8 @@ class AnsattService(
 ) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	fun get(id: UUID): Ansatt? =
-		ansattRepository.get(id)
-			?.let { getAndMaybeUpdateAnsatt(it) }
+	fun get(id: UUID): Ansatt? = ansattRepository.get(id)
+		?.let { getAndMaybeUpdateAnsatt(it) }
 
 	fun get(personident: String): Ansatt? {
 		return ansattRepository.get(personident)
@@ -111,10 +110,7 @@ class AnsattService(
 		return getAndMaybeUpdateAnsatt(ansattDbo)
 	}
 
-	private fun hentKoordinatorOgArrangor(
-		personident: String,
-		arrangorId: UUID,
-	): Pair<AnsattDbo, ArrangorDbo> {
+	private fun hentKoordinatorOgArrangor(personident: String, arrangorId: UUID): Pair<AnsattDbo, ArrangorDbo> {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 
 		val arrangor = finnArrangorMedRolle(ansattDbo, arrangorId, AnsattRolle.KOORDINATOR).getOrThrow()
@@ -196,10 +192,7 @@ class AnsattService(
 		logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId")
 	}
 
-	private fun oppdaterAnsattArrangorer(
-		ansattDbo: AnsattDbo,
-		oppdatertArrangor: ArrangorDbo,
-	): AnsattDbo {
+	private fun oppdaterAnsattArrangorer(ansattDbo: AnsattDbo, oppdatertArrangor: ArrangorDbo): AnsattDbo {
 		val oppdaterteArrangorer =
 			ansattDbo.arrangorer
 				.filter { it.arrangorId != oppdatertArrangor.arrangorId }
@@ -255,11 +248,10 @@ class AnsattService(
 		return mapToAnsatt(ansattDbo).also { publishService.publishAnsatt(it) }
 	}
 
-	fun oppdaterAnsattesRoller() =
-		ansattRepository.getToSynchronize(
-			maxSize = 50,
-			synchronizedBefore = LocalDateTime.now().minusDays(7),
-		).forEach { oppdaterRoller(it) }
+	fun oppdaterAnsattesRoller() = ansattRepository.getToSynchronize(
+		maxSize = 50,
+		synchronizedBefore = LocalDateTime.now().minusDays(7),
+	).forEach { oppdaterRoller(it) }
 
 	private fun getAndMaybeUpdateAnsatt(ansattDbo: AnsattDbo): Ansatt {
 		val shouldSynchronize = ansattDbo.lastSynchronized.isBefore(LocalDateTime.now().minusHours(1))
@@ -280,10 +272,7 @@ class AnsattService(
 			.also { if (ansattDboMedOppdaterteRoller.isUpdated) publishService.publishAnsatt(it) }
 	}
 
-	fun getAll(
-		offset: Int,
-		limit: Int,
-	): List<Ansatt> {
+	fun getAll(offset: Int, limit: Int): List<Ansatt> {
 		return ansattRepository.getAll(offset, limit).map { mapToAnsatt(it) }
 	}
 
@@ -337,10 +326,7 @@ class AnsattService(
 		}
 	}
 
-	fun maybeReaktiverVeiledereForDeltaker(
-		deltakerId: UUID,
-		status: DeltakerStatus,
-	) {
+	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, status: DeltakerStatus) {
 		val ansatteEndret = ansattRepository.maybeReaktiverVeiledereForDeltaker(deltakerId)
 		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
 
@@ -372,10 +358,7 @@ class AnsattService(
 		}
 	}
 
-	private fun fjernGamleVeilederTilganger(
-		arrangor: ArrangorDbo,
-		deltakerIder: List<UUID>,
-	): List<VeilederDeltakerDbo> {
+	private fun fjernGamleVeilederTilganger(arrangor: ArrangorDbo, deltakerIder: List<UUID>): List<VeilederDeltakerDbo> {
 		val deltakere = arrangor.veileder.filter { it.erGyldig() && it.deltakerId in deltakerIder }
 		deltakere.forEach { it.gyldigTil = ZonedDateTime.now() }
 		return deltakere

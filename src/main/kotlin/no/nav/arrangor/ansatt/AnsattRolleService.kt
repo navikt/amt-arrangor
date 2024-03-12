@@ -58,10 +58,7 @@ class AnsattRolleService(
 		return getAnsattDboMedOppdaterteRoller(ansattDbo, nyeRoller)
 	}
 
-	private fun getAnsattDboMedOppdaterteRoller(
-		ansattDbo: AnsattDbo,
-		aktiveRoller: List<RolleOgArrangor>,
-	): DataUpdateWrapper<AnsattDbo> {
+	private fun getAnsattDboMedOppdaterteRoller(ansattDbo: AnsattDbo, aktiveRoller: List<RolleOgArrangor>): DataUpdateWrapper<AnsattDbo> {
 		val gamleAktiveRoller =
 			ansattDbo.arrangorer.flatMap { arrangor ->
 				arrangor.roller.filter { it.erGyldig() }
@@ -166,19 +163,13 @@ class AnsattRolleService(
 		logger.info("Ansatt med ${ansatt.id} fikk ${rolleOgArrangor.rolle} hos ${oppdatertArrangor.arrangorId}")
 	}
 
-	private fun altinnToRolleOgArrangor(
-		roller: List<AltinnRolle>,
-		arrangorer: List<Arrangor>,
-	): List<RolleOgArrangor> {
+	private fun altinnToRolleOgArrangor(roller: List<AltinnRolle>, arrangorer: List<Arrangor>): List<RolleOgArrangor> {
 		return roller.flatMap { altinnRolle ->
 			kombinerRollerOgArrangor(altinnRolle, arrangorer)
 		}
 	}
 
-	private fun kombinerRollerOgArrangor(
-		altinnRolle: AltinnRolle,
-		arrangorer: List<Arrangor>,
-	) = altinnRolle.roller.mapNotNull { ansattRolle ->
+	private fun kombinerRollerOgArrangor(altinnRolle: AltinnRolle, arrangorer: List<Arrangor>) = altinnRolle.roller.mapNotNull { ansattRolle ->
 		val arrangor =
 			arrangorer.find { arrangor -> arrangor.organisasjonsnummer == altinnRolle.organisasjonsnummer }
 				?: return@mapNotNull null

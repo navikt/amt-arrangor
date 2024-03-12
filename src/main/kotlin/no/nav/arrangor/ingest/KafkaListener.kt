@@ -16,10 +16,7 @@ class KafkaListener(
 		properties = ["auto.offset.reset = earliest"],
 		containerFactory = "kafkaListenerContainerFactory",
 	)
-	fun listener(
-		record: ConsumerRecord<String, String>,
-		ack: Acknowledgment,
-	) {
+	fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
 		when (record.topic()) {
 			VIRKSOMHET_TOPIC -> ingestService.handleVirksomhetEndring(record.value()?.let { JsonUtils.fromJson(it) })
 			ANSATT_PERSONALIA_TOPIC -> ingestService.handleAnsattPersonalia(JsonUtils.fromJson(record.value()))
@@ -33,10 +30,7 @@ class KafkaListener(
 		properties = ["auto.offset.reset = earliest"],
 		containerFactory = "kafkaListenerContainerFactoryDeltakerTopic",
 	)
-	fun deltakerListener(
-		record: ConsumerRecord<String, String>,
-		ack: Acknowledgment,
-	) {
+	fun deltakerListener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
 		when (record.topic()) {
 			DELTAKER_TOPIC ->
 				ingestService.handleDeltakerEndring(

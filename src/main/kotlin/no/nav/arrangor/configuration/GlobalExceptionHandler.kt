@@ -14,10 +14,7 @@ class GlobalExceptionHandler {
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	@ExceptionHandler(Exception::class)
-	fun handleException(
-		ex: Exception,
-		request: HttpServletRequest,
-	): ResponseEntity<Response> {
+	fun handleException(ex: Exception, request: HttpServletRequest): ResponseEntity<Response> {
 		return when (ex) {
 			is JwtTokenUnauthorizedException -> buildResponse(HttpStatus.UNAUTHORIZED, ex)
 			is NoSuchElementException -> buildResponse(HttpStatus.NOT_FOUND, ex)
@@ -30,10 +27,7 @@ class GlobalExceptionHandler {
 		}
 	}
 
-	private fun buildResponse(
-		status: HttpStatus,
-		exception: Throwable,
-	): ResponseEntity<Response> {
+	private fun buildResponse(status: HttpStatus, exception: Throwable): ResponseEntity<Response> {
 		if (status.is4xxClientError) {
 			log.warn("Noe er feil med request: ${exception.message}, statuskode ${status.value()}", exception)
 		} else {

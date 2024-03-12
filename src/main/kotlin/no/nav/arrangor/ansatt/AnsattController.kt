@@ -25,29 +25,26 @@ class AnsattController(
 	private val contextHolder: TokenValidationContextHolder,
 ) {
 	@GetMapping
-	fun getByPersonident(): Ansatt =
-		hentPersonligIdentTilInnloggetBruker().let { personident ->
-			ansattService.get(personident)
-				?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
-		}
+	fun getByPersonident(): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
+		ansattService.get(personident)
+			?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
+	}
 
 	@PostMapping("koordinator/{arrangorId}/{deltakerlisteId}")
 	fun setKoordinatorForDeltakerliste(
 		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
 		@PathVariable("arrangorId") arrangorId: UUID,
-	): Ansatt =
-		hentPersonligIdentTilInnloggetBruker().let { personident ->
-			ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
-		}
+	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
+		ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
+	}
 
 	@DeleteMapping("koordinator/{arrangorId}/{deltakerlisteId}")
 	fun fjernKoordinatorForDeltakerliste(
 		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
 		@PathVariable("arrangorId") arrangorId: UUID,
-	): Ansatt =
-		hentPersonligIdentTilInnloggetBruker().let { personident ->
-			ansattService.fjernKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
-		}
+	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
+		ansattService.fjernKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
+	}
 
 	@PostMapping("veiledere/{deltakerId}")
 	fun oppdaterVeiledereForDeltaker(

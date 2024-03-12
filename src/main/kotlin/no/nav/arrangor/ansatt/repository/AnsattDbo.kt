@@ -19,17 +19,15 @@ data class AnsattDbo(
 	val modifiedAt: LocalDateTime = LocalDateTime.now(),
 	val lastSynchronized: LocalDateTime = LocalDateTime.now(),
 ) {
-	fun toPersonalia(): Personalia =
-		Personalia(
-			personident = personident,
-			personId = personId,
-			navn =
-				Navn(
-					fornavn = fornavn,
-					mellomnavn = mellomnavn,
-					etternavn = etternavn,
-				),
-		)
+	fun toPersonalia(): Personalia = Personalia(
+		personident = personident,
+		personId = personId,
+		navn = Navn(
+			fornavn = fornavn,
+			mellomnavn = mellomnavn,
+			etternavn = etternavn,
+		),
+	)
 }
 
 data class ArrangorDbo(
