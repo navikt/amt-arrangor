@@ -30,20 +30,18 @@ class PublishService(
 			.also { logger.info("Publiserte ansatt med id ${ansatt.id}") }
 	}
 
-	private fun Arrangor.toDto(): ArrangorDto =
-		ArrangorDto(
-			id = id,
-			source = AMT_ARRANGOR_SOURCE,
-			navn = navn,
-			organisasjonsnummer = organisasjonsnummer,
-			overordnetArrangorId = overordnetArrangorId,
-		)
+	private fun Arrangor.toDto(): ArrangorDto = ArrangorDto(
+		id = id,
+		source = AMT_ARRANGOR_SOURCE,
+		navn = navn,
+		organisasjonsnummer = organisasjonsnummer,
+		overordnetArrangorId = overordnetArrangorId,
+	)
 
-	private fun Ansatt.toDto(): AnsattDto =
-		AnsattDto(
-			id = id,
-			source = AMT_ARRANGOR_SOURCE,
-			personalia = personalia,
-			arrangorer = arrangorer,
-		)
+	private fun Ansatt.toDto(): AnsattDto = AnsattDto(
+		id = id,
+		source = AMT_ARRANGOR_SOURCE,
+		personalia = personalia,
+		arrangorer = arrangorer,
+	)
 }

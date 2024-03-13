@@ -11,11 +11,9 @@ fun <V> sqlParameters(vararg pairs: Pair<String, V>): MapSqlParameterSource = Ma
 
 fun ResultSet.getNullableUUID(columnLabel: String): UUID? = this.getString(columnLabel)?.let { UUID.fromString(it) }
 
-fun ResultSet.getNullableZonedDateTime(columnLabel: String): ZonedDateTime? =
-	this.getTimestamp(columnLabel)?.let {
-		ZonedDateTime.ofInstant(Instant.ofEpochMilli(it.time), ZoneOffset.systemDefault())
-	}
+fun ResultSet.getNullableZonedDateTime(columnLabel: String): ZonedDateTime? = this.getTimestamp(columnLabel)?.let {
+	ZonedDateTime.ofInstant(Instant.ofEpochMilli(it.time), ZoneOffset.systemDefault())
+}
 
-fun ResultSet.getZonedDateTime(columnLabel: String): ZonedDateTime =
-	getNullableZonedDateTime(columnLabel)
-		?: throw IllegalStateException("Expected $columnLabel not to be null")
+fun ResultSet.getZonedDateTime(columnLabel: String): ZonedDateTime = getNullableZonedDateTime(columnLabel)
+	?: throw IllegalStateException("Expected $columnLabel not to be null")

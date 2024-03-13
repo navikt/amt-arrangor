@@ -71,12 +71,11 @@ class AnsattRepository(
 		).first()
 	}
 
-	fun get(id: UUID): AnsattDbo? =
-		template.query(
-			"SELECT * FROM ansatt WHERE id = :id",
-			sqlParameters("id" to id),
-			rowMapper,
-		).firstOrNull()
+	fun get(id: UUID): AnsattDbo? = template.query(
+		"SELECT * FROM ansatt WHERE id = :id",
+		sqlParameters("id" to id),
+		rowMapper,
+	).firstOrNull()
 
 	fun getAnsatte(ider: List<UUID>): List<AnsattDbo> {
 		if (ider.isEmpty()) {
@@ -89,17 +88,13 @@ class AnsattRepository(
 		)
 	}
 
-	fun get(personident: String): AnsattDbo? =
-		template.query(
-			"SELECT * from ansatt where personident = :personident",
-			sqlParameters("personident" to personident),
-			rowMapper,
-		).firstOrNull()
+	fun get(personident: String): AnsattDbo? = template.query(
+		"SELECT * from ansatt where personident = :personident",
+		sqlParameters("personident" to personident),
+		rowMapper,
+	).firstOrNull()
 
-	fun setSynchronized(
-		id: UUID,
-		timestamp: LocalDateTime,
-	) = template.update(
+	fun setSynchronized(id: UUID, timestamp: LocalDateTime) = template.update(
 		"UPDATE ansatt SET last_synchronized = :last_synchronized WHERE id = :id",
 		sqlParameters(
 			"id" to id,
@@ -107,10 +102,7 @@ class AnsattRepository(
 		),
 	)
 
-	fun getToSynchronize(
-		maxSize: Int,
-		synchronizedBefore: LocalDateTime,
-	): List<AnsattDbo> {
+	fun getToSynchronize(maxSize: Int, synchronizedBefore: LocalDateTime): List<AnsattDbo> {
 		val sql =
 			"""
 			SELECT *
@@ -129,10 +121,7 @@ class AnsattRepository(
 		return template.query(sql, parameters, rowMapper)
 	}
 
-	fun getAll(
-		offset: Int,
-		limit: Int,
-	): List<AnsattDbo> {
+	fun getAll(offset: Int, limit: Int): List<AnsattDbo> {
 		val sql =
 			"""
 			SELECT *
@@ -150,17 +139,13 @@ class AnsattRepository(
 		return template.query(sql, parameters, rowMapper)
 	}
 
-	fun getByPersonId(personId: UUID) =
-		template.query(
-			"SELECT * FROM ansatt WHERE person_id = :personId",
-			sqlParameters("personId" to personId),
-			rowMapper,
-		).firstOrNull()
+	fun getByPersonId(personId: UUID) = template.query(
+		"SELECT * FROM ansatt WHERE person_id = :personId",
+		sqlParameters("personId" to personId),
+		rowMapper,
+	).firstOrNull()
 
-	fun deaktiverVeiledereForDeltaker(
-		deltakerId: UUID,
-		deaktiveringsdato: ZonedDateTime,
-	): List<AnsattDbo> {
+	fun deaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime): List<AnsattDbo> {
 		val sql =
 			"""
 			UPDATE ansatt
@@ -192,10 +177,7 @@ class AnsattRepository(
 		return template.query(sql, parameters, rowMapper)
 	}
 
-	fun maybeReaktiverVeiledereForDeltaker(
-		deltakerId: UUID,
-		deaktiveringsdato: ZonedDateTime = ZonedDateTime.now(),
-	): List<AnsattDbo> {
+	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime = ZonedDateTime.now()): List<AnsattDbo> {
 		val sql =
 			"""
 			UPDATE ansatt
@@ -241,8 +223,7 @@ class AnsattRepository(
 	}
 }
 
-fun List<ArrangorDbo>.toPGObject() =
-	PGobject().also {
-		it.type = "json"
-		it.value = JsonUtils.objectMapper().writeValueAsString(this)
-	}
+fun List<ArrangorDbo>.toPGObject() = PGobject().also {
+	it.type = "json"
+	it.value = JsonUtils.objectMapper().writeValueAsString(this)
+}

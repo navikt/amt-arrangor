@@ -26,17 +26,15 @@ class DbTestData(
 		etternavn: String = UUID.randomUUID().toString(),
 		arrangorer: List<ArrangorDbo>,
 		lastSynchronized: LocalDateTime = LocalDateTime.now(),
-	): AnsattDbo =
-		ansatt(personident, personId, fornavn, mellomnavn, etternavn, arrangorer, lastSynchronized)
-			.let { ansattRepository.insertOrUpdate(it) }
+	): AnsattDbo = ansatt(personident, personId, fornavn, mellomnavn, etternavn, arrangorer, lastSynchronized)
+		.let { ansattRepository.insertOrUpdate(it) }
 
 	fun insertArrangor(
 		navn: String = UUID.randomUUID().toString(),
 		organisasjonsnummer: String = UUID.randomUUID().toString(),
 		overordnetArrangorId: UUID? = null,
-	): ArrangorRepository.ArrangorDbo =
-		arrangor(navn, organisasjonsnummer, overordnetArrangorId)
-			.let { arrangorRepository.insertOrUpdate(it) }
+	): ArrangorRepository.ArrangorDbo = arrangor(navn, organisasjonsnummer, overordnetArrangorId)
+		.let { arrangorRepository.insertOrUpdate(it) }
 
 	fun ansatt(
 		personident: String = UUID.randomUUID().toString(),
@@ -47,29 +45,27 @@ class DbTestData(
 		arrangorer: List<ArrangorDbo> =
 			listOf(ArrangorDbo(UUID.randomUUID(), listOf(RolleDbo(AnsattRolle.KOORDINATOR)), emptyList(), emptyList())),
 		lastSynchronized: LocalDateTime = LocalDateTime.now(),
-	): AnsattDbo =
-		AnsattDbo(
-			id = UUID.randomUUID(),
-			personident = personident,
-			personId = personId,
-			fornavn = fornavn,
-			mellomnavn = mellomnavn,
-			etternavn = etternavn,
-			arrangorer = arrangorer,
-			lastSynchronized = lastSynchronized,
-		)
+	): AnsattDbo = AnsattDbo(
+		id = UUID.randomUUID(),
+		personident = personident,
+		personId = personId,
+		fornavn = fornavn,
+		mellomnavn = mellomnavn,
+		etternavn = etternavn,
+		arrangorer = arrangorer,
+		lastSynchronized = lastSynchronized,
+	)
 
 	fun arrangor(
 		navn: String = UUID.randomUUID().toString(),
 		organisasjonsnummer: String = UUID.randomUUID().toString(),
 		overordnetArrangorId: UUID? = null,
-	): ArrangorRepository.ArrangorDbo =
-		ArrangorRepository.ArrangorDbo(
-			id = UUID.randomUUID(),
-			navn = navn,
-			organisasjonsnummer = organisasjonsnummer,
-			overordnetArrangorId = overordnetArrangorId,
-		)
+	): ArrangorRepository.ArrangorDbo = ArrangorRepository.ArrangorDbo(
+		id = UUID.randomUUID(),
+		navn = navn,
+		organisasjonsnummer = organisasjonsnummer,
+		overordnetArrangorId = overordnetArrangorId,
+	)
 
 	fun ansattArrangorDbo(
 		arrangorId: UUID = UUID.randomUUID(),

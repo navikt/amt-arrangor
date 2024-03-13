@@ -24,24 +24,15 @@ object JsonUtils {
 		return mapper.readValue(jsonStr)
 	}
 
-	fun <T> fromJson(
-		jsonNode: JsonNode,
-		clazz: Class<T>,
-	): T {
+	fun <T> fromJson(jsonNode: JsonNode, clazz: Class<T>): T {
 		return mapper.treeToValue(jsonNode, clazz)
 	}
 
-	fun <T> fromJson(
-		jsonStr: String,
-		clazz: Class<T>,
-	): T {
+	fun <T> fromJson(jsonStr: String, clazz: Class<T>): T {
 		return mapper.readValue(jsonStr, clazz)
 	}
 
-	fun <T> fromJson(
-		stream: InputStream,
-		clazz: Class<T>,
-	): T {
+	fun <T> fromJson(stream: InputStream, clazz: Class<T>): T {
 		return mapper.readValue(stream, clazz)
 	}
 

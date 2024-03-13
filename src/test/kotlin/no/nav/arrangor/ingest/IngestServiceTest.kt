@@ -482,10 +482,7 @@ class IngestServiceTest : IntegrationTest() {
 		}
 	}
 
-	private fun veileder(
-		arrangor: UUID,
-		veilderDeltakere: List<VeilederDeltakerDbo>,
-	): AnsattDbo {
+	private fun veileder(arrangor: UUID, veilderDeltakere: List<VeilederDeltakerDbo>): AnsattDbo {
 		return db.ansatt(
 			arrangorer =
 				listOf(

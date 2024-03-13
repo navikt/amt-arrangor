@@ -27,6 +27,7 @@ val kotestVersion = "5.8.1"
 val testcontainersVersion = "1.19.7"
 val mockkVersion = "1.13.10"
 val mockOauth2ServerVersion = "2.1.2"
+val ktlintVersion = "1.2.1"
 
 val commonVersion = "3.2023.12.12_13.53-510909d4aa1a"
 
@@ -88,4 +89,8 @@ tasks.test {
 
 kotlin {
     jvmToolchain(21)
+}
+
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    version.set(ktlintVersion)
 }

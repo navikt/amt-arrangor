@@ -70,20 +70,14 @@ class IngestService(
 		}
 	}
 
-	private fun harPersonaliaEndringer(
-		ansatt: AnsattDbo,
-		ansattPersonalia: AnsattPersonaliaDto,
-	): Boolean {
+	private fun harPersonaliaEndringer(ansatt: AnsattDbo, ansattPersonalia: AnsattPersonaliaDto): Boolean {
 		return ansatt.personident != ansattPersonalia.personident ||
 			ansatt.fornavn != ansattPersonalia.fornavn ||
 			ansatt.mellomnavn != ansattPersonalia.mellomnavn ||
 			ansatt.etternavn != ansattPersonalia.etternavn
 	}
 
-	private fun getOverordnetArrangorId(
-		overordnetEnhetOrganisasjonsnummer: String,
-		arrangor: ArrangorRepository.ArrangorDbo,
-	): UUID? {
+	private fun getOverordnetArrangorId(overordnetEnhetOrganisasjonsnummer: String, arrangor: ArrangorRepository.ArrangorDbo): UUID? {
 		val overordnetArrangorFraDb = arrangorRepository.get(overordnetEnhetOrganisasjonsnummer)
 		if (overordnetArrangorFraDb?.id == arrangor.overordnetArrangorId) {
 			return arrangor.overordnetArrangorId
@@ -121,10 +115,7 @@ class IngestService(
 		}
 	}
 
-	fun handleDeltakerEndring(
-		id: UUID,
-		deltaker: DeltakerDto?,
-	) {
+	fun handleDeltakerEndring(id: UUID, deltaker: DeltakerDto?) {
 		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER || deltaker.status.type in AVSLUTTENDE_STATUSER) {
 			val deaktiveringsdato = LocalDateTime.now().plusDays(20).atZone(ZoneId.systemDefault())
 			// Deltakere fjernes fra deltakeroversikten 14 dager etter avsluttende status er satt,

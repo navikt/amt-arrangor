@@ -15,10 +15,7 @@ class MockAmtEnhetsregiserServer : MockHttpServer("amt-enhetsregiser-server") {
 		)
 	}
 
-	fun addVirksomhetFailure(
-		orgNr: String,
-		errorCode: Int = 500,
-	) {
+	fun addVirksomhetFailure(orgNr: String, errorCode: Int = 500) {
 		addResponseHandler(
 			path = "/api/enhet/$orgNr",
 			response =

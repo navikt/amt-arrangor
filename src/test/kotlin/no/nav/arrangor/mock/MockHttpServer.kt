@@ -52,27 +52,18 @@ abstract class MockHttpServer(
 		}
 	}
 
-	fun addResponseHandler(
-		predicate: (req: RecordedRequest) -> Boolean,
-		response: (req: RecordedRequest) -> MockResponse,
-	): UUID {
+	fun addResponseHandler(predicate: (req: RecordedRequest) -> Boolean, response: (req: RecordedRequest) -> MockResponse): UUID {
 		val id = UUID.randomUUID()
 		responses[predicate] = ResponseHolder(id, response)
 		return id
 	}
 
-	fun addResponseHandler(
-		path: String,
-		response: MockResponse,
-	): UUID {
+	fun addResponseHandler(path: String, response: MockResponse): UUID {
 		val predicate = { req: RecordedRequest -> req.path == path }
 		return addResponseHandler(predicate) { response }
 	}
 
-	fun addResponseHandler(
-		predicate: (req: RecordedRequest) -> Boolean,
-		response: MockResponse,
-	): UUID {
+	fun addResponseHandler(predicate: (req: RecordedRequest) -> Boolean, response: MockResponse): UUID {
 		return addResponseHandler(predicate) { response }
 	}
 

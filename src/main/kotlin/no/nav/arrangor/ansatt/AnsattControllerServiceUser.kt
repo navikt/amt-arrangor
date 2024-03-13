@@ -29,9 +29,8 @@ class AnsattControllerServiceUser(
 	@GetMapping("{id}")
 	fun get(
 		@PathVariable("id") id: UUID,
-	): Ansatt =
-		ansattService.get(id)
-			?: throw NoSuchElementException("Ansatt $id eksisterer ikke.")
+	): Ansatt = ansattService.get(id)
+		?: throw NoSuchElementException("Ansatt $id eksisterer ikke.")
 
 	@DeleteMapping("/tilganger")
 	fun fjernTilgangerHosArrangor(

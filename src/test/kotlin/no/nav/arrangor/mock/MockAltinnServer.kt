@@ -7,10 +7,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 
 class MockAltinnServer : MockHttpServer("altinn-server") {
-	fun addRoller(
-		personident: String,
-		roller: AltinnAclClient.ResponseWrapper,
-	) {
+	fun addRoller(personident: String, roller: AltinnAclClient.ResponseWrapper) {
 		val request = JsonUtils.toJson(AltinnAclClient.HentRollerRequest(personident))
 
 		val requestPredicate = { req: RecordedRequest ->
@@ -27,10 +24,7 @@ class MockAltinnServer : MockHttpServer("altinn-server") {
 		)
 	}
 
-	fun addRoller(
-		personident: String,
-		roller: Map<String, List<AnsattRolle>>,
-	) {
+	fun addRoller(personident: String, roller: Map<String, List<AnsattRolle>>) {
 		val request = JsonUtils.toJson(AltinnAclClient.HentRollerRequest(personident))
 
 		val requestPredicate = { req: RecordedRequest ->
