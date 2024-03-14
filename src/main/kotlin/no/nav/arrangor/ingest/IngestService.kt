@@ -117,10 +117,10 @@ class IngestService(
 
 	fun handleDeltakerEndring(id: UUID, deltaker: DeltakerDto?) {
 		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER || deltaker.status.type in AVSLUTTENDE_STATUSER) {
-			val deaktiveringsdato = LocalDateTime.now().plusDays(20).atZone(ZoneId.systemDefault())
-			// Deltakere fjernes fra deltakeroversikten 14 dager etter avsluttende status er satt,
+			val deaktiveringsdato = LocalDateTime.now().plusDays(50).atZone(ZoneId.systemDefault())
+			// Deltakere fjernes fra deltakeroversikten 40 dager etter avsluttende status er satt,
 			// så veiledere må ikke deaktiveres før den datoen er passert. For statuser som skjules umiddelbart deaktiverer vi
-			// om 20 dager for litt sikkerhetsmargin i tilfelle deltaker blir aktiv igjen.
+			// om 50 dager for litt sikkerhetsmargin i tilfelle deltaker blir aktiv igjen.
 			ansattService.deaktiverVeiledereForDeltaker(
 				deltakerId = id,
 				deaktiveringsdato = deaktiveringsdato,

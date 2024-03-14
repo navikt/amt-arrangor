@@ -268,7 +268,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på aktive veiledere 20 dager frem i tid`() {
+	fun `handleDeltakerEndret - avsluttende status, aktive veiledere - setter gyldigTil på aktive veiledere 50 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val deltakerId2 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
@@ -300,7 +300,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
 
-		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
@@ -322,7 +322,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på aktive veiledere til 20 dager frem i tid`() {
+	fun `handleDeltakerEndret - skjult status, aktive veiledere - setter gyldigTil på aktive veiledere til 50 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val deltakerId2 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
@@ -354,7 +354,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
 
-		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
@@ -376,7 +376,7 @@ class IngestServiceTest : IntegrationTest() {
 	}
 
 	@Test
-	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på aktive veiledere til 20 dager frem i tid`() {
+	fun `handleDeltakerEndret - deltaker slettet, aktive veiledere - setter gyldigTil på aktive veiledere til 50 dager frem i tid`() {
 		val deltakerId1 = UUID.randomUUID()
 		val arrangor = UUID.randomUUID()
 
@@ -405,7 +405,7 @@ class IngestServiceTest : IntegrationTest() {
 
 		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
 
-		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(20)
+		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
