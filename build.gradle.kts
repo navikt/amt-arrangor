@@ -29,7 +29,7 @@ val mockkVersion = "1.13.10"
 val mockOauth2ServerVersion = "2.1.2"
 val ktlintVersion = "1.2.1"
 
-val commonVersion = "3.2023.12.12_13.53-510909d4aa1a"
+val commonVersion = "3.2024.02.21_11.18-8f9b43befae1"
 
 extra["postgresql.version"] = "42.7.2"
 
