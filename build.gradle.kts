@@ -26,12 +26,12 @@ val arrowVersion = "1.2.4"
 val kotestVersion = "5.8.1"
 val testcontainersVersion = "1.19.7"
 val mockkVersion = "1.13.10"
-val mockOauth2ServerVersion = "2.1.3"
+val mockOauth2ServerVersion = "2.1.4"
 val ktlintVersion = "1.2.1"
 
-val commonVersion = "3.2024.02.21_11.18-8f9b43befae1"
+val commonVersion = "3.2024.04.10_12.03-fddb587e3a68"
 
-extra["postgresql.version"] = "42.7.2"
+extra["jackson-bom.version"] = "2.17.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
