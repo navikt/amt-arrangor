@@ -29,7 +29,7 @@ val mockkVersion = "1.13.10"
 val mockOauth2ServerVersion = "2.1.4"
 val ktlintVersion = "1.2.1"
 
-val commonVersion = "3.2024.04.10_12.03-fddb587e3a68"
+val commonVersion = "3.2024.04.22_13.50-7815154a2573"
 
 extra["jackson-bom.version"] = "2.17.0"
 
