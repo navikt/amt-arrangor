@@ -26,7 +26,7 @@ val arrowVersion = "1.2.4"
 val kotestVersion = "5.8.1"
 val testcontainersVersion = "1.19.7"
 val mockkVersion = "1.13.10"
-val mockOauth2ServerVersion = "2.1.4"
+val mockOauth2ServerVersion = "2.1.5"
 val ktlintVersion = "1.2.1"
 
 val commonVersion = "3.2024.04.22_13.50-7815154a2573"
