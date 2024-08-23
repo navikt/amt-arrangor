@@ -31,8 +31,6 @@ val ktlintVersion = "1.2.1"
 
 val commonVersion = "3.2024.05.23_05.46-2b29fa343e8e"
 
-extra["jackson-bom.version"] = "2.17.0"
-
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
