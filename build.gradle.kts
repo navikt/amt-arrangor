@@ -1,5 +1,5 @@
 plugins {
-    val kotlinVersion = "2.0.10"
+    val kotlinVersion = "2.0.20"
 
     id("org.springframework.boot") version "3.3.2"
     id("io.spring.dependency-management") version "1.1.6"
@@ -30,8 +30,6 @@ val mockOauth2ServerVersion = "2.1.9"
 val ktlintVersion = "1.2.1"
 
 val commonVersion = "3.2024.05.23_05.46-2b29fa343e8e"
-
-extra["jackson-bom.version"] = "2.17.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
