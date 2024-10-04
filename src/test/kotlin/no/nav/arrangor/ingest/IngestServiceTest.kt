@@ -11,12 +11,13 @@ import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.Virksomhet
+import no.nav.arrangor.deltaker.DeltakerRepository
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
-import no.nav.arrangor.ingest.model.DeltakerDto
+import no.nav.arrangor.ingest.model.Deltaker
 import no.nav.arrangor.ingest.model.DeltakerStatus
-import no.nav.arrangor.ingest.model.DeltakerStatusDto
+import no.nav.arrangor.ingest.model.DeltakerStatusType
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
@@ -43,6 +44,9 @@ class IngestServiceTest : IntegrationTest() {
 
 	@Autowired
 	private lateinit var ansattRepository: AnsattRepository
+
+	@Autowired
+	private lateinit var deltakerRepository: DeltakerRepository
 
 	private lateinit var db: DbTestData
 
@@ -292,13 +296,13 @@ class IngestServiceTest : IntegrationTest() {
 		ansattRepository.insertOrUpdate(ansatt1)
 		ansattRepository.insertOrUpdate(ansatt2)
 
-		val deltakerDto =
-			DeltakerDto(
+		val deltaker =
+			Deltaker(
 				id = deltakerId1,
-				status = DeltakerStatusDto(DeltakerStatus.HAR_SLUTTET, LocalDateTime.now(), LocalDateTime.now()),
+				status = DeltakerStatus(DeltakerStatusType.HAR_SLUTTET, LocalDateTime.now(), LocalDateTime.now()),
 			)
 
-		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+		ingestService.handleDeltakerEndring(deltakerId1, deltaker)
 
 		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
@@ -318,6 +322,55 @@ class IngestServiceTest : IntegrationTest() {
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
 			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+
+		deltakerRepository.get(deltakerId1)?.status?.type shouldBe DeltakerStatusType.HAR_SLUTTET
+	}
+
+	@Test
+	fun `handleDeltakerEndret - avsluttende status, aktive veiledere, har lest deltaker tidligere - oppdaterer ikke`() {
+		val deltakerId1 = UUID.randomUUID()
+		val deltakerId2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER),
+				),
+			)
+		val ansatt2 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
+				),
+			)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltaker =
+			Deltaker(
+				id = deltakerId1,
+				status = DeltakerStatus(DeltakerStatusType.HAR_SLUTTET, LocalDateTime.now(), LocalDateTime.now()),
+			)
+		deltakerRepository.insertOrUpdate(deltaker)
+
+		ingestService.handleDeltakerEndring(deltakerId1, deltaker)
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil shouldBe null
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil shouldBe null
 		}
 	}
 
@@ -346,13 +399,13 @@ class IngestServiceTest : IntegrationTest() {
 		ansattRepository.insertOrUpdate(ansatt1)
 		ansattRepository.insertOrUpdate(ansatt2)
 
-		val deltakerDto =
-			DeltakerDto(
+		val deltaker =
+			Deltaker(
 				id = deltakerId1,
-				status = DeltakerStatusDto(DeltakerStatus.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now()),
+				status = DeltakerStatus(DeltakerStatusType.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now()),
 			)
 
-		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+		ingestService.handleDeltakerEndring(deltakerId1, deltaker)
 
 		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
@@ -373,6 +426,68 @@ class IngestServiceTest : IntegrationTest() {
 
 			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
 		}
+	}
+
+	@Test
+	fun `handleDeltakerEndret - fremtidige deaktiverte veiledere, ny status - reaktiverer veiledere`() {
+		val deltakerId1 = UUID.randomUUID()
+		val deltakerId2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.MEDVEILEDER, gyldigTil = ZonedDateTime.now().plusDays(10)),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.VEILEDER),
+				),
+			)
+		val ansatt2 =
+			veileder(
+				arrangor,
+				listOf(
+					VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER, gyldigTil = ZonedDateTime.now().plusDays(10)),
+					VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
+				),
+			)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		val deltaker =
+			Deltaker(
+				id = deltakerId1,
+				status = DeltakerStatus(DeltakerStatusType.IKKE_AKTUELL, LocalDateTime.now().minusDays(8), LocalDateTime.now().minusDays(8)),
+			)
+		deltakerRepository.insertOrUpdate(deltaker)
+
+		ingestService.handleDeltakerEndring(
+			deltakerId1,
+			deltaker.copy(
+				status = DeltakerStatus(
+					DeltakerStatusType.DELTAR,
+					LocalDateTime.now(),
+					LocalDateTime.now(),
+				),
+			),
+		)
+
+		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
+		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil shouldBe null
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+
+		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
+		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+				.gyldigTil shouldBe null
+
+			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+		}
+
+		deltakerRepository.get(deltakerId1)?.status?.type shouldBe DeltakerStatusType.DELTAR
 	}
 
 	@Test
@@ -397,13 +512,7 @@ class IngestServiceTest : IntegrationTest() {
 		ansattRepository.insertOrUpdate(ansatt1)
 		ansattRepository.insertOrUpdate(ansatt2)
 
-		val deltakerDto =
-			DeltakerDto(
-				id = deltakerId1,
-				status = DeltakerStatusDto(DeltakerStatus.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now()),
-			)
-
-		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+		ingestService.handleDeltakerEndring(deltakerId1, null)
 
 		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
@@ -455,13 +564,13 @@ class IngestServiceTest : IntegrationTest() {
 		ansattRepository.insertOrUpdate(ansatt1)
 		ansattRepository.insertOrUpdate(ansatt2)
 
-		val deltakerDto =
-			DeltakerDto(
+		val deltaker =
+			Deltaker(
 				id = deltakerId1,
-				status = DeltakerStatusDto(DeltakerStatus.DELTAR, LocalDateTime.now(), LocalDateTime.now()),
+				status = DeltakerStatus(DeltakerStatusType.DELTAR, LocalDateTime.now(), LocalDateTime.now()),
 			)
 
-		ingestService.handleDeltakerEndring(deltakerId1, deltakerDto)
+		ingestService.handleDeltakerEndring(deltakerId1, deltaker)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
