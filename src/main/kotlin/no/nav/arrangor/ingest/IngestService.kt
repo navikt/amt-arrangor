@@ -6,9 +6,10 @@ import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
+import no.nav.arrangor.deltaker.DeltakerRepository
 import no.nav.arrangor.ingest.model.AVSLUTTENDE_STATUSER
 import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
-import no.nav.arrangor.ingest.model.DeltakerDto
+import no.nav.arrangor.ingest.model.Deltaker
 import no.nav.arrangor.ingest.model.SKJULES_ALLTID_STATUSER
 import no.nav.arrangor.ingest.model.VirksomhetDto
 import org.slf4j.LoggerFactory
@@ -25,6 +26,7 @@ class IngestService(
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val metricsService: MetricsService,
 	private val publishService: PublishService,
+	private val deltakerRepository: DeltakerRepository,
 ) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -115,19 +117,40 @@ class IngestService(
 		}
 	}
 
-	fun handleDeltakerEndring(id: UUID, deltaker: DeltakerDto?) {
-		if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER || deltaker.status.type in AVSLUTTENDE_STATUSER) {
-			val deaktiveringsdato = LocalDateTime.now().plusDays(50).atZone(ZoneId.systemDefault())
-			// Deltakere fjernes fra deltakeroversikten 40 dager etter avsluttende status er satt,
-			// så veiledere må ikke deaktiveres før den datoen er passert. For statuser som skjules umiddelbart deaktiverer vi
-			// om 50 dager for litt sikkerhetsmargin i tilfelle deltaker blir aktiv igjen.
-			ansattService.deaktiverVeiledereForDeltaker(
-				deltakerId = id,
-				deaktiveringsdato = deaktiveringsdato,
-				status = deltaker?.status?.type,
-			)
+	fun handleDeltakerEndring(id: UUID, deltaker: Deltaker?) {
+		if (skalOppdatereVeiledereForDeltaker(id, deltaker)) {
+			if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER || deltaker.status.type in AVSLUTTENDE_STATUSER) {
+				val deaktiveringsdato = LocalDateTime.now().plusDays(50).atZone(ZoneId.systemDefault())
+				// Deltakere fjernes fra deltakeroversikten 40 dager etter avsluttende status er satt,
+				// så veiledere må ikke deaktiveres før den datoen er passert. For statuser som skjules umiddelbart deaktiverer vi
+				// om 50 dager for litt sikkerhetsmargin i tilfelle deltaker blir aktiv igjen.
+				ansattService.deaktiverVeiledereForDeltaker(
+					deltakerId = id,
+					deaktiveringsdato = deaktiveringsdato,
+					status = deltaker?.status?.type,
+				)
+			} else {
+				ansattService.maybeReaktiverVeiledereForDeltaker(id, deltaker.status.type)
+			}
+			deltaker?.let { deltakerRepository.insertOrUpdate(it) }
+		}
+	}
+
+	private fun skalOppdatereVeiledereForDeltaker(id: UUID, deltaker: Deltaker?): Boolean {
+		if (deltaker == null) {
+			logger.info("Oppdaterer veilederkoblinger for tombstonet deltaker $id")
+			return true
+		}
+		val lagretDeltaker = deltakerRepository.get(id)
+		if (lagretDeltaker == null) {
+			logger.info("Oppdaterer veilederkoblinger for deltaker som ikke er lagret $id")
+			return true
+		} else if (deltaker.status.type != lagretDeltaker.status.type) {
+			logger.info("Oppdaterer veilederkoblinger for deltaker som har endret status $id")
+			return true
 		} else {
-			ansattService.maybeReaktiverVeiledereForDeltaker(id, deltaker.status.type)
+			logger.info("Deltaker $id har ikke endret status, ignorerer")
+			return false
 		}
 	}
 }

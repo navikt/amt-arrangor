@@ -15,7 +15,7 @@ import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.ingest.PublishService
-import no.nav.arrangor.ingest.model.DeltakerStatus
+import no.nav.arrangor.ingest.model.DeltakerStatusType
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -316,7 +316,7 @@ class AnsattService(
 	fun deaktiverVeiledereForDeltaker(
 		deltakerId: UUID,
 		deaktiveringsdato: ZonedDateTime,
-		status: DeltakerStatus?,
+		status: DeltakerStatusType?,
 	) {
 		val ansatteEndret = ansattRepository.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
 		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
@@ -326,7 +326,7 @@ class AnsattService(
 		}
 	}
 
-	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, status: DeltakerStatus) {
+	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, status: DeltakerStatusType) {
 		val ansatteEndret = ansattRepository.maybeReaktiverVeiledereForDeltaker(deltakerId)
 		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
 
