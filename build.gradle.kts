@@ -29,7 +29,7 @@ val mockkVersion = "1.13.13"
 val mockOauth2ServerVersion = "2.1.10"
 val ktlintVersion = "1.2.1"
 
-val commonVersion = "3.2024.05.23_05.46-2b29fa343e8e"
+val commonVersion = "3.2024.10.25_13.44-9db48a0dbe67"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
