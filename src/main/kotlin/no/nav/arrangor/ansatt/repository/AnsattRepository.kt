@@ -54,28 +54,30 @@ class AnsattRepository(
 			RETURNING *
 			""".trimIndent()
 
-		return template.query(
-			sql,
-			sqlParameters(
-				"id" to ansatt.id,
-				"person_id" to (ansatt.personId),
-				"personident" to ansatt.personident,
-				"fornavn" to ansatt.fornavn,
-				"mellomnavn" to ansatt.mellomnavn,
-				"etternavn" to ansatt.etternavn,
-				"arrangorer" to ansatt.arrangorer.toPGObject(),
-				"modified_at" to ansatt.modifiedAt,
-				"last_synchronized" to ansatt.lastSynchronized,
-			),
-			rowMapper,
-		).first()
+		return template
+			.query(
+				sql,
+				sqlParameters(
+					"id" to ansatt.id,
+					"person_id" to (ansatt.personId),
+					"personident" to ansatt.personident,
+					"fornavn" to ansatt.fornavn,
+					"mellomnavn" to ansatt.mellomnavn,
+					"etternavn" to ansatt.etternavn,
+					"arrangorer" to ansatt.arrangorer.toPGObject(),
+					"modified_at" to ansatt.modifiedAt,
+					"last_synchronized" to ansatt.lastSynchronized,
+				),
+				rowMapper,
+			).first()
 	}
 
-	fun get(id: UUID): AnsattDbo? = template.query(
-		"SELECT * FROM ansatt WHERE id = :id",
-		sqlParameters("id" to id),
-		rowMapper,
-	).firstOrNull()
+	fun get(id: UUID): AnsattDbo? = template
+		.query(
+			"SELECT * FROM ansatt WHERE id = :id",
+			sqlParameters("id" to id),
+			rowMapper,
+		).firstOrNull()
 
 	fun getAnsatte(ider: List<UUID>): List<AnsattDbo> {
 		if (ider.isEmpty()) {
@@ -88,11 +90,12 @@ class AnsattRepository(
 		)
 	}
 
-	fun get(personident: String): AnsattDbo? = template.query(
-		"SELECT * from ansatt where personident = :personident",
-		sqlParameters("personident" to personident),
-		rowMapper,
-	).firstOrNull()
+	fun get(personident: String): AnsattDbo? = template
+		.query(
+			"SELECT * from ansatt where personident = :personident",
+			sqlParameters("personident" to personident),
+			rowMapper,
+		).firstOrNull()
 
 	fun setSynchronized(id: UUID, timestamp: LocalDateTime) = template.update(
 		"UPDATE ansatt SET last_synchronized = :last_synchronized WHERE id = :id",
@@ -139,11 +142,12 @@ class AnsattRepository(
 		return template.query(sql, parameters, rowMapper)
 	}
 
-	fun getByPersonId(personId: UUID) = template.query(
-		"SELECT * FROM ansatt WHERE person_id = :personId",
-		sqlParameters("personId" to personId),
-		rowMapper,
-	).firstOrNull()
+	fun getByPersonId(personId: UUID) = template
+		.query(
+			"SELECT * FROM ansatt WHERE person_id = :personId",
+			sqlParameters("personId" to personId),
+			rowMapper,
+		).firstOrNull()
 
 	fun deaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime): List<AnsattDbo> {
 		val sql =

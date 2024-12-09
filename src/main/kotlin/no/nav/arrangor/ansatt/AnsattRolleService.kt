@@ -22,9 +22,7 @@ class AnsattRolleService(
 ) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	fun getRollerFraAltinn(personIdent: String): List<AltinnRolle> {
-		return altinnClient.hentRoller(personIdent).getOrThrow()
-	}
+	fun getRollerFraAltinn(personIdent: String): List<AltinnRolle> = altinnClient.hentRoller(personIdent).getOrThrow()
 
 	fun mapAltinnRollerTilArrangorListeForNyAnsatt(roller: List<AltinnRolle>): List<ArrangorDbo> {
 		val unikeOrgnummer = roller.map { it.organisasjonsnummer }.distinct()
@@ -61,7 +59,8 @@ class AnsattRolleService(
 	private fun getAnsattDboMedOppdaterteRoller(ansattDbo: AnsattDbo, aktiveRoller: List<RolleOgArrangor>): DataUpdateWrapper<AnsattDbo> {
 		val gamleAktiveRoller =
 			ansattDbo.arrangorer.flatMap { arrangor ->
-				arrangor.roller.filter { it.erGyldig() }
+				arrangor.roller
+					.filter { it.erGyldig() }
 					.map {
 						RolleOgArrangor(
 							arrangorId = arrangor.arrangorId,
@@ -131,7 +130,8 @@ class AnsattRolleService(
 				}
 		}
 
-		arrangor.roller.find { it.erGyldig() && it.rolle == rolleOgArrangor.rolle }
+		arrangor.roller
+			.find { it.erGyldig() && it.rolle == rolleOgArrangor.rolle }
 			?.let { it.gyldigTil = ZonedDateTime.now() }
 
 		logger.info("Ansatt med ${ansatt.id} mistet ${rolleOgArrangor.rolle} hos ${arrangor.arrangorId}")
@@ -163,11 +163,10 @@ class AnsattRolleService(
 		logger.info("Ansatt med ${ansatt.id} fikk ${rolleOgArrangor.rolle} hos ${oppdatertArrangor.arrangorId}")
 	}
 
-	private fun altinnToRolleOgArrangor(roller: List<AltinnRolle>, arrangorer: List<Arrangor>): List<RolleOgArrangor> {
-		return roller.flatMap { altinnRolle ->
+	private fun altinnToRolleOgArrangor(roller: List<AltinnRolle>, arrangorer: List<Arrangor>): List<RolleOgArrangor> =
+		roller.flatMap { altinnRolle ->
 			kombinerRollerOgArrangor(altinnRolle, arrangorer)
 		}
-	}
 
 	private fun kombinerRollerOgArrangor(altinnRolle: AltinnRolle, arrangorer: List<Arrangor>) = altinnRolle.roller.mapNotNull { ansattRolle ->
 		val arrangor =

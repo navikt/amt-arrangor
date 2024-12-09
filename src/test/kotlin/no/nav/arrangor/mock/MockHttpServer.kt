@@ -11,9 +11,7 @@ import java.util.UUID
 
 private val requestBodyCache = mutableMapOf<RecordedRequest, String>()
 
-fun RecordedRequest.getBodyAsString(): String {
-	return requestBodyCache.getOrPut(this) { this.body.readUtf8() }
-}
+fun RecordedRequest.getBodyAsString(): String = requestBodyCache.getOrPut(this) { this.body.readUtf8() }
 
 abstract class MockHttpServer(
 	private val name: String,
@@ -63,8 +61,8 @@ abstract class MockHttpServer(
 		return addResponseHandler(predicate) { response }
 	}
 
-	fun addResponseHandler(predicate: (req: RecordedRequest) -> Boolean, response: MockResponse): UUID {
-		return addResponseHandler(predicate) { response }
+	fun addResponseHandler(predicate: (req: RecordedRequest) -> Boolean, response: MockResponse): UUID = addResponseHandler(predicate) {
+		response
 	}
 
 	fun resetHttpServer() {
@@ -72,17 +70,11 @@ abstract class MockHttpServer(
 		lastRequestCount = server.requestCount
 	}
 
-	fun serverUrl(): String {
-		return server.url("").toString().removeSuffix("/")
-	}
+	fun serverUrl(): String = server.url("").toString().removeSuffix("/")
 
-	fun requestCount(): Int {
-		return server.requestCount - lastRequestCount
-	}
+	fun requestCount(): Int = server.requestCount - lastRequestCount
 
-	private fun printHeaders(headers: Headers): String {
-		return headers.joinToString("\n") { "		${it.first} : ${it.second}" }
-	}
+	private fun printHeaders(headers: Headers): String = headers.joinToString("\n") { "		${it.first} : ${it.second}" }
 
 	private data class ResponseHolder(
 		val id: UUID,
@@ -93,8 +85,15 @@ abstract class MockHttpServer(
 			val invokedResponse = response.invoke(request)
 
 			val responseBody =
-				invokedResponse.getBody()?.copy()?.asResponseBody()?.string()?.replace("\n", "")?.replace("  ", "")
-					?.replace("	", "")?.trim()
+				invokedResponse
+					.getBody()
+					?.copy()
+					?.asResponseBody()
+					?.string()
+					?.replace("\n", "")
+					?.replace("  ", "")
+					?.replace("	", "")
+					?.trim()
 
 			return "$id: count=$count status=${invokedResponse.status} body=$responseBody"
 		}

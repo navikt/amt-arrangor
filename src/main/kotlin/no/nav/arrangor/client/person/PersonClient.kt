@@ -22,14 +22,17 @@ class PersonClient(
 
 	fun hentPersonalia(personident: String): Result<PersonResponse> {
 		val request =
-			Request.Builder()
+			Request
+				.Builder()
 				.url("$baseUrl/api/arrangor-ansatt")
 				.addHeader("Authorization", "Bearer ${tokenProvider.get()}")
 				.post(JsonUtils.toJson(PersonRequest(personident)).toRequestBody(mediaTypeJson))
 				.build()
 
 		val response =
-			client.newCall(request).execute()
+			client
+				.newCall(request)
+				.execute()
 				.also { res -> isFailure(res, log)?.let { ex -> return Result.failure(ex) } }
 				.let { it.body?.string() ?: return Result.failure(IllegalStateException("Forventet body")) }
 				.let { JsonUtils.fromJson<PersonResponse>(it) }

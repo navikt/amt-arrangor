@@ -11,10 +11,8 @@ class AltinAclClientConfiguration(
 	@Value("\${amt-altinn.scope}") private val scope: String,
 ) {
 	@Bean
-	fun altinnClient(machineToMachineTokenClient: MachineToMachineTokenClient): AltinnAclClient {
-		return AltinnAclClient(
-			baseUrl = baseUrl,
-			tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
-		)
-	}
+	fun altinnClient(machineToMachineTokenClient: MachineToMachineTokenClient): AltinnAclClient = AltinnAclClient(
+		baseUrl = baseUrl,
+		tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
+	)
 }

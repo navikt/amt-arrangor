@@ -50,7 +50,5 @@ class InternalController(
 		} while (ansatte.isNotEmpty())
 	}
 
-	private fun isInternal(servlet: HttpServletRequest): Boolean {
-		return servlet.remoteAddr == "127.0.0.1"
-	}
+	private fun isInternal(servlet: HttpServletRequest): Boolean = servlet.remoteAddr == "127.0.0.1"
 }

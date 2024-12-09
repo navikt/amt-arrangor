@@ -11,10 +11,8 @@ class EnhetsregisterClientConfiguration(
 	@Value("\${amt-enhetsregister.scope}") private val scope: String,
 ) {
 	@Bean
-	fun enhetsregisterClient(machineToMachineTokenClient: MachineToMachineTokenClient): EnhetsregisterClient {
-		return EnhetsregisterClient(
-			baseUrl = baseUrl,
-			tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
-		)
-	}
+	fun enhetsregisterClient(machineToMachineTokenClient: MachineToMachineTokenClient): EnhetsregisterClient = EnhetsregisterClient(
+		baseUrl = baseUrl,
+		tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
+	)
 }

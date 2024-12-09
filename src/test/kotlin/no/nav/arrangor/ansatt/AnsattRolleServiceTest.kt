@@ -135,7 +135,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		)
 
 		val ansattDbo =
-			rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			rolleService
+				.getAnsattDboMedOppdaterteRoller(ansatt)
 				.also { it.isUpdated shouldBe true }
 				.data
 
@@ -173,7 +174,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		)
 
 		val ansattDbo =
-			rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			rolleService
+				.getAnsattDboMedOppdaterteRoller(ansatt)
 				.also { it.isUpdated shouldBe true }
 				.data
 
@@ -223,7 +225,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		)
 
 		val ansattDbo =
-			rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			rolleService
+				.getAnsattDboMedOppdaterteRoller(ansatt)
 				.also { it.isUpdated shouldBe true }
 				.data
 
@@ -258,7 +261,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		)
 
 		val ansattDbo =
-			rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			rolleService
+				.getAnsattDboMedOppdaterteRoller(ansatt)
 				.also { it.isUpdated shouldBe false }
 				.data
 
@@ -287,7 +291,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
 
 		val ansattDbo =
-			rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			rolleService
+				.getAnsattDboMedOppdaterteRoller(ansatt)
 				.also { it.isUpdated shouldBe true }
 				.data
 
@@ -317,14 +322,18 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
 
 		val ansattDbo =
-			rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			rolleService
+				.getAnsattDboMedOppdaterteRoller(ansatt)
 				.also { it.isUpdated shouldBe true }
 				.data
 
 		ansattDbo.arrangorer.size shouldBe 1
 		ansattDbo.arrangorer[0].arrangorId shouldBe arrangorOne.id
 		ansattDbo.arrangorer[0].roller.size shouldBe 2
-		ansattDbo.arrangorer[0].roller.filter { it.erGyldig() }.size shouldBe 0
+		ansattDbo.arrangorer[0]
+			.roller
+			.filter { it.erGyldig() }
+			.size shouldBe 0
 		ansattDbo.arrangorer[0].veileder[0].gyldigTil shouldNotBe null
 		ansattDbo.arrangorer[0].koordinator[0].gyldigTil shouldNotBe null
 		ansattDbo.arrangorer[0].koordinator[0].erGyldig() shouldBe false
@@ -348,7 +357,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		mockAltinnServer.addRoller(ansatt.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)))
 
 		val ansattDbo =
-			rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			rolleService
+				.getAnsattDboMedOppdaterteRoller(ansatt)
 				.also { it.isUpdated shouldBe true }
 				.data
 
@@ -384,7 +394,8 @@ class AnsattRolleServiceTest : IntegrationTest() {
 		)
 
 		val ansattDbo =
-			rolleService.getAnsattDboMedOppdaterteRoller(ansatt)
+			rolleService
+				.getAnsattDboMedOppdaterteRoller(ansatt)
 				.also { it.isUpdated shouldBe false }
 				.data
 

@@ -26,10 +26,8 @@ class ArrangorControllerServiceUser(
 	@GetMapping("{id}")
 	fun get(
 		@PathVariable("id") id: UUID,
-	): ArrangorMedOverordnetArrangor {
-		return arrangorService.getArrangorMedOverordnetArrangor(id)
-			?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
-	}
+	): ArrangorMedOverordnetArrangor = arrangorService.getArrangorMedOverordnetArrangor(id)
+		?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 
 	private fun validerOrganisasjonsnummer(organisasjonsnummer: String) {
 		if (organisasjonsnummer.trim().length != 9 || !organisasjonsnummer.trim().matches("""\d{9}""".toRegex())) {

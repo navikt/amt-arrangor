@@ -67,9 +67,11 @@ class AnsattController(
 			context.firstValidToken
 				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized, valid token is missing")
 
-		return token.jwtTokenClaims.getStringClaim("pid")
+		return token.jwtTokenClaims
+			.getStringClaim("pid")
 			?.also {
-				ansattService.getAnsattIdForPersonident(it)
+				ansattService
+					.getAnsattIdForPersonident(it)
 					?.let { id -> MDC.put("ansatt-id", id.toString()) }
 			}
 			?: throw ResponseStatusException(

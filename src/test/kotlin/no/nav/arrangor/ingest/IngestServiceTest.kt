@@ -308,7 +308,8 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
@@ -317,7 +318,8 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
@@ -363,13 +365,15 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil shouldBe null
 		}
 	}
@@ -411,7 +415,8 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
@@ -420,7 +425,8 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
@@ -473,7 +479,8 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil shouldBe null
 
 			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
@@ -481,7 +488,8 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil shouldBe null
 
 			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
@@ -518,14 +526,16 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 		}
@@ -574,7 +584,8 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil
 				.shouldBe(null)
 
@@ -583,7 +594,8 @@ class IngestServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
-			arr.veileder.find { it.deltakerId == deltakerId1 }!!
+			arr.veileder
+				.find { it.deltakerId == deltakerId1 }!!
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), ZonedDateTime.now().minusDays(2))
 
@@ -591,17 +603,15 @@ class IngestServiceTest : IntegrationTest() {
 		}
 	}
 
-	private fun veileder(arrangor: UUID, veilderDeltakere: List<VeilederDeltakerDbo>): AnsattDbo {
-		return db.ansatt(
-			arrangorer =
-				listOf(
-					ArrangorDbo(
-						arrangor,
-						listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
-						veilderDeltakere,
-						emptyList(),
-					),
+	private fun veileder(arrangor: UUID, veilderDeltakere: List<VeilederDeltakerDbo>): AnsattDbo = db.ansatt(
+		arrangorer =
+			listOf(
+				ArrangorDbo(
+					arrangor,
+					listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+					veilderDeltakere,
+					emptyList(),
 				),
-		)
-	}
+			),
+	)
 }

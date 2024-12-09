@@ -17,13 +17,12 @@ class ApplicationConfiguration {
 		@Value("\${nais.env.azureAppClientId}") azureAdClientId: String,
 		@Value("\${nais.env.azureOpenIdConfigTokenEndpoint}") azureTokenEndpoint: String,
 		@Value("\${nais.env.azureAppJWK}") azureAdJWK: String,
-	): MachineToMachineTokenClient {
-		return AzureAdTokenClientBuilder.builder()
-			.withClientId(azureAdClientId)
-			.withTokenEndpointUrl(azureTokenEndpoint)
-			.withPrivateJwk(azureAdJWK)
-			.buildMachineToMachineTokenClient()
-	}
+	): MachineToMachineTokenClient = AzureAdTokenClientBuilder
+		.builder()
+		.withClientId(azureAdClientId)
+		.withTokenEndpointUrl(azureTokenEndpoint)
+		.withPrivateJwk(azureAdJWK)
+		.buildMachineToMachineTokenClient()
 
 	@Bean
 	fun logFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> {

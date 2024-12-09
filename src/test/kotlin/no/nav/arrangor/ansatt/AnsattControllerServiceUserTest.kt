@@ -67,8 +67,7 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 			path = "/api/service/ansatt/tilganger",
 			body = "".toJsonRequestBody(),
 			headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "foobar")}"),
-		)
-			.also { it.code shouldBe 401 }
+		).also { it.code shouldBe 401 }
 	}
 
 	@Test

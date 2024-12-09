@@ -40,14 +40,14 @@ class IngestService(
 				virksomhetDto.overordnetEnhetOrganisasjonsnummer?.let {
 					getOverordnetArrangorId(overordnetEnhetOrganisasjonsnummer = it, arrangor = arrangor)
 				}
-			arrangorRepository.insertOrUpdate(
-				arrangor.copy(
-					navn = virksomhetDto.navn,
-					organisasjonsnummer = virksomhetDto.organisasjonsnummer,
-					overordnetArrangorId = overordnetArrangorId,
-				),
-			)
-				.also { publishService.publishArrangor(it.toDomain()) }
+			arrangorRepository
+				.insertOrUpdate(
+					arrangor.copy(
+						navn = virksomhetDto.navn,
+						organisasjonsnummer = virksomhetDto.organisasjonsnummer,
+						overordnetArrangorId = overordnetArrangorId,
+					),
+				).also { publishService.publishArrangor(it.toDomain()) }
 				.also { metricsService.incEndredeArrangorer() }
 			logger.info("Oppdatert arrangør med id ${arrangor.id}")
 			metricsService.incConsumedVirksomhetEndring()
@@ -72,12 +72,11 @@ class IngestService(
 		}
 	}
 
-	private fun harPersonaliaEndringer(ansatt: AnsattDbo, ansattPersonalia: AnsattPersonaliaDto): Boolean {
-		return ansatt.personident != ansattPersonalia.personident ||
+	private fun harPersonaliaEndringer(ansatt: AnsattDbo, ansattPersonalia: AnsattPersonaliaDto): Boolean =
+		ansatt.personident != ansattPersonalia.personident ||
 			ansatt.fornavn != ansattPersonalia.fornavn ||
 			ansatt.mellomnavn != ansattPersonalia.mellomnavn ||
 			ansatt.etternavn != ansattPersonalia.etternavn
-	}
 
 	private fun getOverordnetArrangorId(overordnetEnhetOrganisasjonsnummer: String, arrangor: ArrangorRepository.ArrangorDbo): UUID? {
 		val overordnetArrangorFraDb = arrangorRepository.get(overordnetEnhetOrganisasjonsnummer)
