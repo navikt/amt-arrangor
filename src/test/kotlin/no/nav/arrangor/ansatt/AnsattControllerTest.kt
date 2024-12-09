@@ -70,15 +70,15 @@ class AnsattControllerTest : IntegrationTest() {
 			sendRequest(
 				"POST",
 				"/api/ansatt/veiledere/${UUID.randomUUID()}",
-				JsonUtils.toJson(
-					AnsattController.OppdaterVeiledereForDeltakerRequest(
-						arrangorId = UUID.randomUUID(),
-						veilederSomLeggesTil = listOf(AnsattController.VeilederAnsatt(UUID.randomUUID(), VeilederType.VEILEDER)),
-						veilederSomFjernes = emptyList(),
-					),
-				).toJsonRequestBody(),
-			)
-				.also { it.code shouldBe 401 }
+				JsonUtils
+					.toJson(
+						AnsattController.OppdaterVeiledereForDeltakerRequest(
+							arrangorId = UUID.randomUUID(),
+							veilederSomLeggesTil = listOf(AnsattController.VeilederAnsatt(UUID.randomUUID(), VeilederType.VEILEDER)),
+							veilederSomFjernes = emptyList(),
+						),
+					).toJsonRequestBody(),
+			).also { it.code shouldBe 401 }
 		}
 	}
 
@@ -152,16 +152,14 @@ class AnsattControllerTest : IntegrationTest() {
 		}
 	}
 
-	private fun getRoller(ansatt: Ansatt, arrangorId: UUID): List<AnsattRolle> {
-		return ansatt.arrangorer.find { it.arrangorId == arrangorId }!!.roller
-	}
+	private fun getRoller(ansatt: Ansatt, arrangorId: UUID): List<AnsattRolle> =
+		ansatt.arrangorer.find { it.arrangorId == arrangorId }!!.roller
 
 	private fun getAnsatt(personident: String): Ansatt = sendRequest(
 		method = "GET",
 		path = "/api/ansatt",
 		headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}"),
-	)
-		.also { it.code shouldBe 200 }
+	).also { it.code shouldBe 200 }
 		.let { it.body?.string() ?: throw IllegalStateException("Body skal ikke være tom") }
 		.let { JsonUtils.fromJson(it) }
 }

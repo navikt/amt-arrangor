@@ -91,9 +91,18 @@ class AnsattServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
 		oppdatertAnsatt?.arrangorer?.size shouldBe 2
-		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorOne.id }?.roller?.first()
+		oppdatertAnsatt
+			?.arrangorer
+			?.find { it.arrangorId == arrangorOne.id }
+			?.roller
+			?.first()
 			?.erGyldig() shouldBe false
-		oppdatertAnsatt?.arrangorer?.find { it.arrangorId == arrangorTwo.id }?.roller?.first()?.erGyldig() shouldBe true
+		oppdatertAnsatt
+			?.arrangorer
+			?.find { it.arrangorId == arrangorTwo.id }
+			?.roller
+			?.first()
+			?.erGyldig() shouldBe true
 
 		verify(exactly = 1) {
 			publishService.publishAnsatt(match { it.arrangorer.size == 1 && it.arrangorer.first().arrangorId == arrangorTwo.id })
@@ -123,17 +132,34 @@ class AnsattServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
 		oppdatertAnsatt?.arrangorer?.size shouldBe 1
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.size shouldBe 2
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.KOORDINATOR }
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.size shouldBe 2
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.find { it.rolle == AnsattRolle.KOORDINATOR }
 			?.erGyldig() shouldBe false
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.VEILEDER }
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.find { it.rolle == AnsattRolle.VEILEDER }
 			?.erGyldig() shouldBe true
 
 		verify(exactly = 1) {
 			publishService.publishAnsatt(
 				match {
-					it.arrangorer.first().roller.size == 1 &&
-						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER
+					it.arrangorer
+						.first()
+						.roller.size == 1 &&
+						it.arrangorer
+							.first()
+							.roller
+							.first() == AnsattRolle.VEILEDER
 				},
 			)
 		}
@@ -162,17 +188,44 @@ class AnsattServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
 		oppdatertAnsatt?.arrangorer?.size shouldBe 1
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.size shouldBe 2
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.KOORDINATOR }?.erGyldig() shouldBe false
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.find { it.rolle == AnsattRolle.VEILEDER }?.erGyldig() shouldBe true
-		oppdatertAnsatt?.arrangorer?.first()?.koordinator?.first()?.erGyldig() shouldBe false
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.size shouldBe 2
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.find { it.rolle == AnsattRolle.KOORDINATOR }
+			?.erGyldig() shouldBe false
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.find { it.rolle == AnsattRolle.VEILEDER }
+			?.erGyldig() shouldBe true
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.koordinator
+			?.first()
+			?.erGyldig() shouldBe false
 
 		verify(exactly = 1) {
 			publishService.publishAnsatt(
 				match {
-					it.arrangorer.first().roller.size == 1 &&
-						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER &&
-						it.arrangorer.first().koordinator.isEmpty()
+					it.arrangorer
+						.first()
+						.roller.size == 1 &&
+						it.arrangorer
+							.first()
+							.roller
+							.first() == AnsattRolle.VEILEDER &&
+						it.arrangorer
+							.first()
+							.koordinator
+							.isEmpty()
 				},
 			)
 		}
@@ -198,16 +251,36 @@ class AnsattServiceTest : IntegrationTest() {
 
 		val oppdatertAnsatt = ansattRepository.get(ansattDbo.id)
 		oppdatertAnsatt?.arrangorer?.size shouldBe 1
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.size shouldBe 2
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.any { it.rolle == AnsattRolle.VEILEDER && it.erGyldig() } shouldBe true
-		oppdatertAnsatt?.arrangorer?.first()?.roller?.any { it.rolle == AnsattRolle.VEILEDER && !it.erGyldig() } shouldBe true
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.size shouldBe 2
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.any { it.rolle == AnsattRolle.VEILEDER && it.erGyldig() } shouldBe true
+		oppdatertAnsatt
+			?.arrangorer
+			?.first()
+			?.roller
+			?.any { it.rolle == AnsattRolle.VEILEDER && !it.erGyldig() } shouldBe true
 
 		verify(exactly = 1) {
 			publishService.publishAnsatt(
 				match {
-					it.arrangorer.first().roller.size == 1 &&
-						it.arrangorer.first().roller.first() == AnsattRolle.VEILEDER &&
-						it.arrangorer.first().koordinator.isEmpty()
+					it.arrangorer
+						.first()
+						.roller.size == 1 &&
+						it.arrangorer
+							.first()
+							.roller
+							.first() == AnsattRolle.VEILEDER &&
+						it.arrangorer
+							.first()
+							.koordinator
+							.isEmpty()
 				},
 			)
 		}
@@ -606,7 +679,11 @@ class AnsattServiceTest : IntegrationTest() {
 			deltakerliste.deltakerlisteId,
 		)
 
-		ansattRepository.get(koordinator.id)!!.arrangorer[0].koordinator[0].gyldigTil shouldNotBe null
+		ansattRepository
+			.get(koordinator.id)!!
+			.arrangorer[0]
+			.koordinator[0]
+			.gyldigTil shouldNotBe null
 	}
 
 	@Test
@@ -616,7 +693,11 @@ class AnsattServiceTest : IntegrationTest() {
 		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste, emptyList(), arrangor.arrangorId)
-		ansattRepository.get(ansatt.id)!!.arrangorer[0].koordinator[0].gyldigTil shouldNotBe null
+		ansattRepository
+			.get(ansatt.id)!!
+			.arrangorer[0]
+			.koordinator[0]
+			.gyldigTil shouldNotBe null
 	}
 
 	@Test
@@ -652,7 +733,11 @@ class AnsattServiceTest : IntegrationTest() {
 		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker), arrangor.arrangorId)
-		ansattRepository.get(ansatt.id)!!.arrangorer[0].veileder[0].gyldigTil shouldNotBe null
+		ansattRepository
+			.get(ansatt.id)!!
+			.arrangorer[0]
+			.veileder[0]
+			.gyldigTil shouldNotBe null
 	}
 
 	@Test

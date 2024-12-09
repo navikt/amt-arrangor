@@ -33,18 +33,16 @@ class AnsattService(
 ) {
 	private val logger = LoggerFactory.getLogger(javaClass)
 
-	fun get(id: UUID): Ansatt? = ansattRepository.get(id)
+	fun get(id: UUID): Ansatt? = ansattRepository
+		.get(id)
 		?.let { getAndMaybeUpdateAnsatt(it) }
 
-	fun get(personident: String): Ansatt? {
-		return ansattRepository.get(personident)
-			?.let { getAndMaybeUpdateAnsatt(it) }
-			?: opprettAnsatt(personident)
-	}
+	fun get(personident: String): Ansatt? = ansattRepository
+		.get(personident)
+		?.let { getAndMaybeUpdateAnsatt(it) }
+		?: opprettAnsatt(personident)
 
-	fun getAnsattIdForPersonident(personident: String): UUID? {
-		return ansattRepository.get(personident)?.id
-	}
+	fun getAnsattIdForPersonident(personident: String): UUID? = ansattRepository.get(personident)?.id
 
 	fun setKoordinatorForDeltakerliste(
 		personident: String,
@@ -248,10 +246,11 @@ class AnsattService(
 		return mapToAnsatt(ansattDbo).also { publishService.publishAnsatt(it) }
 	}
 
-	fun oppdaterAnsattesRoller() = ansattRepository.getToSynchronize(
-		maxSize = 50,
-		synchronizedBefore = LocalDateTime.now().minusDays(7),
-	).forEach { oppdaterRoller(it) }
+	fun oppdaterAnsattesRoller() = ansattRepository
+		.getToSynchronize(
+			maxSize = 50,
+			synchronizedBefore = LocalDateTime.now().minusDays(7),
+		).forEach { oppdaterRoller(it) }
 
 	private fun getAndMaybeUpdateAnsatt(ansattDbo: AnsattDbo): Ansatt {
 		val shouldSynchronize = ansattDbo.lastSynchronized.isBefore(LocalDateTime.now().minusHours(1))
@@ -272,17 +271,13 @@ class AnsattService(
 			.also { if (ansattDboMedOppdaterteRoller.isUpdated) publishService.publishAnsatt(it) }
 	}
 
-	fun getAll(offset: Int, limit: Int): List<Ansatt> {
-		return ansattRepository.getAll(offset, limit).map { mapToAnsatt(it) }
-	}
+	fun getAll(offset: Int, limit: Int): List<Ansatt> = ansattRepository.getAll(offset, limit).map { mapToAnsatt(it) }
 
-	private fun mapToAnsatt(ansattDbo: AnsattDbo): Ansatt {
-		return Ansatt(
-			id = ansattDbo.id,
-			personalia = ansattDbo.toPersonalia(),
-			arrangorer = mapToTilknyttetArrangorListe(ansattDbo.arrangorer),
-		)
-	}
+	private fun mapToAnsatt(ansattDbo: AnsattDbo): Ansatt = Ansatt(
+		id = ansattDbo.id,
+		personalia = ansattDbo.toPersonalia(),
+		arrangorer = mapToTilknyttetArrangorListe(ansattDbo.arrangorer),
+	)
 
 	private fun mapToTilknyttetArrangorListe(arrangorDboListe: List<ArrangorDbo>): List<TilknyttetArrangor> {
 		if (arrangorDboListe.isEmpty()) {

@@ -38,7 +38,8 @@ class IntegrationTest {
 	fun serverUrl() = "http://localhost:$port"
 
 	private val client =
-		OkHttpClient.Builder()
+		OkHttpClient
+			.Builder()
 			.callTimeout(Duration.ofMinutes(5))
 			.build()
 
@@ -57,9 +58,7 @@ class IntegrationTest {
 
 		val postgresDataSource = SingletonPostgresContainer.getDataSource()
 
-		private fun getDiscoveryUrl(issuer: String = Issuer.TOKEN_X): String {
-			return mockOAuth2Server.wellKnownUrl(issuer).toString()
-		}
+		private fun getDiscoveryUrl(issuer: String = Issuer.TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
 
 		@JvmStatic
 		@DynamicPropertySource
@@ -114,7 +113,8 @@ class IntegrationTest {
 		headers: Map<String, String> = emptyMap(),
 	): Response {
 		val reqBuilder =
-			Request.Builder()
+			Request
+				.Builder()
 				.url("${serverUrl()}$path")
 				.method(method, body)
 
@@ -137,8 +137,8 @@ class IntegrationTest {
 				"client_id" to clientId,
 				"pid" to fnr,
 			),
-	): String {
-		return mockOAuth2Server.issueToken(
+	): String = mockOAuth2Server
+		.issueToken(
 			issuerId,
 			clientId,
 			DefaultOAuth2TokenCallback(
@@ -149,16 +149,13 @@ class IntegrationTest {
 				expiry = 3600,
 			),
 		).serialize()
-	}
 
 	fun getAzureAdToken(
 		subject: String = "test",
 		audience: String = "test-aud",
 		issuerId: String = Issuer.AZURE_AD,
 		claims: Map<String, Any> = emptyMap(),
-	): String {
-		return mockOAuth2Server.issueToken(issuerId, subject, audience, claims).serialize()
-	}
+	): String = mockOAuth2Server.issueToken(issuerId, subject, audience, claims).serialize()
 }
 
 fun String.toJsonRequestBody(): RequestBody {

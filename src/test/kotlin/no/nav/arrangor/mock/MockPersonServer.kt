@@ -34,8 +34,7 @@ class MockPersonServer : MockHttpServer("amt-person") {
 								etternavn,
 							),
 						),
-					)
-					.setHeader("content-type", "application/json"),
+					).setHeader("content-type", "application/json"),
 		)
 	}
 }

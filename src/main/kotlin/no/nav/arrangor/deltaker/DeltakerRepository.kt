@@ -26,11 +26,12 @@ class DeltakerRepository(
 			)
 		}
 
-	fun get(id: UUID): Deltaker? = template.query(
-		"SELECT * FROM deltaker WHERE id = :id",
-		sqlParameters("id" to id),
-		rowMapper,
-	).firstOrNull()
+	fun get(id: UUID): Deltaker? = template
+		.query(
+			"SELECT * FROM deltaker WHERE id = :id",
+			sqlParameters("id" to id),
+			rowMapper,
+		).firstOrNull()
 
 	fun insertOrUpdate(deltaker: Deltaker) {
 		val sql =

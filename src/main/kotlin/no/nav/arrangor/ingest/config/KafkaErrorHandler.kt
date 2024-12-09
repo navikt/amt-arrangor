@@ -28,11 +28,11 @@ class KafkaErrorHandler(
 		container: MessageListenerContainer,
 	) {
 		records.forEach { record ->
-			log.error(
-				"Feil i prossesseringen av record med offset: ${record.offset()}, key: ${record.key()} på topic ${record.topic()}",
-				thrownException,
-			)
-				.also { metricsService.incConsumerFaild() }
+			log
+				.error(
+					"Feil i prossesseringen av record med offset: ${record.offset()}, key: ${record.key()} på topic ${record.topic()}",
+					thrownException,
+				).also { metricsService.incConsumerFaild() }
 		}
 		if (records.isEmpty()) {
 			log.error("Feil i listener uten noen records", thrownException)
@@ -49,11 +49,11 @@ class KafkaErrorHandler(
 		invokeListener: Runnable,
 	) {
 		data.forEach { record ->
-			log.error(
-				"Feil i prossesseringen av record med offset: ${record.offset()}, key: ${record.key()} på topic ${record.topic()}",
-				thrownException,
-			)
-				.also { metricsService.incConsumerFaild() }
+			log
+				.error(
+					"Feil i prossesseringen av record med offset: ${record.offset()}, key: ${record.key()} på topic ${record.topic()}",
+					thrownException,
+				).also { metricsService.incConsumerFaild() }
 		}
 		if (data.isEmpty) {
 			log.error("Feil i listener uten noen records", thrownException)

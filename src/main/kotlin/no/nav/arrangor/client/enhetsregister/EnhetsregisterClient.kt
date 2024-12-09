@@ -20,20 +20,22 @@ class EnhetsregisterClient(
 	fun hentVirksomhet(orgNr: String): Result<Virksomhet> {
 		val start = Instant.now()
 		val request =
-			Request.Builder()
+			Request
+				.Builder()
 				.url("$baseUrl/api/enhet/$orgNr")
 				.addHeader("Authorization", "Bearer ${tokenProvider.get()}")
 				.get()
 				.build()
 
 		val virksomhet =
-			client.newCall(request).execute()
+			client
+				.newCall(request)
+				.execute()
 				.also { res -> isFailure(res, log)?.let { exception -> return Result.failure(exception) } }
 				.let {
 					it.body?.string()
 						?: return Result.failure(IllegalStateException("Forventet body for organisasjonsnummer $orgNr"))
-				}
-				.let { JsonUtils.fromJson<Virksomhet>(it) }
+				}.let { JsonUtils.fromJson<Virksomhet>(it) }
 				.also {
 					log.info(
 						"hentVirksomhet $orgNr executed in ${

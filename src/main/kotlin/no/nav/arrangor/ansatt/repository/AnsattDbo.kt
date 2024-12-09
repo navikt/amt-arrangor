@@ -42,9 +42,7 @@ data class RolleDbo(
 	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
 	var gyldigTil: ZonedDateTime? = null,
 ) {
-	fun erGyldig(): Boolean {
-		return gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
-	}
+	fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
 }
 
 data class KoordinatorsDeltakerlisteDbo(
@@ -52,9 +50,7 @@ data class KoordinatorsDeltakerlisteDbo(
 	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
 	var gyldigTil: ZonedDateTime? = null,
 ) {
-	fun erGyldig(): Boolean {
-		return gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
-	}
+	fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
 }
 
 data class VeilederDeltakerDbo(
@@ -63,7 +59,5 @@ data class VeilederDeltakerDbo(
 	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
 	var gyldigTil: ZonedDateTime? = null,
 ) {
-	fun erGyldig(): Boolean {
-		return gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
-	}
+	fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
 }

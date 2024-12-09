@@ -23,13 +23,11 @@ class TestKafkaConfig(
 	) + kafkaConfig.commonConfig()
 
 	@Bean
-	fun testKafkaConsumer(): Consumer<String, String> {
-		return DefaultKafkaConsumerFactory(
-			testConsumerProps("amt-arrangor-consumer"),
-			StringDeserializer(),
-			StringDeserializer(),
-		).createConsumer()
-	}
+	fun testKafkaConsumer(): Consumer<String, String> = DefaultKafkaConsumerFactory(
+		testConsumerProps("amt-arrangor-consumer"),
+		StringDeserializer(),
+		StringDeserializer(),
+	).createConsumer()
 
 	@Bean
 	fun testKafkaProducer(): KafkaProducer<String, String> {

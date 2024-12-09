@@ -11,10 +11,8 @@ class PersonClientConfiguration(
 	@Value("\${amt-person.scope}") private val scope: String,
 ) {
 	@Bean
-	fun personClient(machineToMachineTokenClient: MachineToMachineTokenClient): PersonClient {
-		return PersonClient(
-			baseUrl = baseUrl,
-			tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
-		)
-	}
+	fun personClient(machineToMachineTokenClient: MachineToMachineTokenClient): PersonClient = PersonClient(
+		baseUrl = baseUrl,
+		tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
+	)
 }

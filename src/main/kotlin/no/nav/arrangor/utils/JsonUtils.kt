@@ -16,27 +16,15 @@ object JsonUtils {
 			.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
 			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
-	fun objectMapper(): ObjectMapper {
-		return mapper
-	}
+	fun objectMapper(): ObjectMapper = mapper
 
-	inline fun <reified T> fromJson(jsonStr: String): T {
-		return mapper.readValue(jsonStr)
-	}
+	inline fun <reified T> fromJson(jsonStr: String): T = mapper.readValue(jsonStr)
 
-	fun <T> fromJson(jsonNode: JsonNode, clazz: Class<T>): T {
-		return mapper.treeToValue(jsonNode, clazz)
-	}
+	fun <T> fromJson(jsonNode: JsonNode, clazz: Class<T>): T = mapper.treeToValue(jsonNode, clazz)
 
-	fun <T> fromJson(jsonStr: String, clazz: Class<T>): T {
-		return mapper.readValue(jsonStr, clazz)
-	}
+	fun <T> fromJson(jsonStr: String, clazz: Class<T>): T = mapper.readValue(jsonStr, clazz)
 
-	fun <T> fromJson(stream: InputStream, clazz: Class<T>): T {
-		return mapper.readValue(stream, clazz)
-	}
+	fun <T> fromJson(stream: InputStream, clazz: Class<T>): T = mapper.readValue(stream, clazz)
 
-	fun toJson(any: Any): String {
-		return mapper.writeValueAsString(any)
-	}
+	fun toJson(any: Any): String = mapper.writeValueAsString(any)
 }

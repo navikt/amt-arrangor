@@ -37,30 +37,32 @@ class ArrangorRepository(
 			RETURNING *
 			""".trimIndent()
 
-		return template.query(
-			sql,
-			sqlParameters(
-				"id" to arrangorInput.id,
-				"navn" to arrangorInput.navn,
-				"organisasjonsnummer" to arrangorInput.organisasjonsnummer,
-				"overordnet_arrangor_id" to arrangorInput.overordnetArrangorId,
-			),
-			rowMapper,
-		)
-			.first()
+		return template
+			.query(
+				sql,
+				sqlParameters(
+					"id" to arrangorInput.id,
+					"navn" to arrangorInput.navn,
+					"organisasjonsnummer" to arrangorInput.organisasjonsnummer,
+					"overordnet_arrangor_id" to arrangorInput.overordnetArrangorId,
+				),
+				rowMapper,
+			).first()
 	}
 
-	fun get(id: UUID): ArrangorDbo? = template.query(
-		"SELECT * FROM arrangor WHERE id = :id",
-		sqlParameters("id" to id),
-		rowMapper,
-	).firstOrNull()
+	fun get(id: UUID): ArrangorDbo? = template
+		.query(
+			"SELECT * FROM arrangor WHERE id = :id",
+			sqlParameters("id" to id),
+			rowMapper,
+		).firstOrNull()
 
-	fun get(orgNr: String): ArrangorDbo? = template.query(
-		"SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
-		sqlParameters("organisasjonsnummer" to orgNr),
-		rowMapper,
-	).firstOrNull()
+	fun get(orgNr: String): ArrangorDbo? = template
+		.query(
+			"SELECT * FROM arrangor WHERE organisasjonsnummer = :organisasjonsnummer",
+			sqlParameters("organisasjonsnummer" to orgNr),
+			rowMapper,
+		).firstOrNull()
 
 	fun getArrangorerMedIder(ids: List<UUID>): List<ArrangorDbo> {
 		if (ids.isEmpty()) {

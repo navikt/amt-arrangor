@@ -20,14 +20,17 @@ class AltinnAclClient(
 
 	fun hentRoller(personident: String): Result<List<AltinnRolle>> {
 		val request =
-			Request.Builder()
+			Request
+				.Builder()
 				.url("$baseUrl/api/v1/rolle/tiltaksarrangor")
 				.addHeader("Authorization", "Bearer ${tokenProvider.get()}")
 				.post(JsonUtils.toJson(HentRollerRequest(personident)).toRequestBody("application/json".toMediaType()))
 				.build()
 
 		val roller =
-			client.newCall(request).execute()
+			client
+				.newCall(request)
+				.execute()
 				.also { res -> isFailure(res, log)?.let { ex -> return Result.failure(ex) } }
 				.let { it.body?.string() ?: return Result.failure(IllegalStateException("Forventet body")) }
 				.let { JsonUtils.fromJson<ResponseWrapper>(it).roller }
@@ -37,15 +40,15 @@ class AltinnAclClient(
 		return Result.success(roller)
 	}
 
-	private fun mapTiltaksarrangorRolle(rolle: String): AnsattRolle {
-		return when (rolle) {
-			"KOORDINATOR" -> AnsattRolle.KOORDINATOR
-			"VEILEDER" -> AnsattRolle.VEILEDER
-			else -> throw IllegalArgumentException("Ukjent tiltaksarrangør rolle $rolle")
-		}
+	private fun mapTiltaksarrangorRolle(rolle: String): AnsattRolle = when (rolle) {
+		"KOORDINATOR" -> AnsattRolle.KOORDINATOR
+		"VEILEDER" -> AnsattRolle.VEILEDER
+		else -> throw IllegalArgumentException("Ukjent tiltaksarrangør rolle $rolle")
 	}
 
-	data class HentRollerRequest(val personident: String)
+	data class HentRollerRequest(
+		val personident: String,
+	)
 
 	data class ResponseWrapper(
 		val roller: List<ResponseEntry>,

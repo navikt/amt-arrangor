@@ -46,7 +46,8 @@ object SingletonPostgresContainer {
 
 	private fun applyMigrations(dataSource: DataSource) {
 		val flyway: Flyway =
-			Flyway.configure()
+			Flyway
+				.configure()
 				.dataSource(dataSource)
 				.connectRetries(10)
 				.cleanDisabled(false)
@@ -56,10 +57,9 @@ object SingletonPostgresContainer {
 		flyway.migrate()
 	}
 
-	private fun createContainer(): PostgreSQLContainer<Nothing> {
-		return PostgreSQLContainer<Nothing>(DockerImageName.parse(POSTGRES_DOCKER_IMAGE_NAME))
+	private fun createContainer(): PostgreSQLContainer<Nothing> =
+		PostgreSQLContainer<Nothing>(DockerImageName.parse(POSTGRES_DOCKER_IMAGE_NAME))
 			.waitingFor(HostPortWaitStrategy())
-	}
 
 	private fun createDataSource(container: PostgreSQLContainer<Nothing>): DataSource {
 		val config = HikariConfig()
