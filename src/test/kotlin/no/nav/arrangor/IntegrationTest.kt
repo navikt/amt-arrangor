@@ -23,7 +23,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import java.util.UUID
@@ -93,10 +93,13 @@ class IntegrationTest {
 				registry.add("spring.datasource.hikari.maximum-pool-size") { 3 }
 			}
 
-			KafkaContainer(DockerImageName.parse(getKafkaImage())).apply {
-				start()
-				System.setProperty("KAFKA_BROKERS", bootstrapServers)
-			}
+			KafkaContainer(DockerImageName.parse("apache/kafka"))
+				.withEnv("KAFKA_LISTENERS", "PLAINTEXT://:9092,BROKER://:9093,CONTROLLER://:9094")
+				// workaround for https://github.com/testcontainers/testcontainers-java/issues/9506
+				.apply {
+					start()
+					System.setProperty("KAFKA_BROKERS", bootstrapServers)
+				}
 		}
 	}
 
@@ -161,14 +164,4 @@ class IntegrationTest {
 fun String.toJsonRequestBody(): RequestBody {
 	val mediaTypeJson = "application/json".toMediaType()
 	return this.toRequestBody(mediaTypeJson)
-}
-
-private fun getKafkaImage(): String {
-	val tag =
-		when (System.getProperty("os.arch")) {
-			"aarch64" -> "7.2.2-1-ubi8.arm64"
-			else -> "7.2.2"
-		}
-
-	return "confluentinc/cp-kafka:$tag"
 }
