@@ -2,7 +2,7 @@ package no.nav.arrangor.internal
 
 import jakarta.servlet.http.HttpServletRequest
 import no.nav.arrangor.ansatt.AnsattService
-import no.nav.arrangor.consumer.PublishService
+import no.nav.arrangor.consumer.ProducerService
 import no.nav.arrangor.domain.Ansatt
 import no.nav.common.job.JobRunner
 import no.nav.security.token.support.core.api.Unprotected
@@ -18,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException
 @RequestMapping("/internal")
 class InternalAPI(
 	private val ansattService: AnsattService,
-	private val publishService: PublishService,
+	private val producerService: ProducerService,
 ) {
 	private val log = LoggerFactory.getLogger(InternalAPI::class.java)
 
@@ -43,7 +43,7 @@ class InternalAPI(
 
 		do {
 			ansatte = ansattService.getAll(offset, 500)
-			ansatte.forEach { publishService.publishAnsatt(it) }
+			ansatte.forEach { producerService.publishAnsatt(it) }
 
 			log.info("Republiserte ansatte fra offset $offset til ${offset + ansatte.size}")
 			offset += ansatte.size

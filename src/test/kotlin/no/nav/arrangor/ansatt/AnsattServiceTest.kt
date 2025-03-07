@@ -15,7 +15,7 @@ import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.person.PersonClient
-import no.nav.arrangor.consumer.PublishService
+import no.nav.arrangor.consumer.ProducerService
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.testutils.DbTestData
@@ -31,7 +31,7 @@ import java.util.UUID
 import javax.sql.DataSource
 
 class AnsattServiceTest : IntegrationTest() {
-	val publishService = mockk<PublishService>(relaxed = true)
+	val producerService = mockk<ProducerService>(relaxed = true)
 	val metricsService = mockk<MetricsService>(relaxed = true)
 
 	@Autowired
@@ -58,10 +58,10 @@ class AnsattServiceTest : IntegrationTest() {
 	@BeforeEach
 	fun setUp() {
 		resetMockServers()
-		clearMocks(publishService)
+		clearMocks(producerService)
 		db = DbTestData(NamedParameterJdbcTemplate(dataSource))
 		ansattService =
-			AnsattService(personClient, ansattRepository, rolleService, publishService, metricsService, arrangorService)
+			AnsattService(personClient, ansattRepository, rolleService, producerService, metricsService, arrangorService)
 
 		arrangorOne = db.insertArrangor()
 		arrangorTwo = db.insertArrangor()
@@ -105,7 +105,7 @@ class AnsattServiceTest : IntegrationTest() {
 			?.erGyldig() shouldBe true
 
 		verify(exactly = 1) {
-			publishService.publishAnsatt(match { it.arrangorer.size == 1 && it.arrangorer.first().arrangorId == arrangorTwo.id })
+			producerService.publishAnsatt(match { it.arrangorer.size == 1 && it.arrangorer.first().arrangorId == arrangorTwo.id })
 		}
 	}
 
@@ -151,7 +151,7 @@ class AnsattServiceTest : IntegrationTest() {
 			?.erGyldig() shouldBe true
 
 		verify(exactly = 1) {
-			publishService.publishAnsatt(
+			producerService.publishAnsatt(
 				match {
 					it.arrangorer
 						.first()
@@ -213,7 +213,7 @@ class AnsattServiceTest : IntegrationTest() {
 			?.erGyldig() shouldBe false
 
 		verify(exactly = 1) {
-			publishService.publishAnsatt(
+			producerService.publishAnsatt(
 				match {
 					it.arrangorer
 						.first()
@@ -268,7 +268,7 @@ class AnsattServiceTest : IntegrationTest() {
 			?.any { it.rolle == AnsattRolle.VEILEDER && !it.erGyldig() } shouldBe true
 
 		verify(exactly = 1) {
-			publishService.publishAnsatt(
+			producerService.publishAnsatt(
 				match {
 					it.arrangorer
 						.first()

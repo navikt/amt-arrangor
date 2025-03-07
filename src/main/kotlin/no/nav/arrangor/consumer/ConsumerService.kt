@@ -25,7 +25,7 @@ class ConsumerService(
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val metricsService: MetricsService,
-	private val publishService: PublishService,
+	private val producerService: ProducerService,
 	private val deltakerRepository: DeltakerRepository,
 ) {
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -47,7 +47,7 @@ class ConsumerService(
 						organisasjonsnummer = virksomhetDto.organisasjonsnummer,
 						overordnetArrangorId = overordnetArrangorId,
 					),
-				).also { publishService.publishArrangor(it.toDomain()) }
+				).also { producerService.publishArrangor(it.toDomain()) }
 				.also { metricsService.incEndredeArrangorer() }
 			logger.info("Oppdatert arrangør med id ${arrangor.id}")
 			metricsService.incConsumedVirksomhetEndring()
@@ -107,7 +107,7 @@ class ConsumerService(
 				}
 			if (nyOverordnetArrangor != null) {
 				logger.info("Opprettet ny overordnet arrangør med id ${nyOverordnetArrangor.id}")
-				publishService.publishArrangor(nyOverordnetArrangor.toDomain())
+				producerService.publishArrangor(nyOverordnetArrangor.toDomain())
 				metricsService.incEndredeArrangorer()
 			} else {
 				logger.warn("Kunne ikke opprette ovrordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer")

@@ -4,7 +4,7 @@ import no.nav.arrangor.MetricsService
 import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.client.enhetsregister.Virksomhet
-import no.nav.arrangor.consumer.PublishService
+import no.nav.arrangor.consumer.ProducerService
 import no.nav.arrangor.domain.Arrangor
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -14,7 +14,7 @@ import java.util.UUID
 class ArrangorService(
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
-	private val publishService: PublishService,
+	private val producerService: ProducerService,
 	private val metricsService: MetricsService,
 ) {
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -102,7 +102,7 @@ class ArrangorService(
 					overordnetArrangorId = overordnetArrangor?.id,
 				),
 			)
-		publishService.publishArrangor(arrangor.toDomain())
+		producerService.publishArrangor(arrangor.toDomain())
 		metricsService.incEndredeArrangorer()
 		return arrangor
 	}
@@ -118,7 +118,7 @@ class ArrangorService(
 					overordnetArrangorId = null,
 				),
 			)
-		publishService.publishArrangor(overordnetArrangor.toDomain())
+		producerService.publishArrangor(overordnetArrangor.toDomain())
 		metricsService.incEndredeArrangorer()
 		return overordnetArrangor
 	}
