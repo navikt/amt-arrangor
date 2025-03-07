@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.util.UUID
 import javax.sql.DataSource
 
-class ArrangorControllerServiceUserTest : IntegrationTest() {
+class ArrangorServiceUserAPITest : IntegrationTest() {
 	@Autowired
 	private lateinit var datasource: DataSource
 

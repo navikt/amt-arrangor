@@ -1,4 +1,4 @@
-package no.nav.arrangor.ingest
+package no.nav.arrangor.consumer
 
 import no.nav.arrangor.utils.JsonUtils
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component
 import java.util.UUID
 
 @Component
-class KafkaListener(
-	private val ingestService: IngestService,
+class KafkaConsumer(
+	private val consumerService: ConsumerService,
 ) {
 	@KafkaListener(
 		topics = [VIRKSOMHET_TOPIC, ANSATT_PERSONALIA_TOPIC],
@@ -18,8 +18,8 @@ class KafkaListener(
 	)
 	fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
 		when (record.topic()) {
-			VIRKSOMHET_TOPIC -> ingestService.handleVirksomhetEndring(record.value()?.let { JsonUtils.fromJson(it) })
-			ANSATT_PERSONALIA_TOPIC -> ingestService.handleAnsattPersonalia(JsonUtils.fromJson(record.value()))
+			VIRKSOMHET_TOPIC -> consumerService.handleVirksomhetEndring(record.value()?.let { JsonUtils.fromJson(it) })
+			ANSATT_PERSONALIA_TOPIC -> consumerService.handleAnsattPersonalia(JsonUtils.fromJson(record.value()))
 			else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
 		}
 		ack.acknowledge()
@@ -33,7 +33,7 @@ class KafkaListener(
 	fun deltakerListener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
 		when (record.topic()) {
 			DELTAKER_TOPIC ->
-				ingestService.handleDeltakerEndring(
+				consumerService.handleDeltakerEndring(
 					UUID.fromString(record.key()),
 					record.value()?.let { JsonUtils.fromJson(it) },
 				)

@@ -1,4 +1,4 @@
-package no.nav.arrangor.ingest
+package no.nav.arrangor.consumer
 
 import no.nav.arrangor.MetricsService
 import no.nav.arrangor.domain.Ansatt

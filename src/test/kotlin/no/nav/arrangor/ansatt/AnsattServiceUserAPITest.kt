@@ -22,7 +22,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.util.UUID
 import javax.sql.DataSource
 
-class AnsattControllerServiceUserTest : IntegrationTest() {
+class AnsattServiceUserAPITest : IntegrationTest() {
 	@Autowired
 	private lateinit var datasource: DataSource
 
@@ -48,7 +48,7 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 			sendRequest(
 				method = "POST",
 				path = "/api/service/ansatt",
-				body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody("12345678910")).toJsonRequestBody(),
+				body = JsonUtils.toJson(AnsattServiceUserAPI.AnsattRequestBody("12345678910")).toJsonRequestBody(),
 			)
 
 		response.code shouldBe 401
@@ -89,7 +89,7 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 			sendRequest(
 				method = "POST",
 				path = "/api/service/ansatt",
-				body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
+				body = JsonUtils.toJson(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
 				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
 			)
 
@@ -114,7 +114,7 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 			sendRequest(
 				method = "POST",
 				path = "/api/service/ansatt",
-				body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
+				body = JsonUtils.toJson(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
 				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
 			)
 
@@ -136,7 +136,7 @@ class AnsattControllerServiceUserTest : IntegrationTest() {
 			sendRequest(
 				method = "POST",
 				path = "/api/service/ansatt",
-				body = JsonUtils.toJson(AnsattControllerServiceUser.AnsattRequestBody(personident)).toJsonRequestBody(),
+				body = JsonUtils.toJson(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
 				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
 			)
 

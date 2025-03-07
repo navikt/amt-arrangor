@@ -15,7 +15,7 @@ import java.util.UUID
 @RestController
 @ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 @RequestMapping("/api/service/ansatt")
-class AnsattControllerServiceUser(
+class AnsattServiceUserAPI(
 	private val ansattService: AnsattService,
 ) {
 	@PostMapping

@@ -17,7 +17,7 @@ import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.person.PersonClient
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.ingest.PublishService
+import no.nav.arrangor.consumer.PublishService
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
 import org.junit.jupiter.api.AfterEach
@@ -305,11 +305,11 @@ class AnsattServiceTest : IntegrationTest() {
 			ansattService.oppdaterVeiledereForDeltaker(
 				ansatt.personident,
 				UUID.randomUUID(),
-				AnsattController.OppdaterVeiledereForDeltakerRequest(
+				AnsattAPI.OppdaterVeiledereForDeltakerRequest(
 					arrangorId = arrangorOne.id,
 					veilederSomLeggesTil =
 						listOf(
-							AnsattController.VeilederAnsatt(
+							AnsattAPI.VeilederAnsatt(
 								UUID.randomUUID(),
 								VeilederType.VEILEDER,
 							),
@@ -366,11 +366,11 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val request =
-			AnsattController.OppdaterVeiledereForDeltakerRequest(
+			AnsattAPI.OppdaterVeiledereForDeltakerRequest(
 				arrangorId = arrangorOne.id,
 				veilederSomLeggesTil =
 					listOf(
-						AnsattController.VeilederAnsatt(
+						AnsattAPI.VeilederAnsatt(
 							veileder2.id,
 							VeilederType.VEILEDER,
 						),
@@ -447,12 +447,12 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val request =
-			AnsattController.OppdaterVeiledereForDeltakerRequest(
+			AnsattAPI.OppdaterVeiledereForDeltakerRequest(
 				arrangorId = arrangorOne.id,
 				veilederSomLeggesTil = emptyList(),
 				veilederSomFjernes =
 					listOf(
-						AnsattController.VeilederAnsatt(
+						AnsattAPI.VeilederAnsatt(
 							veileder1.id,
 							VeilederType.MEDVEILEDER,
 						),
@@ -543,30 +543,30 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val request =
-			AnsattController.OppdaterVeiledereForDeltakerRequest(
+			AnsattAPI.OppdaterVeiledereForDeltakerRequest(
 				arrangorId = arrangorOne.id,
 				veilederSomLeggesTil =
 					listOf(
-						AnsattController.VeilederAnsatt(
+						AnsattAPI.VeilederAnsatt(
 							veileder1.id,
 							VeilederType.VEILEDER,
 						),
-						AnsattController.VeilederAnsatt(
+						AnsattAPI.VeilederAnsatt(
 							veileder2.id,
 							VeilederType.MEDVEILEDER,
 						),
-						AnsattController.VeilederAnsatt(
+						AnsattAPI.VeilederAnsatt(
 							veileder3.id,
 							VeilederType.MEDVEILEDER,
 						),
 					),
 				veilederSomFjernes =
 					listOf(
-						AnsattController.VeilederAnsatt(
+						AnsattAPI.VeilederAnsatt(
 							veileder1.id,
 							VeilederType.MEDVEILEDER,
 						),
-						AnsattController.VeilederAnsatt(
+						AnsattAPI.VeilederAnsatt(
 							veileder2.id,
 							VeilederType.VEILEDER,
 						),
@@ -632,11 +632,11 @@ class AnsattServiceTest : IntegrationTest() {
 			)
 
 		val request =
-			AnsattController.OppdaterVeiledereForDeltakerRequest(
+			AnsattAPI.OppdaterVeiledereForDeltakerRequest(
 				arrangorId = arrangorOne.id,
 				veilederSomLeggesTil =
 					listOf(
-						AnsattController.VeilederAnsatt(
+						AnsattAPI.VeilederAnsatt(
 							ansatt.id,
 							VeilederType.VEILEDER,
 						),

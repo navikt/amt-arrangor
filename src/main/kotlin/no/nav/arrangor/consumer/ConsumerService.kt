@@ -1,4 +1,4 @@
-package no.nav.arrangor.ingest
+package no.nav.arrangor.consumer
 
 import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.AnsattService
@@ -7,11 +7,11 @@ import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.deltaker.DeltakerRepository
-import no.nav.arrangor.ingest.model.AVSLUTTENDE_STATUSER
-import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
-import no.nav.arrangor.ingest.model.Deltaker
-import no.nav.arrangor.ingest.model.SKJULES_ALLTID_STATUSER
-import no.nav.arrangor.ingest.model.VirksomhetDto
+import no.nav.arrangor.consumer.model.AVSLUTTENDE_STATUSER
+import no.nav.arrangor.consumer.model.AnsattPersonaliaDto
+import no.nav.arrangor.consumer.model.Deltaker
+import no.nav.arrangor.consumer.model.SKJULES_ALLTID_STATUSER
+import no.nav.arrangor.consumer.model.VirksomhetDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -19,7 +19,7 @@ import java.time.ZoneId
 import java.util.UUID
 
 @Service
-class IngestService(
+class ConsumerService(
 	private val ansattRepository: AnsattRepository,
 	private val ansattService: AnsattService,
 	private val arrangorRepository: ArrangorRepository,

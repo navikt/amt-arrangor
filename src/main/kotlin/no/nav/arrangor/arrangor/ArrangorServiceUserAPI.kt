@@ -12,7 +12,7 @@ import java.util.UUID
 @RestController
 @ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 @RequestMapping("/api/service/arrangor")
-class ArrangorControllerServiceUser(
+class ArrangorServiceUserAPI(
 	private val arrangorService: ArrangorService,
 ) {
 	@GetMapping("/organisasjonsnummer/{orgnummer}")

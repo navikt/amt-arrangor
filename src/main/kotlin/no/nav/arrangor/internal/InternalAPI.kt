@@ -3,7 +3,7 @@ package no.nav.arrangor.internal
 import jakarta.servlet.http.HttpServletRequest
 import no.nav.arrangor.ansatt.AnsattService
 import no.nav.arrangor.domain.Ansatt
-import no.nav.arrangor.ingest.PublishService
+import no.nav.arrangor.consumer.PublishService
 import no.nav.common.job.JobRunner
 import no.nav.security.token.support.core.api.Unprotected
 import org.slf4j.LoggerFactory
@@ -16,11 +16,11 @@ import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/internal")
-class InternalController(
+class InternalAPI(
 	private val ansattService: AnsattService,
 	private val publishService: PublishService,
 ) {
-	private val log = LoggerFactory.getLogger(InternalController::class.java)
+	private val log = LoggerFactory.getLogger(InternalAPI::class.java)
 
 	@Unprotected
 	@GetMapping("/ansatte/republiser")

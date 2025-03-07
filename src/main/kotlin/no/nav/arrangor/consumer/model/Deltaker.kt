@@ -1,4 +1,4 @@
-package no.nav.arrangor.ingest.model
+package no.nav.arrangor.consumer.model
 
 import java.time.LocalDateTime
 import java.util.UUID

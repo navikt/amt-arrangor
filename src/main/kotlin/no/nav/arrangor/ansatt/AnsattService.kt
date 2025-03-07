@@ -14,8 +14,8 @@ import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.ingest.PublishService
-import no.nav.arrangor.ingest.model.DeltakerStatusType
+import no.nav.arrangor.consumer.PublishService
+import no.nav.arrangor.consumer.model.DeltakerStatusType
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -133,7 +133,7 @@ class AnsattService(
 	fun oppdaterVeiledereForDeltaker(
 		personident: String,
 		deltakerId: UUID,
-		request: AnsattController.OppdaterVeiledereForDeltakerRequest,
+		request: AnsattAPI.OppdaterVeiledereForDeltakerRequest,
 	) {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 		finnArrangorMedRolle(ansattDbo, request.arrangorId, AnsattRolle.KOORDINATOR).getOrThrow()
