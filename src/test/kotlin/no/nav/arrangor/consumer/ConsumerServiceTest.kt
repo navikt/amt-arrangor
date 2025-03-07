@@ -11,14 +11,14 @@ import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.Virksomhet
-import no.nav.arrangor.deltaker.DeltakerRepository
-import no.nav.arrangor.domain.AnsattRolle
-import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.consumer.model.AnsattPersonaliaDto
 import no.nav.arrangor.consumer.model.Deltaker
 import no.nav.arrangor.consumer.model.DeltakerStatus
 import no.nav.arrangor.consumer.model.DeltakerStatusType
 import no.nav.arrangor.consumer.model.VirksomhetDto
+import no.nav.arrangor.deltaker.DeltakerRepository
+import no.nav.arrangor.domain.AnsattRolle
+import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
 import org.junit.jupiter.api.AfterEach

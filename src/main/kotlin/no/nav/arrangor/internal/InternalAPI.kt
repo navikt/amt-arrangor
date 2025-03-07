@@ -2,8 +2,8 @@ package no.nav.arrangor.internal
 
 import jakarta.servlet.http.HttpServletRequest
 import no.nav.arrangor.ansatt.AnsattService
-import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.consumer.PublishService
+import no.nav.arrangor.domain.Ansatt
 import no.nav.common.job.JobRunner
 import no.nav.security.token.support.core.api.Unprotected
 import org.slf4j.LoggerFactory

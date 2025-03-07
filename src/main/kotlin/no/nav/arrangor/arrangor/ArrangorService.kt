@@ -4,8 +4,8 @@ import no.nav.arrangor.MetricsService
 import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.client.enhetsregister.Virksomhet
-import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.consumer.PublishService
+import no.nav.arrangor.domain.Arrangor
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.UUID

@@ -6,12 +6,12 @@ import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
-import no.nav.arrangor.deltaker.DeltakerRepository
 import no.nav.arrangor.consumer.model.AVSLUTTENDE_STATUSER
 import no.nav.arrangor.consumer.model.AnsattPersonaliaDto
 import no.nav.arrangor.consumer.model.Deltaker
 import no.nav.arrangor.consumer.model.SKJULES_ALLTID_STATUSER
 import no.nav.arrangor.consumer.model.VirksomhetDto
+import no.nav.arrangor.deltaker.DeltakerRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
