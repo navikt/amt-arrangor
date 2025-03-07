@@ -1,4 +1,4 @@
-package no.nav.arrangor.ingest
+package no.nav.arrangor.kafka
 
 const val ARRANGOR_TOPIC = "amt.arrangor-v1"
 const val ANSATT_TOPIC = "amt.arrangor-ansatt-v1"

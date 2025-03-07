@@ -24,7 +24,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 import javax.sql.DataSource
 
-class AnsattControllerTest : IntegrationTest() {
+class AnsattAPITest : IntegrationTest() {
 	@Autowired
 	private lateinit var datasource: DataSource
 
@@ -72,9 +72,9 @@ class AnsattControllerTest : IntegrationTest() {
 				"/api/ansatt/veiledere/${UUID.randomUUID()}",
 				JsonUtils
 					.toJson(
-						AnsattController.OppdaterVeiledereForDeltakerRequest(
+						AnsattAPI.OppdaterVeiledereForDeltakerRequest(
 							arrangorId = UUID.randomUUID(),
-							veilederSomLeggesTil = listOf(AnsattController.VeilederAnsatt(UUID.randomUUID(), VeilederType.VEILEDER)),
+							veilederSomLeggesTil = listOf(AnsattAPI.VeilederAnsatt(UUID.randomUUID(), VeilederType.VEILEDER)),
 							veilederSomFjernes = emptyList(),
 						),
 					).toJsonRequestBody(),

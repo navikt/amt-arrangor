@@ -1,4 +1,4 @@
-package no.nav.arrangor.ingest
+package no.nav.arrangor.kafka
 
 import io.kotest.matchers.date.shouldBeWithin
 import io.kotest.matchers.shouldBe
@@ -14,11 +14,11 @@ import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.deltaker.DeltakerRepository
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
-import no.nav.arrangor.ingest.model.Deltaker
-import no.nav.arrangor.ingest.model.DeltakerStatus
-import no.nav.arrangor.ingest.model.DeltakerStatusType
-import no.nav.arrangor.ingest.model.VirksomhetDto
+import no.nav.arrangor.kafka.model.AnsattPersonaliaDto
+import no.nav.arrangor.kafka.model.Deltaker
+import no.nav.arrangor.kafka.model.DeltakerStatus
+import no.nav.arrangor.kafka.model.DeltakerStatusType
+import no.nav.arrangor.kafka.model.VirksomhetDto
 import no.nav.arrangor.testutils.DbTestData
 import no.nav.arrangor.testutils.DbTestDataUtils
 import org.junit.jupiter.api.AfterEach
@@ -32,12 +32,12 @@ import java.time.ZonedDateTime
 import java.util.UUID
 import javax.sql.DataSource
 
-class IngestServiceTest : IntegrationTest() {
+class ConsumerServiceTest : IntegrationTest() {
 	@Autowired
 	private lateinit var datasource: DataSource
 
 	@Autowired
-	private lateinit var ingestService: IngestService
+	private lateinit var consumerService: ConsumerService
 
 	@Autowired
 	private lateinit var arrangorRepository: ArrangorRepository
@@ -97,7 +97,7 @@ class IngestServiceTest : IntegrationTest() {
 			),
 		)
 
-		ingestService.handleVirksomhetEndring(
+		consumerService.handleVirksomhetEndring(
 			VirksomhetDto(
 				organisasjonsnummer = orgnummer,
 				navn = "Nytt navn",
@@ -143,7 +143,7 @@ class IngestServiceTest : IntegrationTest() {
 			),
 		)
 
-		ingestService.handleVirksomhetEndring(
+		consumerService.handleVirksomhetEndring(
 			VirksomhetDto(
 				organisasjonsnummer = orgnummer,
 				navn = "Nytt navn",
@@ -188,7 +188,7 @@ class IngestServiceTest : IntegrationTest() {
 			),
 		)
 
-		ingestService.handleVirksomhetEndring(
+		consumerService.handleVirksomhetEndring(
 			VirksomhetDto(
 				organisasjonsnummer = orgnummer,
 				navn = "Nytt navn",
@@ -228,7 +228,7 @@ class IngestServiceTest : IntegrationTest() {
 				"navn",
 			)
 
-		ingestService.handleAnsattPersonalia(nyPersonalia)
+		consumerService.handleAnsattPersonalia(nyPersonalia)
 
 		val oppdatertAnsatt = ansattRepository.get(ansatt.id)!!
 		oppdatertAnsatt.personident shouldBe nyPersonalia.personident
@@ -261,7 +261,7 @@ class IngestServiceTest : IntegrationTest() {
 				ansatt.etternavn,
 			)
 
-		ingestService.handleAnsattPersonalia(personalia)
+		consumerService.handleAnsattPersonalia(personalia)
 
 		val faktiskAnsatt = ansattRepository.get(ansatt.id)!!
 		faktiskAnsatt.personident shouldBe ansatt.personident
@@ -302,7 +302,7 @@ class IngestServiceTest : IntegrationTest() {
 				status = DeltakerStatus(DeltakerStatusType.HAR_SLUTTET, LocalDateTime.now(), LocalDateTime.now()),
 			)
 
-		ingestService.handleDeltakerEndring(deltakerId1, deltaker)
+		consumerService.handleDeltakerEndring(deltakerId1, deltaker)
 
 		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
@@ -361,7 +361,7 @@ class IngestServiceTest : IntegrationTest() {
 			)
 		deltakerRepository.insertOrUpdate(deltaker)
 
-		ingestService.handleDeltakerEndring(deltakerId1, deltaker)
+		consumerService.handleDeltakerEndring(deltakerId1, deltaker)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
@@ -409,7 +409,7 @@ class IngestServiceTest : IntegrationTest() {
 				status = DeltakerStatus(DeltakerStatusType.PABEGYNT_REGISTRERING, LocalDateTime.now(), LocalDateTime.now()),
 			)
 
-		ingestService.handleDeltakerEndring(deltakerId1, deltaker)
+		consumerService.handleDeltakerEndring(deltakerId1, deltaker)
 
 		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
@@ -466,7 +466,7 @@ class IngestServiceTest : IntegrationTest() {
 			)
 		deltakerRepository.insertOrUpdate(deltaker)
 
-		ingestService.handleDeltakerEndring(
+		consumerService.handleDeltakerEndring(
 			deltakerId1,
 			deltaker.copy(
 				status = DeltakerStatus(
@@ -520,7 +520,7 @@ class IngestServiceTest : IntegrationTest() {
 		ansattRepository.insertOrUpdate(ansatt1)
 		ansattRepository.insertOrUpdate(ansatt2)
 
-		ingestService.handleDeltakerEndring(deltakerId1, null)
+		consumerService.handleDeltakerEndring(deltakerId1, null)
 
 		val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
@@ -580,7 +580,7 @@ class IngestServiceTest : IntegrationTest() {
 				status = DeltakerStatus(DeltakerStatusType.DELTAR, LocalDateTime.now(), LocalDateTime.now()),
 			)
 
-		ingestService.handleDeltakerEndring(deltakerId1, deltaker)
+		consumerService.handleDeltakerEndring(deltakerId1, deltaker)
 
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->

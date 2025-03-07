@@ -14,8 +14,8 @@ import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.domain.TilknyttetArrangor
 import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.ingest.PublishService
-import no.nav.arrangor.ingest.model.DeltakerStatusType
+import no.nav.arrangor.kafka.ProducerService
+import no.nav.arrangor.kafka.model.DeltakerStatusType
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -27,7 +27,7 @@ class AnsattService(
 	private val personClient: PersonClient,
 	private val ansattRepository: AnsattRepository,
 	private val rolleService: AnsattRolleService,
-	private val publishService: PublishService,
+	private val producerService: ProducerService,
 	private val metricsService: MetricsService,
 	private val arrangorService: ArrangorService,
 ) {
@@ -74,7 +74,7 @@ class AnsattService(
 
 		val oppdatertAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
 
-		publishService.publishAnsatt(oppdatertAnsatt)
+		producerService.publishAnsatt(oppdatertAnsatt)
 		metricsService.incLagtTilSomKoordinator()
 		logger.info("Ansatt ${oppdatertAnsattDbo.id} ble koordinator for deltakerliste $deltakerlisteId")
 
@@ -100,7 +100,7 @@ class AnsattService(
 			it.gyldigTil = ZonedDateTime.now()
 
 			mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
-				.also { ansatt -> publishService.publishAnsatt(ansatt) }
+				.also { ansatt -> producerService.publishAnsatt(ansatt) }
 				.also { metricsService.incFjernetSomKoodrinator() }
 				.also { logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId") }
 		}
@@ -133,7 +133,7 @@ class AnsattService(
 	fun oppdaterVeiledereForDeltaker(
 		personident: String,
 		deltakerId: UUID,
-		request: AnsattController.OppdaterVeiledereForDeltakerRequest,
+		request: AnsattAPI.OppdaterVeiledereForDeltakerRequest,
 	) {
 		val ansattDbo = ansattRepository.get(personident) ?: throw NoSuchElementException("Ansatt finnes ikke")
 		finnArrangorMedRolle(ansattDbo, request.arrangorId, AnsattRolle.KOORDINATOR).getOrThrow()
@@ -185,7 +185,7 @@ class AnsattService(
 			)
 
 		val oppdaterAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(oppdatertAnsattDbo))
-		publishService.publishAnsatt(oppdaterAnsatt)
+		producerService.publishAnsatt(oppdaterAnsatt)
 		metricsService.incLagtTilSomVeileder()
 		logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId")
 	}
@@ -214,7 +214,7 @@ class AnsattService(
 			it.gyldigTil = ZonedDateTime.now()
 
 			val oppdatertAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
-			publishService.publishAnsatt(oppdatertAnsatt)
+			producerService.publishAnsatt(oppdatertAnsatt)
 			metricsService.incFjernetSomVeileder()
 		}
 		logger.info("Ansatt ${ansattDbo.id} mistet veilederrolle for $deltakerId")
@@ -243,7 +243,7 @@ class AnsattService(
 				),
 			)
 		logger.info("Opprettet ny ansatt og lagret roller for ansattId ${ansattDbo.id}")
-		return mapToAnsatt(ansattDbo).also { publishService.publishAnsatt(it) }
+		return mapToAnsatt(ansattDbo).also { producerService.publishAnsatt(it) }
 	}
 
 	fun oppdaterAnsattesRoller() = ansattRepository
@@ -268,7 +268,7 @@ class AnsattService(
 		val oppdatertAnsattDbo = ansattRepository.insertOrUpdate(ansattDboMedOppdaterteRoller.data)
 
 		return mapToAnsatt(oppdatertAnsattDbo)
-			.also { if (ansattDboMedOppdaterteRoller.isUpdated) publishService.publishAnsatt(it) }
+			.also { if (ansattDboMedOppdaterteRoller.isUpdated) producerService.publishAnsatt(it) }
 	}
 
 	fun getAll(offset: Int, limit: Int): List<Ansatt> = ansattRepository.getAll(offset, limit).map { mapToAnsatt(it) }
@@ -314,7 +314,7 @@ class AnsattService(
 		status: DeltakerStatusType?,
 	) {
 		val ansatteEndret = ansattRepository.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
-		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
+		ansatteEndret.forEach { producerService.publishAnsatt(mapToAnsatt(it)) }
 
 		if (ansatteEndret.isNotEmpty()) {
 			logger.info("Deaktiverte veiledere for deltaker $deltakerId med status ${status?.name ?: "slettet"}")
@@ -323,7 +323,7 @@ class AnsattService(
 
 	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, status: DeltakerStatusType) {
 		val ansatteEndret = ansattRepository.maybeReaktiverVeiledereForDeltaker(deltakerId)
-		ansatteEndret.forEach { publishService.publishAnsatt(mapToAnsatt(it)) }
+		ansatteEndret.forEach { producerService.publishAnsatt(mapToAnsatt(it)) }
 
 		if (ansatteEndret.isNotEmpty()) {
 			logger.info("Reaktiverte veiledere ${ansatteEndret.size} for deltaker $deltakerId med status ${status.name}")
@@ -345,7 +345,7 @@ class AnsattService(
 
 				if (fjernedeTilganger.isNotEmpty()) {
 					val oppdatertAnsatt = mapToAnsatt(ansattRepository.insertOrUpdate(ansatt))
-					publishService.publishAnsatt(oppdatertAnsatt)
+					producerService.publishAnsatt(oppdatertAnsatt)
 					metricsService.incFjernetSomVeileder(fjernedeTilganger.size)
 					logger.info("Ansatt ${ansatt.id} mistet veilederroller for deltakere på deltakerlisten $deltakerlisteId")
 				}

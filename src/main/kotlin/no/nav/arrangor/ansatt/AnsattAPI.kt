@@ -20,7 +20,7 @@ import java.util.UUID
 @RestController
 @ProtectedWithClaims(issuer = Issuer.TOKEN_X)
 @RequestMapping("/api/ansatt")
-class AnsattController(
+class AnsattAPI(
 	private val ansattService: AnsattService,
 	private val contextHolder: TokenValidationContextHolder,
 ) {

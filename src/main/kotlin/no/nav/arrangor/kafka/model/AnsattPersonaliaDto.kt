@@ -1,4 +1,4 @@
-package no.nav.arrangor.ingest.model
+package no.nav.arrangor.kafka.model
 
 import java.util.UUID
 

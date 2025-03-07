@@ -1,4 +1,4 @@
-package no.nav.arrangor.ingest
+package no.nav.arrangor.kafka
 
 import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.AnsattService
@@ -7,11 +7,11 @@ import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.deltaker.DeltakerRepository
-import no.nav.arrangor.ingest.model.AVSLUTTENDE_STATUSER
-import no.nav.arrangor.ingest.model.AnsattPersonaliaDto
-import no.nav.arrangor.ingest.model.Deltaker
-import no.nav.arrangor.ingest.model.SKJULES_ALLTID_STATUSER
-import no.nav.arrangor.ingest.model.VirksomhetDto
+import no.nav.arrangor.kafka.model.AVSLUTTENDE_STATUSER
+import no.nav.arrangor.kafka.model.AnsattPersonaliaDto
+import no.nav.arrangor.kafka.model.Deltaker
+import no.nav.arrangor.kafka.model.SKJULES_ALLTID_STATUSER
+import no.nav.arrangor.kafka.model.VirksomhetDto
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -19,13 +19,13 @@ import java.time.ZoneId
 import java.util.UUID
 
 @Service
-class IngestService(
+class ConsumerService(
 	private val ansattRepository: AnsattRepository,
 	private val ansattService: AnsattService,
 	private val arrangorRepository: ArrangorRepository,
 	private val enhetsregisterClient: EnhetsregisterClient,
 	private val metricsService: MetricsService,
-	private val publishService: PublishService,
+	private val producerService: ProducerService,
 	private val deltakerRepository: DeltakerRepository,
 ) {
 	private val logger = LoggerFactory.getLogger(javaClass)
@@ -47,7 +47,7 @@ class IngestService(
 						organisasjonsnummer = virksomhetDto.organisasjonsnummer,
 						overordnetArrangorId = overordnetArrangorId,
 					),
-				).also { publishService.publishArrangor(it.toDomain()) }
+				).also { producerService.publishArrangor(it.toDomain()) }
 				.also { metricsService.incEndredeArrangorer() }
 			logger.info("Oppdatert arrangør med id ${arrangor.id}")
 			metricsService.incConsumedVirksomhetEndring()
@@ -107,7 +107,7 @@ class IngestService(
 				}
 			if (nyOverordnetArrangor != null) {
 				logger.info("Opprettet ny overordnet arrangør med id ${nyOverordnetArrangor.id}")
-				publishService.publishArrangor(nyOverordnetArrangor.toDomain())
+				producerService.publishArrangor(nyOverordnetArrangor.toDomain())
 				metricsService.incEndredeArrangorer()
 			} else {
 				logger.warn("Kunne ikke opprette ovrordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer")
