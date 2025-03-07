@@ -1,4 +1,4 @@
-package no.nav.arrangor.consumer
+package no.nav.arrangor.kafka
 
 import io.kotest.matchers.date.shouldBeWithin
 import io.kotest.matchers.shouldBe
@@ -11,11 +11,11 @@ import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.Virksomhet
-import no.nav.arrangor.consumer.model.AnsattPersonaliaDto
-import no.nav.arrangor.consumer.model.Deltaker
-import no.nav.arrangor.consumer.model.DeltakerStatus
-import no.nav.arrangor.consumer.model.DeltakerStatusType
-import no.nav.arrangor.consumer.model.VirksomhetDto
+import no.nav.arrangor.kafka.model.AnsattPersonaliaDto
+import no.nav.arrangor.kafka.model.Deltaker
+import no.nav.arrangor.kafka.model.DeltakerStatus
+import no.nav.arrangor.kafka.model.DeltakerStatusType
+import no.nav.arrangor.kafka.model.VirksomhetDto
 import no.nav.arrangor.deltaker.DeltakerRepository
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType

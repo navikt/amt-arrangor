@@ -1,4 +1,4 @@
-package no.nav.arrangor.consumer.config
+package no.nav.arrangor.kafka.config
 
 import no.nav.arrangor.MetricsService
 import org.apache.kafka.clients.consumer.Consumer

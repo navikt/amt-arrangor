@@ -1,4 +1,4 @@
-package no.nav.arrangor.consumer.model
+package no.nav.arrangor.kafka.model
 
 data class VirksomhetDto(
 	val organisasjonsnummer: String,

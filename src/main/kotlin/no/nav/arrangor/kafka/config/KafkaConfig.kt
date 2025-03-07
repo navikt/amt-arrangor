@@ -1,4 +1,4 @@
-package no.nav.arrangor.consumer.config
+package no.nav.arrangor.kafka.config
 
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG

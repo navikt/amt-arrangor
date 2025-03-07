@@ -1,8 +1,8 @@
 package no.nav.arrangor.deltaker
 
-import no.nav.arrangor.consumer.model.Deltaker
-import no.nav.arrangor.consumer.model.DeltakerStatus
-import no.nav.arrangor.consumer.model.DeltakerStatusType
+import no.nav.arrangor.kafka.model.Deltaker
+import no.nav.arrangor.kafka.model.DeltakerStatus
+import no.nav.arrangor.kafka.model.DeltakerStatusType
 import no.nav.arrangor.utils.getZonedDateTime
 import no.nav.arrangor.utils.sqlParameters
 import org.springframework.jdbc.core.RowMapper

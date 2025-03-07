@@ -1,6 +1,6 @@
 package no.nav.arrangor.testutils
 
-import no.nav.arrangor.consumer.config.KafkaConfig
+import no.nav.arrangor.kafka.config.KafkaConfig
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.KafkaProducer

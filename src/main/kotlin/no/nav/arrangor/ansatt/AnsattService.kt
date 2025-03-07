@@ -8,8 +8,8 @@ import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorService
 import no.nav.arrangor.client.person.PersonClient
-import no.nav.arrangor.consumer.ProducerService
-import no.nav.arrangor.consumer.model.DeltakerStatusType
+import no.nav.arrangor.kafka.ProducerService
+import no.nav.arrangor.kafka.model.DeltakerStatusType
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.Arrangor

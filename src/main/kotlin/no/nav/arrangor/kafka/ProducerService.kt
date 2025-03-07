@@ -1,4 +1,4 @@
-package no.nav.arrangor.consumer
+package no.nav.arrangor.kafka
 
 import no.nav.arrangor.MetricsService
 import no.nav.arrangor.domain.Ansatt

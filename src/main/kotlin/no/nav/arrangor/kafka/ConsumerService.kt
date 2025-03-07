@@ -1,4 +1,4 @@
-package no.nav.arrangor.consumer
+package no.nav.arrangor.kafka
 
 import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.AnsattService
@@ -6,11 +6,11 @@ import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
-import no.nav.arrangor.consumer.model.AVSLUTTENDE_STATUSER
-import no.nav.arrangor.consumer.model.AnsattPersonaliaDto
-import no.nav.arrangor.consumer.model.Deltaker
-import no.nav.arrangor.consumer.model.SKJULES_ALLTID_STATUSER
-import no.nav.arrangor.consumer.model.VirksomhetDto
+import no.nav.arrangor.kafka.model.AVSLUTTENDE_STATUSER
+import no.nav.arrangor.kafka.model.AnsattPersonaliaDto
+import no.nav.arrangor.kafka.model.Deltaker
+import no.nav.arrangor.kafka.model.SKJULES_ALLTID_STATUSER
+import no.nav.arrangor.kafka.model.VirksomhetDto
 import no.nav.arrangor.deltaker.DeltakerRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
