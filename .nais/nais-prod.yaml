@@ -50,8 +50,6 @@ spec:
   azure:
     application:
       enabled: true
-  secureLogs:
-    enabled: true
   kafka:
     pool: nav-prod
   leaderElection: true
