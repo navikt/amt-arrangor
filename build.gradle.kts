@@ -1,5 +1,5 @@
 plugins {
-    val kotlinVersion = "2.1.21"
+    val kotlinVersion = "2.2.0"
 
     id("org.springframework.boot") version "3.5.3"
     id("io.spring.dependency-management") version "1.1.7"
@@ -25,7 +25,7 @@ val tokenSupportVersion = "5.0.30"
 val arrowVersion = "2.1.2"
 val kotestVersion = "5.9.1"
 val testcontainersVersion = "1.21.2"
-val mockkVersion = "1.14.2"
+val mockkVersion = "1.14.4"
 val mockOauth2ServerVersion = "2.2.1"
 val ktlintVersion = "1.4.1"
 
