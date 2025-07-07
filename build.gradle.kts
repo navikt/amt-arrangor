@@ -20,7 +20,7 @@ repositories {
 val logstashEncoderVersion = "8.1"
 val kafkaClientsVersion = "4.0.0"
 val shedlockVersion = "6.9.0"
-val okHttpVersion = "4.12.0"
+val okHttpVersion = "5.0.0"
 val tokenSupportVersion = "5.0.30"
 val arrowVersion = "2.1.2"
 val kotestVersion = "5.9.1"
@@ -57,10 +57,16 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
-    implementation("no.nav.common:log:$commonVersion")
+    implementation("no.nav.common:log:$commonVersion") {
+        exclude("com.squareup.okhttp3", "okhttp")
+    }
     implementation("no.nav.common:token-client:$commonVersion")
-    implementation("no.nav.common:rest:$commonVersion")
-    implementation("no.nav.common:job:$commonVersion")
+    implementation("no.nav.common:rest:$commonVersion") {
+        exclude("com.squareup.okhttp3", "okhttp")
+    }
+    implementation("no.nav.common:job:$commonVersion") {
+        exclude("com.squareup.okhttp3", "okhttp")
+    }
 
     implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
 
@@ -80,6 +86,7 @@ dependencies {
     testImplementation("org.awaitility:awaitility")
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
+    testImplementation("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
 }
 
 tasks.test {
