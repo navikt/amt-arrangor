@@ -100,6 +100,10 @@ ktlint {
     version = ktlintVersion
 }
 
+tasks.jar {
+    enabled = false
+}
+
 tasks.test {
     useJUnitPlatform()
     jvmArgs(
