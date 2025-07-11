@@ -18,64 +18,49 @@ import no.nav.arrangor.client.person.PersonClient
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.kafka.ProducerService
-import no.nav.arrangor.testutils.DbTestData
-import no.nav.arrangor.testutils.DbTestDataUtils
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.ZonedDateTime
 import java.util.UUID
-import javax.sql.DataSource
 
 class AnsattServiceTest : IntegrationTest() {
-	val producerService = mockk<ProducerService>(relaxed = true)
-	val metricsService = mockk<MetricsService>(relaxed = true)
+	private val producerService = mockk<ProducerService>(relaxed = true)
+	private val metricsService = mockk<MetricsService>(relaxed = true)
 
 	@Autowired
-	lateinit var personClient: PersonClient
+	private lateinit var personClient: PersonClient
 
 	@Autowired
-	lateinit var rolleService: AnsattRolleService
+	private lateinit var rolleService: AnsattRolleService
 
 	@Autowired
-	lateinit var ansattRepository: AnsattRepository
+	private lateinit var ansattRepository: AnsattRepository
 
 	@Autowired
-	lateinit var arrangorService: ArrangorService
+	private lateinit var arrangorService: ArrangorService
 
-	lateinit var ansattService: AnsattService
+	private lateinit var ansattService: AnsattService
 
-	@Autowired
-	lateinit var dataSource: DataSource
-
-	lateinit var db: DbTestData
-	lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
-	lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
+	private lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
+	private lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
 
 	@BeforeEach
 	fun setUp() {
 		resetMockServers()
 		clearMocks(producerService)
-		db = DbTestData(NamedParameterJdbcTemplate(dataSource))
 		ansattService =
 			AnsattService(personClient, ansattRepository, rolleService, producerService, metricsService, arrangorService)
 
-		arrangorOne = db.insertArrangor()
-		arrangorTwo = db.insertArrangor()
-	}
-
-	@AfterEach
-	fun tearDown() {
-		DbTestDataUtils.cleanDatabase(dataSource)
+		arrangorOne = testDatabase.insertArrangor()
+		arrangorTwo = testDatabase.insertArrangor()
 	}
 
 	@Test
 	fun `oppdaterRoller - ansatt mister eneste rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten arrangoren`() {
 		val ansattDbo =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(arrangorOne.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList()),
@@ -112,7 +97,7 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `oppdaterRoller - ansatt mister en rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten rollen`() {
 		val ansattDbo =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -169,7 +154,7 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `oppdaterRoller - ansatt mister en rolle hos arrangor - ansatt lagres med deaktivert rolle og publiseres uten koordinator for`() {
 		val koordinatorFor = UUID.randomUUID()
 		val ansattDbo =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -234,7 +219,7 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `oppdaterRoller - ansatt får tilbake deaktivert rolle - oppretter ny rolle og publiserer ansatt`() {
 		val ansattDbo =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -289,7 +274,7 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `oppdaterVeiledereForDeltaker - ansatt har ikke koordinatortilgang - kaster feil`() {
 		val ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -324,7 +309,7 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `oppdaterVeiledereForDeltaker - skal legge til ansatt som veileder - ansatt blir oppdatert`() {
 		val deltakerId = UUID.randomUUID()
 		val koordinator =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -336,7 +321,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val veileder1 =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -354,7 +339,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val veileder2 =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -399,7 +384,7 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `oppdaterVeiledereForDeltaker - skal fjerne ansatt som veileder - ansatt blir oppdatert`() {
 		val deltakerId = UUID.randomUUID()
 		val koordinator =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -411,7 +396,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val veileder1 =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -429,7 +414,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val veileder2 =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -483,7 +468,7 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `oppdaterVeiledereForDeltaker - skal legge til og fjerne ansatt som veileder - ansatte blir oppdatert`() {
 		val deltakerId = UUID.randomUUID()
 		val koordinator =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -495,7 +480,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val veileder1 =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -513,7 +498,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val veileder2 =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -531,7 +516,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val veileder3 =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -607,7 +592,7 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `oppdaterVeileder - deaktivert tilgang for deltaker finnes - ny tilgang opprettes`() {
 		val deltakerId = UUID.randomUUID()
 		val koordinator =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -619,7 +604,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -661,7 +646,7 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `fjernKoordinatorForDeltakerliste - skal fjerne sette gyldigTil til nå`() {
 		val deltakerliste = KoordinatorsDeltakerlisteDbo(UUID.randomUUID())
 		val koordinator =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -689,8 +674,8 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `fjernTilgangerHosArrangor - koordinator skal fjernes`() {
 		val deltakerliste = UUID.randomUUID()
-		val arrangor = db.ansattArrangorDbo(koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste)))
-		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
+		val arrangor = testDatabase.ansattArrangorDbo(koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste)))
+		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste, emptyList(), arrangor.arrangorId)
 		ansattRepository
@@ -706,14 +691,14 @@ class AnsattServiceTest : IntegrationTest() {
 		val deltakerliste2 = UUID.randomUUID()
 
 		val arrangor =
-			db.ansattArrangorDbo(
+			testDatabase.ansattArrangorDbo(
 				koordinator =
 					listOf(
 						KoordinatorsDeltakerlisteDbo(deltakerliste1),
 						KoordinatorsDeltakerlisteDbo(deltakerliste2),
 					),
 			)
-		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
+		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste1, emptyList(), arrangor.arrangorId)
 
@@ -726,11 +711,11 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `fjernTilgangerHosArrangor - veileder skal fjernes`() {
 		val deltaker = UUID.randomUUID()
 		val arrangor =
-			db.ansattArrangorDbo(
+			testDatabase.ansattArrangorDbo(
 				roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
 				veileder = listOf(VeilederDeltakerDbo(deltaker, VeilederType.VEILEDER)),
 			)
-		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor))
+		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker), arrangor.arrangorId)
 		ansattRepository
@@ -747,7 +732,7 @@ class AnsattServiceTest : IntegrationTest() {
 		val deltaker3 = UUID.randomUUID()
 
 		val arrangor1 =
-			db.ansattArrangorDbo(
+			testDatabase.ansattArrangorDbo(
 				roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
 				veileder =
 					listOf(
@@ -756,14 +741,14 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 			)
 		val arrangor2 =
-			db.ansattArrangorDbo(
+			testDatabase.ansattArrangorDbo(
 				roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
 				veileder =
 					listOf(
 						VeilederDeltakerDbo(deltaker3, VeilederType.VEILEDER),
 					),
 			)
-		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor1, arrangor2))
+		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor1, arrangor2))
 
 		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker1, deltaker2), arrangor1.arrangorId)
 		val ansattArrangor1Tilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor1.arrangorId }!!
@@ -783,7 +768,7 @@ class AnsattServiceTest : IntegrationTest() {
 		val deltakerliste = UUID.randomUUID()
 
 		val arrangor1 =
-			db.ansattArrangorDbo(
+			testDatabase.ansattArrangorDbo(
 				roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR), RolleDbo(AnsattRolle.VEILEDER)),
 				veileder =
 					listOf(
@@ -791,7 +776,7 @@ class AnsattServiceTest : IntegrationTest() {
 					),
 				koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste)),
 			)
-		val ansatt = db.insertAnsatt(arrangorer = listOf(arrangor1))
+		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor1))
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste, listOf(deltaker1), arrangor1.arrangorId)
 		val ansattArrangor1Tilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor1.arrangorId }!!
@@ -803,7 +788,7 @@ class AnsattServiceTest : IntegrationTest() {
 	@Test
 	fun `setKoordinator - ny deltakerliste - ny tilgang opprettes`() {
 		val ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -830,7 +815,7 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `setKoordinator - aktiv tilgang for deltakerliste finnes - tilgang opprettes ikke`() {
 		val deltakerlisteId = UUID.randomUUID()
 		val ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -856,7 +841,7 @@ class AnsattServiceTest : IntegrationTest() {
 	fun `setKoordinator - deaktivert tilgang for deltakerliste finnes - ny tilgang opprettes`() {
 		val deltakerlisteId = UUID.randomUUID()
 		val ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(

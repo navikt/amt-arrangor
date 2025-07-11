@@ -4,36 +4,21 @@ import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldBeWithin
 import io.kotest.matchers.shouldBe
+import no.nav.arrangor.RepositoryTestBase
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.testutils.DbTestData
-import no.nav.arrangor.testutils.DbTestDataUtils
-import no.nav.arrangor.testutils.SingletonPostgresContainer
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
 
-class AnsattRepositoryTest {
-	private val datasource = SingletonPostgresContainer.getDataSource()
-	private val template = NamedParameterJdbcTemplate(datasource)
-
-	private val repository = AnsattRepository(template)
-	lateinit var db: DbTestData
-
-	@BeforeEach
-	fun setUp() {
-		db = DbTestData(template)
-	}
-
-	@AfterEach
-	fun tearDown() {
-		DbTestDataUtils.cleanDatabase(datasource)
-	}
+@SpringBootTest(classes = [AnsattRepository::class])
+class AnsattRepositoryTest : RepositoryTestBase() {
+	@Autowired
+	private lateinit var ansattRepository: AnsattRepository
 
 	@Test
 	fun `insertOrUpdate - not exists - adds to database`() {
@@ -59,7 +44,7 @@ class AnsattRepositoryTest {
 					),
 			)
 
-		val inserted = repository.insertOrUpdate(ansatt)
+		val inserted = ansattRepository.insertOrUpdate(ansatt)
 
 		inserted.id shouldBe ansattId
 		inserted.personident shouldBe ansatt.personident
@@ -101,7 +86,7 @@ class AnsattRepositoryTest {
 						),
 					),
 			)
-		repository.insertOrUpdate(oldAnsatt)
+		ansattRepository.insertOrUpdate(oldAnsatt)
 		val oppdatertAnsatt =
 			AnsattDbo(
 				id = ansattId,
@@ -121,7 +106,7 @@ class AnsattRepositoryTest {
 					),
 			)
 
-		val new = repository.insertOrUpdate(oppdatertAnsatt)
+		val new = ansattRepository.insertOrUpdate(oppdatertAnsatt)
 
 		new.id shouldBe ansattId
 		new.personident shouldBe oldAnsatt.personident
@@ -137,7 +122,7 @@ class AnsattRepositoryTest {
 
 	@Test
 	fun `get(UUID) - not exists - returns null`() {
-		repository.get(UUID.randomUUID()) shouldBe null
+		ansattRepository.get(UUID.randomUUID()) shouldBe null
 	}
 
 	@Test
@@ -162,14 +147,14 @@ class AnsattRepositoryTest {
 							koordinator = emptyList(),
 						),
 					),
-			).let { repository.insertOrUpdate(it) }
+			).let { ansattRepository.insertOrUpdate(it) }
 
-		repository.get(stored.id) shouldBe stored
+		ansattRepository.get(stored.id) shouldBe stored
 	}
 
 	@Test
 	fun `get(personident) - not exists - returns null`() {
-		repository.get(UUID.randomUUID().toString()) shouldBe null
+		ansattRepository.get(UUID.randomUUID().toString()) shouldBe null
 	}
 
 	@Test
@@ -194,9 +179,9 @@ class AnsattRepositoryTest {
 							koordinator = emptyList(),
 						),
 					),
-			).let { repository.insertOrUpdate(it) }
+			).let { ansattRepository.insertOrUpdate(it) }
 
-		repository.get(stored.personident) shouldBe stored
+		ansattRepository.get(stored.personident) shouldBe stored
 	}
 
 	@Test
@@ -221,22 +206,22 @@ class AnsattRepositoryTest {
 							koordinator = emptyList(),
 						),
 					),
-			).let { repository.insertOrUpdate(it) }
+			).let { ansattRepository.insertOrUpdate(it) }
 
-		repository.getByPersonId(stored.personId) shouldBe stored
+		ansattRepository.getByPersonId(stored.personId) shouldBe stored
 	}
 
 	@Test
 	fun `getByPersonId - not exists - returns null`() {
-		repository.getByPersonId(UUID.randomUUID()) shouldBe null
+		ansattRepository.getByPersonId(UUID.randomUUID()) shouldBe null
 	}
 
 	@Test
 	fun `getToSynchronize - Returns only values to synchronize`() {
-		db.ansatt().let { repository.insertOrUpdate(it) }
-		val two = db.ansatt(lastSynchronized = LocalDateTime.now().minusDays(8)).let { repository.insertOrUpdate(it) }
+		testDatabase.ansatt().let { ansattRepository.insertOrUpdate(it) }
+		val two = testDatabase.ansatt(lastSynchronized = LocalDateTime.now().minusDays(8)).let { ansattRepository.insertOrUpdate(it) }
 
-		val returned = repository.getToSynchronize(5, LocalDateTime.now().minusDays(7))
+		val returned = ansattRepository.getToSynchronize(5, LocalDateTime.now().minusDays(7))
 
 		returned.size shouldBe 1
 		returned[0] shouldBe two
@@ -244,11 +229,11 @@ class AnsattRepositoryTest {
 
 	@Test
 	fun `getToSynchronize - returns max limit and oldest ordered`() {
-		db.ansatt().let { repository.insertOrUpdate(it) }
-		val two = db.ansatt(lastSynchronized = LocalDateTime.now().minusDays(2)).let { repository.insertOrUpdate(it) }
-		val three = db.ansatt(lastSynchronized = LocalDateTime.now().minusDays(1)).let { repository.insertOrUpdate(it) }
+		testDatabase.ansatt().let { ansattRepository.insertOrUpdate(it) }
+		val two = testDatabase.ansatt(lastSynchronized = LocalDateTime.now().minusDays(2)).let { ansattRepository.insertOrUpdate(it) }
+		val three = testDatabase.ansatt(lastSynchronized = LocalDateTime.now().minusDays(1)).let { ansattRepository.insertOrUpdate(it) }
 
-		val returned = repository.getToSynchronize(2, LocalDateTime.now().plusMinutes(7))
+		val returned = ansattRepository.getToSynchronize(2, LocalDateTime.now().plusMinutes(7))
 
 		returned.size shouldBe 2
 		returned shouldContainInOrder listOf(two, three)
@@ -261,7 +246,7 @@ class AnsattRepositoryTest {
 		val arrangor = UUID.randomUUID()
 
 		val ansatt1 =
-			db.ansatt(
+			testDatabase.ansatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -276,7 +261,7 @@ class AnsattRepositoryTest {
 					),
 			)
 		val ansatt2 =
-			db.ansatt(
+			testDatabase.ansatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -290,12 +275,12 @@ class AnsattRepositoryTest {
 						),
 					),
 			)
-		repository.insertOrUpdate(ansatt1)
-		repository.insertOrUpdate(ansatt2)
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
 
 		val deaktiveringsdato = ZonedDateTime.now().plusDays(1)
 
-		val oppdaterteAnsatte = repository.deaktiverVeiledereForDeltaker(deltaker1, deaktiveringsdato)
+		val oppdaterteAnsatte = ansattRepository.deaktiverVeiledereForDeltaker(deltaker1, deaktiveringsdato)
 		oppdaterteAnsatte shouldHaveSize 2
 
 		val oppdatertAnsatt1 = oppdaterteAnsatte.find { it.id == ansatt1.id }!!
@@ -320,21 +305,21 @@ class AnsattRepositoryTest {
 
 	@Test
 	fun `getAnsatteHosArrangor - flere ansatte og arrangorer - returnerer ansatte med roller hos arrangor`() {
-		val arrangor1 = db.ansattArrangorDbo()
-		val arrangor2 = db.ansattArrangorDbo()
+		val arrangor1 = testDatabase.ansattArrangorDbo()
+		val arrangor2 = testDatabase.ansattArrangorDbo()
 
-		val ansatt1 = db.insertAnsatt(arrangorer = listOf(arrangor1, arrangor2))
-		val ansatt2 = db.insertAnsatt(arrangorer = listOf(arrangor1))
-		val ansatt3 = db.insertAnsatt(arrangorer = listOf(arrangor2))
-		val ansatt4 = db.insertAnsatt(arrangorer = listOf())
+		val ansatt1 = testDatabase.insertAnsatt(arrangorer = listOf(arrangor1, arrangor2))
+		val ansatt2 = testDatabase.insertAnsatt(arrangorer = listOf(arrangor1))
+		val ansatt3 = testDatabase.insertAnsatt(arrangorer = listOf(arrangor2))
+		val ansatt4 = testDatabase.insertAnsatt(arrangorer = listOf())
 
-		val ansatteArrangor1 = repository.getAnsatteHosArrangor(arrangor1.arrangorId)
+		val ansatteArrangor1 = ansattRepository.getAnsatteHosArrangor(arrangor1.arrangorId)
 		ansatteArrangor1.any { it == ansatt1 } shouldBe true
 		ansatteArrangor1.any { it == ansatt2 } shouldBe true
 		ansatteArrangor1.any { it == ansatt3 } shouldBe false
 		ansatteArrangor1.any { it == ansatt4 } shouldBe false
 
-		val ansatteArrangor2 = repository.getAnsatteHosArrangor(arrangor2.arrangorId)
+		val ansatteArrangor2 = ansattRepository.getAnsatteHosArrangor(arrangor2.arrangorId)
 		ansatteArrangor2.any { it == ansatt1 } shouldBe true
 		ansatteArrangor2.any { it == ansatt2 } shouldBe false
 		ansatteArrangor2.any { it == ansatt3 } shouldBe true

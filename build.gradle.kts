@@ -28,8 +28,16 @@ val testcontainersVersion = "1.21.3"
 val mockkVersion = "1.14.4"
 val mockOauth2ServerVersion = "2.2.1"
 val ktlintVersion = "1.4.1"
+val springmockkVersion = "4.0.2"
 
 val commonVersion = "3.2024.10.25_13.44-9db48a0dbe67"
+
+dependencyManagement {
+    dependencies {
+        dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
+        dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
+    }
+}
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
@@ -48,8 +56,6 @@ dependencies {
         exclude("org.xerial.snappy", "snappy-java")
     }
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
     implementation("org.flywaydb:flyway-core")
@@ -57,24 +63,17 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
 
-    implementation("no.nav.common:log:$commonVersion") {
-        exclude("com.squareup.okhttp3", "okhttp")
-    }
+    implementation("no.nav.common:log:$commonVersion")
     implementation("no.nav.common:token-client:$commonVersion")
-    implementation("no.nav.common:rest:$commonVersion") {
-        exclude("com.squareup.okhttp3", "okhttp")
-    }
-    implementation("no.nav.common:job:$commonVersion") {
-        exclude("com.squareup.okhttp3", "okhttp")
-    }
-
-    implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
+    implementation("no.nav.common:rest:$commonVersion")
+    implementation("no.nav.common:job:$commonVersion")
 
     implementation("io.arrow-kt:arrow-core:$arrowVersion")
     implementation("io.arrow-kt:arrow-fx-coroutines:$arrowVersion")
 
     implementation("org.postgresql:postgresql")
 
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude("com.vaadin.external.google", "android-json")
     }
@@ -86,17 +85,27 @@ dependencies {
     testImplementation("org.awaitility:awaitility")
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
-    testImplementation("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
-}
-
-tasks.test {
-    useJUnitPlatform()
+    testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
 }
 
 kotlin {
     jvmToolchain(21)
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            "-Xjsr305=strict",
+            "-Xannotation-default-target=param-property",
+        )
+    }
 }
 
-configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-    version.set(ktlintVersion)
+ktlint {
+    version = ktlintVersion
+}
+
+tasks.test {
+    useJUnitPlatform()
+    jvmArgs(
+        "-Xshare:off",
+        "-XX:+EnableDynamicAgentLoading",
+    )
 }

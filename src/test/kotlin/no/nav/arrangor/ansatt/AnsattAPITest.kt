@@ -9,40 +9,18 @@ import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.AnsattRolle.KOORDINATOR
 import no.nav.arrangor.domain.AnsattRolle.VEILEDER
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.testutils.DbTestData
-import no.nav.arrangor.testutils.DbTestDataUtils
 import no.nav.arrangor.toJsonRequestBody
 import no.nav.arrangor.utils.JsonUtils
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.LocalDateTime
 import java.util.UUID
-import javax.sql.DataSource
 
 class AnsattAPITest : IntegrationTest() {
 	@Autowired
-	private lateinit var datasource: DataSource
-
-	@Autowired
 	private lateinit var ansattRepository: AnsattRepository
-
-	private lateinit var db: DbTestData
-
-	@BeforeEach
-	fun setUp() {
-		db = DbTestData(NamedParameterJdbcTemplate(datasource))
-	}
-
-	@AfterEach
-	fun tearDown() {
-		DbTestDataUtils.cleanDatabase(datasource)
-		resetMockServers()
-	}
 
 	@Nested
 	@DisplayName("Tester at alle endepunkt er sikret")
@@ -87,8 +65,8 @@ class AnsattAPITest : IntegrationTest() {
 	inner class GetByPersonidentTests {
 		@Test
 		fun `getAnsattByPersonident - returnerer Ansatt`() {
-			val arrangorOne = db.insertArrangor()
-			val arrangorTwo = db.insertArrangor()
+			val arrangorOne = testDatabase.insertArrangor()
+			val arrangorTwo = testDatabase.insertArrangor()
 			val personident = UUID.randomUUID().toString()
 			val personId = UUID.randomUUID()
 
@@ -113,9 +91,9 @@ class AnsattAPITest : IntegrationTest() {
 
 		@Test
 		fun `getAnsattByPersonident - om lastSynchronized over 1 time - oppdater ansattroller`() {
-			val arrangorOne = db.insertArrangor()
-			val arrangorTwo = db.insertArrangor()
-			val arrangorThree = db.insertArrangor()
+			val arrangorOne = testDatabase.insertArrangor()
+			val arrangorTwo = testDatabase.insertArrangor()
+			val arrangorThree = testDatabase.insertArrangor()
 			val personident = UUID.randomUUID().toString()
 			val personId = UUID.randomUUID()
 
@@ -160,6 +138,7 @@ class AnsattAPITest : IntegrationTest() {
 		path = "/api/ansatt",
 		headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}"),
 	).also { it.code shouldBe 200 }
-		.let { it.body?.string() ?: throw IllegalStateException("Body skal ikke være tom") }
+		.body
+		.string()
 		.let { JsonUtils.fromJson(it) }
 }

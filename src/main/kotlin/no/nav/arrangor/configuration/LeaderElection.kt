@@ -30,7 +30,7 @@ class LeaderElection(
 
 		val uriString =
 			UriComponentsBuilder
-				.fromHttpUrl(getHttpPath(electorPath))
+				.fromUriString(getHttpPath(electorPath))
 				.toUriString()
 		val request =
 			Request
@@ -46,15 +46,11 @@ class LeaderElection(
 				throw RuntimeException(message)
 			}
 
-			response.body?.string()?.let {
+			response.body.string().let {
 				val leader: Leader = fromJson(it)
 				return leader.name == hostname
 			}
 		}
-
-		val message = "Kall mot elector returnerer ikke data"
-		log.error(message)
-		throw RuntimeException(message)
 	}
 
 	private fun getHttpPath(url: String): String = when (url.startsWith("http://")) {
