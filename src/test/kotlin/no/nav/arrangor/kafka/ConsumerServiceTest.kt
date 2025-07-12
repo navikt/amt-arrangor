@@ -19,49 +19,30 @@ import no.nav.arrangor.kafka.model.Deltaker
 import no.nav.arrangor.kafka.model.DeltakerStatus
 import no.nav.arrangor.kafka.model.DeltakerStatusType
 import no.nav.arrangor.kafka.model.VirksomhetDto
-import no.nav.arrangor.testutils.DbTestData
-import no.nav.arrangor.testutils.DbTestDataUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
-import javax.sql.DataSource
 
-class ConsumerServiceTest : IntegrationTest() {
-	@Autowired
-	private lateinit var datasource: DataSource
-
-	@Autowired
-	private lateinit var consumerService: ConsumerService
-
-	@Autowired
-	private lateinit var arrangorRepository: ArrangorRepository
-
-	@Autowired
-	private lateinit var ansattRepository: AnsattRepository
-
-	@Autowired
-	private lateinit var deltakerRepository: DeltakerRepository
-
-	private lateinit var db: DbTestData
-
+class ConsumerServiceTest(
+	private val consumerService: ConsumerService,
+	private val arrangorRepository: ArrangorRepository,
+	private val ansattRepository: AnsattRepository,
+	private val deltakerRepository: DeltakerRepository,
+) : IntegrationTest() {
 	val personIdent = "12345678910"
 	val personId: UUID = UUID.randomUUID()
 
 	@BeforeEach
 	fun setUp() {
-		db = DbTestData(NamedParameterJdbcTemplate(datasource))
 		mockPersonServer.setPerson(personIdent, personId, "Test", null, "Testersen")
 	}
 
 	@AfterEach
 	fun tearDown() {
-		DbTestDataUtils.cleanDatabase(datasource)
 		resetMockServers()
 	}
 
@@ -462,7 +443,11 @@ class ConsumerServiceTest : IntegrationTest() {
 		val deltaker =
 			Deltaker(
 				id = deltakerId1,
-				status = DeltakerStatus(DeltakerStatusType.IKKE_AKTUELL, LocalDateTime.now().minusDays(8), LocalDateTime.now().minusDays(8)),
+				status = DeltakerStatus(
+					DeltakerStatusType.IKKE_AKTUELL,
+					LocalDateTime.now().minusDays(8),
+					LocalDateTime.now().minusDays(8),
+				),
 			)
 		deltakerRepository.insertOrUpdate(deltaker)
 
@@ -603,7 +588,7 @@ class ConsumerServiceTest : IntegrationTest() {
 		}
 	}
 
-	private fun veileder(arrangor: UUID, veilderDeltakere: List<VeilederDeltakerDbo>): AnsattDbo = db.ansatt(
+	private fun veileder(arrangor: UUID, veilderDeltakere: List<VeilederDeltakerDbo>): AnsattDbo = testDatabase.ansatt(
 		arrangorer =
 			listOf(
 				ArrangorDbo(

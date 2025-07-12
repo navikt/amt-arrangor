@@ -16,49 +16,28 @@ import no.nav.arrangor.client.altinn.AltinnRolle
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.testutils.DbTestData
-import no.nav.arrangor.testutils.DbTestDataUtils
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
-import javax.sql.DataSource
 
-class AnsattRolleServiceTest : IntegrationTest() {
-	@Autowired
-	lateinit var rolleService: AnsattRolleService
+class AnsattRolleServiceTest(
+	private val rolleService: AnsattRolleService,
+	private val arrangorRepository: ArrangorRepository,
+) : IntegrationTest() {
+	private lateinit var ansatt: AnsattDbo
 
-	@Autowired
-	lateinit var arrangorRepository: ArrangorRepository
-
-	@Autowired
-	lateinit var dataSource: DataSource
-
-	lateinit var db: DbTestData
-
-	lateinit var ansatt: AnsattDbo
-
-	lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
-	lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
-	lateinit var arrangorThree: ArrangorRepository.ArrangorDbo
+	private lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
+	private lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
+	private lateinit var arrangorThree: ArrangorRepository.ArrangorDbo
 
 	@BeforeEach
 	fun setUp() {
-		db = DbTestData(NamedParameterJdbcTemplate(dataSource))
-
-		arrangorOne = db.insertArrangor()
-		arrangorTwo = db.insertArrangor()
-		arrangorThree = db.insertArrangor()
-	}
-
-	@AfterEach
-	fun tearDown() {
-		DbTestDataUtils.cleanDatabase(dataSource)
+		arrangorOne = testDatabase.insertArrangor()
+		arrangorTwo = testDatabase.insertArrangor()
+		arrangorThree = testDatabase.insertArrangor()
 	}
 
 	@Test
@@ -113,7 +92,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - to nye roller, en eksisterende rolle - returnerer objekt med korrekte roller`() {
 		ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -157,7 +136,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - eksisterende rolle er utlopt men aktivert igjen fra altinn - ny rolle opprettes`() {
 		ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -199,7 +178,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	@Test
 	fun `mapAltinnRollerTilArrangorListeForNyAnsatt - nye roller, ny arrangor - returnerer korrekte roller og lagrer ny arrangor`() {
 		ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -243,7 +222,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - likt i altinn og database - ingen endringer`() {
 		ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -276,7 +255,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - har roller i database, men ingen i altinn - setter roller til ugyldig`() {
 		ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -307,7 +286,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	fun `getAnsattDboMedOppdaterteRoller - mister tilgang, er veileder, har lagt til deltakerlister - fjerner roller og tilganger`() {
 		val deltakerId = UUID.randomUUID()
 		ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -342,7 +321,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - har deaktivert rolle blir tildelt ny rolle - legger til ny rolle fjerner ikke deaktiver rolle`() {
 		ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(
@@ -372,7 +351,7 @@ class AnsattRolleServiceTest : IntegrationTest() {
 	@Test
 	fun `getAnsattDboMedOppdaterteRoller - har samme rolle flere ganger og rollen er aktiv i altinn - ingen endringer`() {
 		ansatt =
-			db.insertAnsatt(
+			testDatabase.insertAnsatt(
 				arrangorer =
 					listOf(
 						ArrangorDbo(

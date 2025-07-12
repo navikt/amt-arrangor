@@ -10,35 +10,17 @@ import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
 import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.AnsattRolle
-import no.nav.arrangor.testutils.DbTestData
-import no.nav.arrangor.testutils.DbTestDataUtils
 import no.nav.arrangor.toJsonRequestBody
 import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.util.UUID
-import javax.sql.DataSource
 
-class AnsattServiceUserAPITest : IntegrationTest() {
-	@Autowired
-	private lateinit var datasource: DataSource
-
-	@Autowired
-	private lateinit var ansattRepository: AnsattRepository
-
-	private lateinit var db: DbTestData
-
-	@BeforeEach
-	fun setUp() {
-		db = DbTestData(NamedParameterJdbcTemplate(datasource))
-	}
-
+class AnsattServiceUserAPITest(
+	private val ansattRepository: AnsattRepository,
+) : IntegrationTest() {
 	@AfterEach
 	fun tearDown() {
-		DbTestDataUtils.cleanDatabase(datasource)
 		resetMockServers()
 	}
 
@@ -72,8 +54,8 @@ class AnsattServiceUserAPITest : IntegrationTest() {
 
 	@Test
 	fun `getAnsatt - autentisert - returnerer ansatt`() {
-		val arrangorOne = db.insertArrangor()
-		val arrangorTwo = db.insertArrangor()
+		val arrangorOne = testDatabase.insertArrangor()
+		val arrangorTwo = testDatabase.insertArrangor()
 		val personident = "12345678910"
 		val personId = UUID.randomUUID()
 		mockAltinnServer.addRoller(
@@ -94,7 +76,7 @@ class AnsattServiceUserAPITest : IntegrationTest() {
 			)
 
 		response.code shouldBe 200
-		val ansatt = JsonUtils.fromJson<Ansatt>(response.body!!.string())
+		val ansatt = JsonUtils.fromJson<Ansatt>(response.body.string())
 		ansatt.personalia.personId shouldBe personId
 		ansatt.arrangorer.size shouldBe 2
 		ansattRepository.get(personident) shouldNotBe null
@@ -157,7 +139,7 @@ class AnsattServiceUserAPITest : IntegrationTest() {
 
 	@Test
 	fun `getAnsatt (id) - autentisert - returnerer ansatt`() {
-		val arrangorOne = db.insertArrangor()
+		val arrangorOne = testDatabase.insertArrangor()
 		val personident = "12345678910"
 		val ansattId = UUID.randomUUID()
 		val personId = UUID.randomUUID()
@@ -190,7 +172,7 @@ class AnsattServiceUserAPITest : IntegrationTest() {
 			)
 
 		response.code shouldBe 200
-		val ansatt = JsonUtils.fromJson<Ansatt>(response.body!!.string())
+		val ansatt = JsonUtils.fromJson<Ansatt>(response.body.string())
 		ansatt.personalia.personId shouldBe personId
 		ansatt.arrangorer.size shouldBe 1
 		ansattRepository.get(personident) shouldNotBe null
