@@ -14,14 +14,12 @@ import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDateTime
 import java.util.UUID
 
-class AnsattAPITest : IntegrationTest() {
-	@Autowired
-	private lateinit var ansattRepository: AnsattRepository
-
+class AnsattAPITest(
+	private val ansattRepository: AnsattRepository,
+) : IntegrationTest() {
 	@Nested
 	@DisplayName("Tester at alle endepunkt er sikret")
 	inner class EndpointsSecuredTests {

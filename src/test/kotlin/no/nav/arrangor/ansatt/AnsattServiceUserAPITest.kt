@@ -14,13 +14,11 @@ import no.nav.arrangor.toJsonRequestBody
 import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import java.util.UUID
 
-class AnsattServiceUserAPITest : IntegrationTest() {
-	@Autowired
-	private lateinit var ansattRepository: AnsattRepository
-
+class AnsattServiceUserAPITest(
+	private val ansattRepository: AnsattRepository,
+) : IntegrationTest() {
 	@AfterEach
 	fun tearDown() {
 		resetMockServers()

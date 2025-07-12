@@ -5,16 +5,12 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import java.util.UUID
 
-class ArrangorServiceTest : IntegrationTest() {
-	@Autowired
-	private lateinit var arrangorService: ArrangorService
-
-	@Autowired
-	private lateinit var arrangorRepository: ArrangorRepository
-
+class ArrangorServiceTest(
+	private val arrangorService: ArrangorService,
+	private val arrangorRepository: ArrangorRepository,
+) : IntegrationTest() {
 	@Test
 	fun `getOrCreate(string) - overordnet arrangor mangler navn - oppretter ikke overordnet arrangor`() {
 		val virksomhet =

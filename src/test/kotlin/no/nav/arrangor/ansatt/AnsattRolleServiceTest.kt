@@ -18,19 +18,15 @@ import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
 
-class AnsattRolleServiceTest : IntegrationTest() {
-	@Autowired
-	private lateinit var rolleService: AnsattRolleService
-
-	@Autowired
-	private lateinit var arrangorRepository: ArrangorRepository
-
+class AnsattRolleServiceTest(
+	private val rolleService: AnsattRolleService,
+	private val arrangorRepository: ArrangorRepository,
+) : IntegrationTest() {
 	private lateinit var ansatt: AnsattDbo
 
 	private lateinit var arrangorOne: ArrangorRepository.ArrangorDbo

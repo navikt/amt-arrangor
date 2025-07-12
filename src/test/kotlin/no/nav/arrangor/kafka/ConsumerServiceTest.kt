@@ -22,25 +22,17 @@ import no.nav.arrangor.kafka.model.VirksomhetDto
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
 
-class ConsumerServiceTest : IntegrationTest() {
-	@Autowired
-	private lateinit var consumerService: ConsumerService
-
-	@Autowired
-	private lateinit var arrangorRepository: ArrangorRepository
-
-	@Autowired
-	private lateinit var ansattRepository: AnsattRepository
-
-	@Autowired
-	private lateinit var deltakerRepository: DeltakerRepository
-
+class ConsumerServiceTest(
+	private val consumerService: ConsumerService,
+	private val arrangorRepository: ArrangorRepository,
+	private val ansattRepository: AnsattRepository,
+	private val deltakerRepository: DeltakerRepository,
+) : IntegrationTest() {
 	val personIdent = "12345678910"
 	val personId: UUID = UUID.randomUUID()
 
@@ -451,7 +443,11 @@ class ConsumerServiceTest : IntegrationTest() {
 		val deltaker =
 			Deltaker(
 				id = deltakerId1,
-				status = DeltakerStatus(DeltakerStatusType.IKKE_AKTUELL, LocalDateTime.now().minusDays(8), LocalDateTime.now().minusDays(8)),
+				status = DeltakerStatus(
+					DeltakerStatusType.IKKE_AKTUELL,
+					LocalDateTime.now().minusDays(8),
+					LocalDateTime.now().minusDays(8),
+				),
 			)
 		deltakerRepository.insertOrUpdate(deltaker)
 

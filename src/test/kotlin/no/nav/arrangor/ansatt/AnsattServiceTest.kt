@@ -1,9 +1,9 @@
 package no.nav.arrangor.ansatt
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.clearMocks
-import io.mockk.mockk
 import io.mockk.verify
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.MetricsService
@@ -13,36 +13,21 @@ import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
 import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
-import no.nav.arrangor.arrangor.ArrangorService
-import no.nav.arrangor.client.person.PersonClient
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.kafka.ProducerService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.beans.factory.annotation.Autowired
 import java.time.ZonedDateTime
 import java.util.UUID
 
-class AnsattServiceTest : IntegrationTest() {
-	private val producerService = mockk<ProducerService>(relaxed = true)
-	private val metricsService = mockk<MetricsService>(relaxed = true)
-
-	@Autowired
-	private lateinit var personClient: PersonClient
-
-	@Autowired
-	private lateinit var rolleService: AnsattRolleService
-
-	@Autowired
-	private lateinit var ansattRepository: AnsattRepository
-
-	@Autowired
-	private lateinit var arrangorService: ArrangorService
-
-	private lateinit var ansattService: AnsattService
-
+class AnsattServiceTest(
+	private val ansattService: AnsattService,
+	private val ansattRepository: AnsattRepository,
+	@MockkBean(relaxed = true) private val producerService: ProducerService,
+	@MockkBean(relaxed = true) @Suppress("unused") private val metricsService: MetricsService,
+) : IntegrationTest() {
 	private lateinit var arrangorOne: ArrangorRepository.ArrangorDbo
 	private lateinit var arrangorTwo: ArrangorRepository.ArrangorDbo
 
@@ -50,9 +35,6 @@ class AnsattServiceTest : IntegrationTest() {
 	fun setUp() {
 		resetMockServers()
 		clearMocks(producerService)
-		ansattService =
-			AnsattService(personClient, ansattRepository, rolleService, producerService, metricsService, arrangorService)
-
 		arrangorOne = testDatabase.insertArrangor()
 		arrangorTwo = testDatabase.insertArrangor()
 	}
@@ -610,7 +592,13 @@ class AnsattServiceTest : IntegrationTest() {
 						ArrangorDbo(
 							arrangorId = arrangorOne.id,
 							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.VEILEDER, gyldigTil = ZonedDateTime.now().minusDays(7))),
+							veileder = listOf(
+								VeilederDeltakerDbo(
+									deltakerId,
+									VeilederType.VEILEDER,
+									gyldigTil = ZonedDateTime.now().minusDays(7),
+								),
+							),
 							koordinator = listOf(),
 						),
 					),
@@ -848,7 +836,12 @@ class AnsattServiceTest : IntegrationTest() {
 							arrangorId = arrangorOne.id,
 							roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
 							veileder = emptyList(),
-							koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerlisteId, gyldigTil = ZonedDateTime.now().minusDays(8))),
+							koordinator = listOf(
+								KoordinatorsDeltakerlisteDbo(
+									deltakerlisteId,
+									gyldigTil = ZonedDateTime.now().minusDays(8),
+								),
+							),
 						),
 					),
 			)

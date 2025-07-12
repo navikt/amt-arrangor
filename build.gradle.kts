@@ -28,6 +28,7 @@ val testcontainersVersion = "1.21.3"
 val mockkVersion = "1.14.4"
 val mockOauth2ServerVersion = "2.2.1"
 val ktlintVersion = "1.4.1"
+val springmockkVersion = "4.0.2"
 
 val commonVersion = "3.2024.10.25_13.44-9db48a0dbe67"
 
@@ -84,6 +85,7 @@ dependencies {
     testImplementation("org.awaitility:awaitility")
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
+    testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
 }
 
 kotlin {

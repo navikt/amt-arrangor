@@ -8,7 +8,6 @@ import no.nav.arrangor.RepositoryTestBase
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.Duration
 import java.time.LocalDateTime
@@ -16,10 +15,9 @@ import java.time.ZonedDateTime
 import java.util.UUID
 
 @SpringBootTest(classes = [AnsattRepository::class])
-class AnsattRepositoryTest : RepositoryTestBase() {
-	@Autowired
-	private lateinit var ansattRepository: AnsattRepository
-
+class AnsattRepositoryTest(
+	private val ansattRepository: AnsattRepository,
+) : RepositoryTestBase() {
 	@Test
 	fun `insertOrUpdate - not exists - adds to database`() {
 		val ansattId = UUID.randomUUID()

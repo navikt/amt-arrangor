@@ -4,15 +4,13 @@ import io.kotest.matchers.shouldBe
 import no.nav.arrangor.RepositoryTestBase
 import no.nav.arrangor.arrangor.ArrangorRepository.ArrangorDbo
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.util.UUID
 
 @SpringBootTest(classes = [ArrangorRepository::class])
-class ArrangorRepositoryTest : RepositoryTestBase() {
-	@Autowired
-	private lateinit var arrangorRepository: ArrangorRepository
-
+class ArrangorRepositoryTest(
+	private val arrangorRepository: ArrangorRepository,
+) : RepositoryTestBase() {
 	@Test
 	fun `insertOrUpdate - arrangor finnes ikke - inserter og returnerer arrangor`() {
 		val arrangor = ArrangorDbo(UUID.randomUUID(), "Foo", randomOrgnr(), null)
