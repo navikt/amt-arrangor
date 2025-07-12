@@ -23,15 +23,15 @@ abstract class RepositoryTestBase {
 	@Autowired
 	private lateinit var template: NamedParameterJdbcTemplate
 
-	@AfterEach
-	fun cleanDatabase() = DbTestDataUtils.cleanDatabase(dataSource)
-
 	protected lateinit var testDatabase: DbTestData
 
 	@BeforeEach
 	fun setUpTestDatabase() {
 		testDatabase = DbTestData(template)
 	}
+
+	@AfterEach
+	fun cleanDatabase() = DbTestDataUtils.cleanDatabase(dataSource)
 
 	companion object {
 		@ServiceConnection
