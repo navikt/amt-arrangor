@@ -128,8 +128,7 @@ class AnsattAPITest(
 		}
 	}
 
-	private fun getRoller(ansatt: Ansatt, arrangorId: UUID): List<AnsattRolle> =
-		ansatt.arrangorer.find { it.arrangorId == arrangorId }!!.roller
+	private fun getRoller(ansatt: Ansatt, arrangorId: UUID): List<AnsattRolle> = ansatt.arrangorer.first { it.arrangorId == arrangorId }.roller
 
 	private fun getAnsatt(personident: String): Ansatt = sendRequest(
 		method = "GET",

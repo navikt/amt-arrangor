@@ -8,13 +8,11 @@ import no.nav.arrangor.RepositoryTestBase
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
 
-@SpringBootTest(classes = [AnsattRepository::class])
 class AnsattRepositoryTest(
 	private val ansattRepository: AnsattRepository,
 ) : RepositoryTestBase() {
@@ -281,23 +279,23 @@ class AnsattRepositoryTest(
 		val oppdaterteAnsatte = ansattRepository.deaktiverVeiledereForDeltaker(deltaker1, deaktiveringsdato)
 		oppdaterteAnsatte shouldHaveSize 2
 
-		val oppdatertAnsatt1 = oppdaterteAnsatte.find { it.id == ansatt1.id }!!
+		val oppdatertAnsatt1 = oppdaterteAnsatte.first { it.id == ansatt1.id }
 		oppdatertAnsatt1.arrangorer.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltaker1 }!!
+				.first { it.deltakerId == deltaker1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(1), deaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltaker2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltaker2 }.gyldigTil shouldBe null
 		}
 
-		val oppdatertAnsatt2 = oppdaterteAnsatte.find { it.id == ansatt2.id }!!
+		val oppdatertAnsatt2 = oppdaterteAnsatte.first { it.id == ansatt2.id }
 		oppdatertAnsatt2.arrangorer.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltaker1 }!!
+				.first { it.deltakerId == deltaker1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(1), deaktiveringsdato)
-			arr.veileder.find { it.deltakerId == deltaker2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltaker2 }.gyldigTil shouldBe null
 		}
 	}
 

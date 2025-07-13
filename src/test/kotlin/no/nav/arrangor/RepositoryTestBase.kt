@@ -1,19 +1,21 @@
 package no.nav.arrangor
 
-import no.nav.arrangor.testutils.DbTestData
-import no.nav.arrangor.testutils.DbTestDataUtils
-import no.nav.arrangor.testutils.SingletonPostgresContainer.postgresContainer
+import no.nav.arrangor.ansatt.repository.AnsattRepository
+import no.nav.arrangor.arrangor.ArrangorRepository
+import no.nav.arrangor.database.DbTestDataUtils
+import no.nav.arrangor.database.SingletonPostgresContainer.postgresContainer
+import no.nav.arrangor.database.TestDatabaseService
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureJdbc
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestConstructor
 import javax.sql.DataSource
 
 @ActiveProfiles("test")
+@SpringBootTest(classes = [AnsattRepository::class, ArrangorRepository::class, TestDatabaseService::class])
 @AutoConfigureJdbc
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 abstract class RepositoryTestBase {
@@ -21,14 +23,7 @@ abstract class RepositoryTestBase {
 	private lateinit var dataSource: DataSource
 
 	@Autowired
-	private lateinit var template: NamedParameterJdbcTemplate
-
-	protected lateinit var testDatabase: DbTestData
-
-	@BeforeEach
-	fun setUpTestDatabase() {
-		testDatabase = DbTestData(template)
-	}
+	protected lateinit var testDatabase: TestDatabaseService
 
 	@AfterEach
 	fun cleanDatabase() = DbTestDataUtils.cleanDatabase(dataSource)

@@ -1,7 +1,9 @@
 package no.nav.arrangor.ansatt
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.date.shouldBeWithin
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
@@ -122,13 +124,17 @@ class AnsattRolleServiceTest(
 		ansattDbo.arrangorer.size shouldBe 2
 
 		val arrangorOne = ansattDbo.arrangorer.find { it.arrangorId == arrangorOne.id }
-		arrangorOne!!.roller.size shouldBe 1
-		arrangorOne.roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
-		arrangorOne.roller[0].gyldigTil shouldBe null
+		assertSoftly(arrangorOne.shouldNotBeNull()) {
+			roller.size shouldBe 1
+			roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+			roller[0].gyldigTil shouldBe null
+		}
 
 		val arrangorTwo = ansattDbo.arrangorer.find { it.arrangorId == arrangorTwo.id }
-		arrangorTwo!!.roller.size shouldBe 2
-		arrangorTwo.roller.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
+		assertSoftly(arrangorTwo.shouldNotBeNull()) {
+			roller.size shouldBe 2
+			roller.map { it.rolle } shouldContainAll listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER)
+		}
 
 		ansattDbo.lastSynchronized.shouldBeWithin(Duration.ofSeconds(10), LocalDateTime.now())
 	}
@@ -212,9 +218,11 @@ class AnsattRolleServiceTest(
 		ansattDbo.arrangorer.size shouldBe 2
 
 		val nyArrangor = ansattDbo.arrangorer.find { it.arrangorId != arrangorOne.id }
-		nyArrangor!!.roller.size shouldBe 1
-		nyArrangor.roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
-		nyArrangor.roller[0].gyldigTil shouldBe null
+		assertSoftly(nyArrangor.shouldNotBeNull()) {
+			roller.size shouldBe 1
+			roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+			roller[0].gyldigTil shouldBe null
+		}
 
 		arrangorRepository.get(nyArrangorOrgnummer) shouldNotBe null
 	}

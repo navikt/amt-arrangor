@@ -1,6 +1,8 @@
 package no.nav.arrangor.ansatt
 
 import com.ninjasquad.springmockk.MockkBean
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.clearMocks
@@ -620,14 +622,15 @@ class AnsattServiceTest(
 		ansattService.oppdaterVeiledereForDeltaker(koordinator.personident, deltakerId, request)
 
 		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
-		val veileder = oppdatertAnsatt?.arrangorer?.first()?.veileder!!
+		val veileder = oppdatertAnsatt?.arrangorer?.first()?.veileder
 
-		veileder.size shouldBe 2
-		veileder[0].deltakerId shouldBe deltakerId
-		veileder[1].deltakerId shouldBe deltakerId
-
-		veileder.any { it.erGyldig() } shouldBe true
-		veileder.any { !it.erGyldig() } shouldBe true
+		assertSoftly(veileder.shouldNotBeNull()) {
+			size shouldBe 2
+			it[0].deltakerId shouldBe deltakerId
+			it[1].deltakerId shouldBe deltakerId
+			it.any { it.erGyldig() } shouldBe true
+			it.any { !it.erGyldig() } shouldBe true
+		}
 	}
 
 	@Test
@@ -666,8 +669,10 @@ class AnsattServiceTest(
 		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste, emptyList(), arrangor.arrangorId)
-		ansattRepository
-			.get(ansatt.id)!!
+		val ansattInDb = ansattRepository.get(ansatt.id)
+		ansattInDb.shouldNotBeNull()
+
+		ansattInDb
 			.arrangorer[0]
 			.koordinator[0]
 			.gyldigTil shouldNotBe null
@@ -690,7 +695,10 @@ class AnsattServiceTest(
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste1, emptyList(), arrangor.arrangorId)
 
-		val ansattArrangorTilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor.arrangorId }!!
+		val ansattInDb = ansattRepository.get(ansatt.id)
+		ansattInDb.shouldNotBeNull()
+
+		val ansattArrangorTilganger = ansattInDb.arrangorer.first { it.arrangorId == arrangor.arrangorId }
 		ansattArrangorTilganger.koordinator.first { it.deltakerlisteId == deltakerliste1 }.erGyldig() shouldBe false
 		ansattArrangorTilganger.koordinator.first { it.deltakerlisteId == deltakerliste2 }.erGyldig() shouldBe true
 	}
@@ -706,8 +714,10 @@ class AnsattServiceTest(
 		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor))
 
 		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker), arrangor.arrangorId)
-		ansattRepository
-			.get(ansatt.id)!!
+		val ansattInDb = ansattRepository.get(ansatt.id)
+		ansattInDb.shouldNotBeNull()
+
+		ansattInDb
 			.arrangorer[0]
 			.veileder[0]
 			.gyldigTil shouldNotBe null
@@ -739,13 +749,15 @@ class AnsattServiceTest(
 		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor1, arrangor2))
 
 		ansattService.fjernTilgangerHosArrangor(UUID.randomUUID(), listOf(deltaker1, deltaker2), arrangor1.arrangorId)
-		val ansattArrangor1Tilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor1.arrangorId }!!
+
+		val ansattInDb = ansattRepository.get(ansatt.id)
+		ansattInDb.shouldNotBeNull()
+		val ansattArrangor1Tilganger = ansattInDb.arrangorer.first { it.arrangorId == arrangor1.arrangorId }
 
 		ansattArrangor1Tilganger.veileder.first { it.deltakerId == deltaker1 }.erGyldig() shouldBe false
 		ansattArrangor1Tilganger.veileder.first { it.deltakerId == deltaker2 }.erGyldig() shouldBe false
 
-		val ansattArrangor2Tilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor2.arrangorId }!!
-
+		val ansattArrangor2Tilganger = ansattInDb.arrangorer.first { it.arrangorId == arrangor2.arrangorId }
 		ansattArrangor2Tilganger.veileder.first { it.deltakerId == deltaker3 }.erGyldig() shouldBe true
 	}
 
@@ -767,7 +779,10 @@ class AnsattServiceTest(
 		val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor1))
 
 		ansattService.fjernTilgangerHosArrangor(deltakerliste, listOf(deltaker1), arrangor1.arrangorId)
-		val ansattArrangor1Tilganger = ansattRepository.get(ansatt.id)!!.arrangorer.find { it.arrangorId == arrangor1.arrangorId }!!
+		val ansattInDb = ansattRepository.get(ansatt.id)
+		ansattInDb.shouldNotBeNull()
+
+		val ansattArrangor1Tilganger = ansattInDb.arrangorer.first { it.arrangorId == arrangor1.arrangorId }
 
 		ansattArrangor1Tilganger.veileder.first { it.deltakerId == deltaker1 }.erGyldig() shouldBe false
 		ansattArrangor1Tilganger.koordinator.first { it.deltakerlisteId == deltakerliste }.erGyldig() shouldBe false
@@ -792,11 +807,13 @@ class AnsattServiceTest(
 		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
 
 		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
-		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator!!
+		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator
 
-		koordinator.size shouldBe 1
-		koordinator.first().deltakerlisteId shouldBe deltakerlisteId
-		koordinator.first().erGyldig() shouldBe true
+		assertSoftly(koordinator.shouldNotBeNull()) {
+			size shouldBe 1
+			first().deltakerlisteId shouldBe deltakerlisteId
+			first().erGyldig() shouldBe true
+		}
 	}
 
 	@Test
@@ -818,11 +835,13 @@ class AnsattServiceTest(
 		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
 
 		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
-		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator!!
+		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator
 
-		koordinator.size shouldBe 1
-		koordinator.first().deltakerlisteId shouldBe deltakerlisteId
-		koordinator.first().erGyldig() shouldBe true
+		assertSoftly(koordinator.shouldNotBeNull()) {
+			size shouldBe 1
+			first().deltakerlisteId shouldBe deltakerlisteId
+			first().erGyldig() shouldBe true
+		}
 	}
 
 	@Test
@@ -849,12 +868,15 @@ class AnsattServiceTest(
 		ansattService.setKoordinatorForDeltakerliste(ansatt.personident, arrangorOne.id, deltakerlisteId)
 
 		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
-		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator!!
+		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator
 
-		koordinator.size shouldBe 2
-		koordinator[0].deltakerlisteId shouldBe deltakerlisteId
-		koordinator[1].deltakerlisteId shouldBe deltakerlisteId
-		koordinator.any { it.erGyldig() } shouldBe true
-		koordinator.any { !it.erGyldig() } shouldBe true
+		assertSoftly(koordinator.shouldNotBeNull()) {
+			size shouldBe 2
+			it[0].deltakerlisteId shouldBe deltakerlisteId
+			it[0].deltakerlisteId shouldBe deltakerlisteId
+			it[1].deltakerlisteId shouldBe deltakerlisteId
+			it.any { it.erGyldig() } shouldBe true
+			it.any { !it.erGyldig() } shouldBe true
+		}
 	}
 }

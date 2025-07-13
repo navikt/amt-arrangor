@@ -4,10 +4,8 @@ import io.kotest.matchers.shouldBe
 import no.nav.arrangor.RepositoryTestBase
 import no.nav.arrangor.arrangor.ArrangorRepository.ArrangorDbo
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
 import java.util.UUID
 
-@SpringBootTest(classes = [ArrangorRepository::class])
 class ArrangorRepositoryTest(
 	private val arrangorRepository: ArrangorRepository,
 ) : RepositoryTestBase() {

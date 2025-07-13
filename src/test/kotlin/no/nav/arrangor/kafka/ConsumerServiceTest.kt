@@ -1,6 +1,8 @@
 package no.nav.arrangor.kafka
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.date.shouldBeWithin
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
@@ -211,11 +213,13 @@ class ConsumerServiceTest(
 
 		consumerService.handleAnsattPersonalia(nyPersonalia)
 
-		val oppdatertAnsatt = ansattRepository.get(ansatt.id)!!
-		oppdatertAnsatt.personident shouldBe nyPersonalia.personident
-		oppdatertAnsatt.fornavn shouldBe nyPersonalia.fornavn
-		oppdatertAnsatt.mellomnavn shouldBe nyPersonalia.mellomnavn
-		oppdatertAnsatt.etternavn shouldBe nyPersonalia.etternavn
+		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
+		assertSoftly(oppdatertAnsatt.shouldNotBeNull()) {
+			personident shouldBe nyPersonalia.personident
+			fornavn shouldBe nyPersonalia.fornavn
+			mellomnavn shouldBe nyPersonalia.mellomnavn
+			etternavn shouldBe nyPersonalia.etternavn
+		}
 	}
 
 	@Test
@@ -244,12 +248,14 @@ class ConsumerServiceTest(
 
 		consumerService.handleAnsattPersonalia(personalia)
 
-		val faktiskAnsatt = ansattRepository.get(ansatt.id)!!
-		faktiskAnsatt.personident shouldBe ansatt.personident
-		faktiskAnsatt.fornavn shouldBe ansatt.fornavn
-		faktiskAnsatt.mellomnavn shouldBe ansatt.mellomnavn
-		faktiskAnsatt.etternavn shouldBe ansatt.etternavn
-		faktiskAnsatt.modifiedAt.shouldBeWithin(Duration.ofSeconds(1), ansatt.modifiedAt)
+		val faktiskAnsatt = ansattRepository.get(ansatt.id)
+		assertSoftly(faktiskAnsatt.shouldNotBeNull()) {
+			personident shouldBe ansatt.personident
+			fornavn shouldBe ansatt.fornavn
+			mellomnavn shouldBe ansatt.mellomnavn
+			etternavn shouldBe ansatt.etternavn
+			modifiedAt.shouldBeWithin(Duration.ofSeconds(1), ansatt.modifiedAt)
+		}
 	}
 
 	@Test
@@ -290,21 +296,21 @@ class ConsumerServiceTest(
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		deltakerRepository.get(deltakerId1)?.status?.type shouldBe DeltakerStatusType.HAR_SLUTTET
@@ -347,14 +353,14 @@ class ConsumerServiceTest(
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil shouldBe null
 		}
 	}
@@ -397,21 +403,21 @@ class ConsumerServiceTest(
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 	}
 
@@ -465,19 +471,19 @@ class ConsumerServiceTest(
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil shouldBe null
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil shouldBe null
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		deltakerRepository.get(deltakerId1)?.status?.type shouldBe DeltakerStatusType.DELTAR
@@ -512,7 +518,7 @@ class ConsumerServiceTest(
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 		}
@@ -520,7 +526,7 @@ class ConsumerServiceTest(
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 		}
@@ -570,21 +576,21 @@ class ConsumerServiceTest(
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil
 				.shouldBe(null)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), ZonedDateTime.now().minusDays(2))
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 	}
 

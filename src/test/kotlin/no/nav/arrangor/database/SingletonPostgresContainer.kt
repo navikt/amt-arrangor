@@ -1,4 +1,4 @@
-package no.nav.arrangor.testutils
+package no.nav.arrangor.database
 
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.PostgreSQLContainer

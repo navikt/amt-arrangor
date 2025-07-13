@@ -91,12 +91,12 @@ class ArrangorServiceTest(
 			arrangorService.getOrCreate(listOf(manglendeArrangor.organisasjonsnummer, eksisterendeArrangor.organisasjonsnummer))
 		arrangorer.size shouldBe 2
 
-		val opprettetArrangor = arrangorer.find { it.organisasjonsnummer == manglendeArrangor.organisasjonsnummer }!!
+		val opprettetArrangor = arrangorer.first { it.organisasjonsnummer == manglendeArrangor.organisasjonsnummer }
 		opprettetArrangor.navn shouldBe manglendeArrangor.navn
 		opprettetArrangor.organisasjonsnummer shouldBe manglendeArrangor.organisasjonsnummer
 		opprettetArrangor.overordnetArrangorId shouldBe null
 
-		val eksisterende = arrangorer.find { it.organisasjonsnummer == eksisterendeArrangor.organisasjonsnummer }!!
+		val eksisterende = arrangorer.first { it.organisasjonsnummer == eksisterendeArrangor.organisasjonsnummer }
 		eksisterende.navn shouldBe eksisterendeArrangor.navn
 		eksisterende.organisasjonsnummer shouldBe eksisterendeArrangor.organisasjonsnummer
 		eksisterende.overordnetArrangorId shouldBe eksisterendeArrangor.overordnetArrangorId
