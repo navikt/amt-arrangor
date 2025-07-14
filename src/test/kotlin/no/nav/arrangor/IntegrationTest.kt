@@ -38,9 +38,7 @@ abstract class IntegrationTest : RepositoryTestBase() {
 			.build()
 
 	@AfterEach
-	fun resetMockHttpServer() {
-		mockAmtEnhetsregiserServer.resetHttpServer()
-	}
+	fun resetMockHttpServer() = mockAmtEnhetsregiserServer.resetHttpServer()
 
 	companion object {
 		private val mockOAuth2Server = MockOAuth2Server()

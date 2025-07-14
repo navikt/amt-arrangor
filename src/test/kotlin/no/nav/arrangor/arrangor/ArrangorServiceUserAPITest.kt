@@ -10,9 +10,7 @@ import java.util.UUID
 
 class ArrangorServiceUserAPITest : IntegrationTest() {
 	@AfterEach
-	fun tearDown() {
-		resetMockServers()
-	}
+	fun tearDown() = resetMockServers()
 
 	@Test
 	fun `getArrangor - ikke gyldig token - unauthorized`() {

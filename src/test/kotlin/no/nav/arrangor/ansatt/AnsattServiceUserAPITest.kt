@@ -20,9 +20,7 @@ class AnsattServiceUserAPITest(
 	private val ansattRepository: AnsattRepository,
 ) : IntegrationTest() {
 	@AfterEach
-	fun tearDown() {
-		resetMockServers()
-	}
+	fun tearDown() = resetMockServers()
 
 	@Test
 	fun `getAnsatt - ikke gyldig token - unauthorized`() {

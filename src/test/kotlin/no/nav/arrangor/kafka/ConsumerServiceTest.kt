@@ -39,14 +39,16 @@ class ConsumerServiceTest(
 	val personId: UUID = UUID.randomUUID()
 
 	@BeforeEach
-	fun setUp() {
-		mockPersonServer.setPerson(personIdent, personId, "Test", null, "Testersen")
-	}
+	fun setUp() = mockPersonServer.setPerson(
+		personident = personIdent,
+		personId = personId,
+		fornavn = "Test",
+		mellomnavn = null,
+		etternavn = "Testersen",
+	)
 
 	@AfterEach
-	fun tearDown() {
-		resetMockServers()
-	}
+	fun tearDown() = resetMockServers()
 
 	@Test
 	fun `handleVirksomhetEndring - finnes i db med annet navn - arrangornavn oppdateres i db`() {
