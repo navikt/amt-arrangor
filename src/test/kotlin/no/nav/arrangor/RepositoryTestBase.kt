@@ -2,8 +2,7 @@ package no.nav.arrangor
 
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
-import no.nav.arrangor.database.DbTestDataUtils
-import no.nav.arrangor.database.SingletonPostgresContainer.postgresContainer
+import no.nav.arrangor.database.DbTestDataUtils.cleanDatabase
 import no.nav.arrangor.database.TestDatabaseService
 import org.junit.jupiter.api.AfterEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestConstructor
+import org.testcontainers.containers.PostgreSQLContainer
 import javax.sql.DataSource
 
 @ActiveProfiles("test")
@@ -26,11 +26,13 @@ abstract class RepositoryTestBase {
 	protected lateinit var testDatabase: TestDatabaseService
 
 	@AfterEach
-	fun cleanDatabase() = DbTestDataUtils.cleanDatabase(dataSource)
+	fun cleanDatabase() = cleanDatabase(dataSource)
 
 	companion object {
+		private const val POSTGRES_DOCKER_IMAGE_NAME = "postgres:14-alpine"
+
 		@ServiceConnection
 		@Suppress("unused")
-		private val container = postgresContainer
+		private val container = PostgreSQLContainer<Nothing>(POSTGRES_DOCKER_IMAGE_NAME)
 	}
 }
