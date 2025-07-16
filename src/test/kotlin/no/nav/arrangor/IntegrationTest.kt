@@ -16,7 +16,6 @@ import okhttp3.Response
 import org.junit.jupiter.api.AfterEach
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.kafka.KafkaContainer
@@ -49,15 +48,6 @@ abstract class IntegrationTest : RepositoryTestBase() {
 
 		private fun getDiscoveryUrl(issuer: String = Issuer.TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
 
-		@ServiceConnection
-		@Suppress("unused")
-		private val kafkaContainer = KafkaContainer(DockerImageName.parse("apache/kafka"))
-			.apply {
-				// workaround for https://github.com/testcontainers/testcontainers-java/issues/9506
-				start()
-				System.setProperty("KAFKA_BROKERS", bootstrapServers)
-			}
-
 		@JvmStatic
 		@DynamicPropertySource
 		@Suppress("unused")
@@ -84,6 +74,14 @@ abstract class IntegrationTest : RepositoryTestBase() {
 			mockPersonServer.start()
 			registry.add("amt-person.url") { mockPersonServer.serverUrl() }
 			registry.add("amt-person.scope") { "test.person.scope" }
+
+			KafkaContainer(DockerImageName.parse("apache/kafka"))
+				.withEnv("KAFKA_LISTENERS", "PLAINTEXT://:9092,BROKER://:9093,CONTROLLER://:9094")
+				// workaround for https://github.com/testcontainers/testcontainers-java/issues/9506
+				.apply {
+					start()
+					System.setProperty("KAFKA_BROKERS", bootstrapServers)
+				}
 		}
 	}
 
