@@ -1,6 +1,8 @@
 package no.nav.arrangor.kafka
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.date.shouldBeWithin
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
@@ -19,51 +21,34 @@ import no.nav.arrangor.kafka.model.Deltaker
 import no.nav.arrangor.kafka.model.DeltakerStatus
 import no.nav.arrangor.kafka.model.DeltakerStatusType
 import no.nav.arrangor.kafka.model.VirksomhetDto
-import no.nav.arrangor.testutils.DbTestData
-import no.nav.arrangor.testutils.DbTestDataUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
-import javax.sql.DataSource
 
-class ConsumerServiceTest : IntegrationTest() {
-	@Autowired
-	private lateinit var datasource: DataSource
-
-	@Autowired
-	private lateinit var consumerService: ConsumerService
-
-	@Autowired
-	private lateinit var arrangorRepository: ArrangorRepository
-
-	@Autowired
-	private lateinit var ansattRepository: AnsattRepository
-
-	@Autowired
-	private lateinit var deltakerRepository: DeltakerRepository
-
-	private lateinit var db: DbTestData
-
+class ConsumerServiceTest(
+	private val consumerService: ConsumerService,
+	private val arrangorRepository: ArrangorRepository,
+	private val ansattRepository: AnsattRepository,
+	private val deltakerRepository: DeltakerRepository,
+) : IntegrationTest() {
 	val personIdent = "12345678910"
 	val personId: UUID = UUID.randomUUID()
 
 	@BeforeEach
-	fun setUp() {
-		db = DbTestData(NamedParameterJdbcTemplate(datasource))
-		mockPersonServer.setPerson(personIdent, personId, "Test", null, "Testersen")
-	}
+	fun setUp() = mockPersonServer.setPerson(
+		personident = personIdent,
+		personId = personId,
+		fornavn = "Test",
+		mellomnavn = null,
+		etternavn = "Testersen",
+	)
 
 	@AfterEach
-	fun tearDown() {
-		DbTestDataUtils.cleanDatabase(datasource)
-		resetMockServers()
-	}
+	fun tearDown() = resetMockServers()
 
 	@Test
 	fun `handleVirksomhetEndring - finnes i db med annet navn - arrangornavn oppdateres i db`() {
@@ -230,11 +215,13 @@ class ConsumerServiceTest : IntegrationTest() {
 
 		consumerService.handleAnsattPersonalia(nyPersonalia)
 
-		val oppdatertAnsatt = ansattRepository.get(ansatt.id)!!
-		oppdatertAnsatt.personident shouldBe nyPersonalia.personident
-		oppdatertAnsatt.fornavn shouldBe nyPersonalia.fornavn
-		oppdatertAnsatt.mellomnavn shouldBe nyPersonalia.mellomnavn
-		oppdatertAnsatt.etternavn shouldBe nyPersonalia.etternavn
+		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
+		assertSoftly(oppdatertAnsatt.shouldNotBeNull()) {
+			personident shouldBe nyPersonalia.personident
+			fornavn shouldBe nyPersonalia.fornavn
+			mellomnavn shouldBe nyPersonalia.mellomnavn
+			etternavn shouldBe nyPersonalia.etternavn
+		}
 	}
 
 	@Test
@@ -263,12 +250,14 @@ class ConsumerServiceTest : IntegrationTest() {
 
 		consumerService.handleAnsattPersonalia(personalia)
 
-		val faktiskAnsatt = ansattRepository.get(ansatt.id)!!
-		faktiskAnsatt.personident shouldBe ansatt.personident
-		faktiskAnsatt.fornavn shouldBe ansatt.fornavn
-		faktiskAnsatt.mellomnavn shouldBe ansatt.mellomnavn
-		faktiskAnsatt.etternavn shouldBe ansatt.etternavn
-		faktiskAnsatt.modifiedAt.shouldBeWithin(Duration.ofSeconds(1), ansatt.modifiedAt)
+		val faktiskAnsatt = ansattRepository.get(ansatt.id)
+		assertSoftly(faktiskAnsatt.shouldNotBeNull()) {
+			personident shouldBe ansatt.personident
+			fornavn shouldBe ansatt.fornavn
+			mellomnavn shouldBe ansatt.mellomnavn
+			etternavn shouldBe ansatt.etternavn
+			modifiedAt.shouldBeWithin(Duration.ofSeconds(1), ansatt.modifiedAt)
+		}
 	}
 
 	@Test
@@ -309,21 +298,21 @@ class ConsumerServiceTest : IntegrationTest() {
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		deltakerRepository.get(deltakerId1)?.status?.type shouldBe DeltakerStatusType.HAR_SLUTTET
@@ -366,14 +355,14 @@ class ConsumerServiceTest : IntegrationTest() {
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil shouldBe null
 		}
 	}
@@ -416,21 +405,21 @@ class ConsumerServiceTest : IntegrationTest() {
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 	}
 
@@ -462,7 +451,11 @@ class ConsumerServiceTest : IntegrationTest() {
 		val deltaker =
 			Deltaker(
 				id = deltakerId1,
-				status = DeltakerStatus(DeltakerStatusType.IKKE_AKTUELL, LocalDateTime.now().minusDays(8), LocalDateTime.now().minusDays(8)),
+				status = DeltakerStatus(
+					DeltakerStatusType.IKKE_AKTUELL,
+					LocalDateTime.now().minusDays(8),
+					LocalDateTime.now().minusDays(8),
+				),
 			)
 		deltakerRepository.insertOrUpdate(deltaker)
 
@@ -480,19 +473,19 @@ class ConsumerServiceTest : IntegrationTest() {
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil shouldBe null
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil shouldBe null
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		deltakerRepository.get(deltakerId1)?.status?.type shouldBe DeltakerStatusType.DELTAR
@@ -527,7 +520,7 @@ class ConsumerServiceTest : IntegrationTest() {
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 		}
@@ -535,7 +528,7 @@ class ConsumerServiceTest : IntegrationTest() {
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
 		}
@@ -585,25 +578,25 @@ class ConsumerServiceTest : IntegrationTest() {
 		val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
 		oppdatertAnsatt1?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil
 				.shouldBe(null)
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
 		oppdatertAnsatt2?.arrangorer?.forEach { arr ->
 			arr.veileder
-				.find { it.deltakerId == deltakerId1 }!!
+				.first { it.deltakerId == deltakerId1 }
 				.gyldigTil!!
 				.shouldBeWithin(Duration.ofSeconds(10), ZonedDateTime.now().minusDays(2))
 
-			arr.veileder.find { it.deltakerId == deltakerId2 }!!.gyldigTil shouldBe null
+			arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
 		}
 	}
 
-	private fun veileder(arrangor: UUID, veilderDeltakere: List<VeilederDeltakerDbo>): AnsattDbo = db.ansatt(
+	private fun veileder(arrangor: UUID, veilderDeltakere: List<VeilederDeltakerDbo>): AnsattDbo = testDatabase.ansatt(
 		arrangorer =
 			listOf(
 				ArrangorDbo(

@@ -5,16 +5,12 @@ import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
 import java.util.UUID
 
-class ArrangorServiceTest : IntegrationTest() {
-	@Autowired
-	lateinit var service: ArrangorService
-
-	@Autowired
-	lateinit var repository: ArrangorRepository
-
+class ArrangorServiceTest(
+	private val arrangorService: ArrangorService,
+	private val arrangorRepository: ArrangorRepository,
+) : IntegrationTest() {
 	@Test
 	fun `getOrCreate(string) - overordnet arrangor mangler navn - oppretter ikke overordnet arrangor`() {
 		val virksomhet =
@@ -26,7 +22,7 @@ class ArrangorServiceTest : IntegrationTest() {
 			)
 		mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
 
-		val arrangor = service.getOrCreate(virksomhet.organisasjonsnummer)
+		val arrangor = arrangorService.getOrCreate(virksomhet.organisasjonsnummer)
 		arrangor.navn shouldBe virksomhet.navn
 		arrangor.organisasjonsnummer shouldBe virksomhet.organisasjonsnummer
 		arrangor.overordnetArrangorId shouldBe null
@@ -43,7 +39,7 @@ class ArrangorServiceTest : IntegrationTest() {
 			)
 		mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
 
-		val arrangor = service.getOrCreate(virksomhet.organisasjonsnummer)
+		val arrangor = arrangorService.getOrCreate(virksomhet.organisasjonsnummer)
 		arrangor.navn shouldBe virksomhet.navn
 		arrangor.organisasjonsnummer shouldBe virksomhet.organisasjonsnummer
 		arrangor.overordnetArrangorId shouldBe null
@@ -60,12 +56,12 @@ class ArrangorServiceTest : IntegrationTest() {
 			)
 		mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
 
-		val arrangor = service.getOrCreate(virksomhet.organisasjonsnummer)
+		val arrangor = arrangorService.getOrCreate(virksomhet.organisasjonsnummer)
 		arrangor.navn shouldBe virksomhet.navn
 		arrangor.organisasjonsnummer shouldBe virksomhet.organisasjonsnummer
 		arrangor.overordnetArrangorId shouldNotBe null
 
-		val overordnetArrangor = repository.get(virksomhet.overordnetEnhetOrganisasjonsnummer!!)!!
+		val overordnetArrangor = arrangorRepository.get(virksomhet.overordnetEnhetOrganisasjonsnummer!!)!!
 		overordnetArrangor.id shouldBe arrangor.overordnetArrangorId
 		overordnetArrangor.navn shouldBe virksomhet.overordnetEnhetNavn
 		overordnetArrangor.organisasjonsnummer shouldBe virksomhet.overordnetEnhetOrganisasjonsnummer
@@ -88,18 +84,19 @@ class ArrangorServiceTest : IntegrationTest() {
 				organisasjonsnummer = randomOrgnr(),
 				overordnetArrangorId = null,
 			)
-		repository.insertOrUpdate(eksisterendeArrangor)
+		arrangorRepository.insertOrUpdate(eksisterendeArrangor)
 		mockAmtEnhetsregiserServer.addVirksomhet(manglendeArrangor)
 
-		val arrangorer = service.getOrCreate(listOf(manglendeArrangor.organisasjonsnummer, eksisterendeArrangor.organisasjonsnummer))
+		val arrangorer =
+			arrangorService.getOrCreate(listOf(manglendeArrangor.organisasjonsnummer, eksisterendeArrangor.organisasjonsnummer))
 		arrangorer.size shouldBe 2
 
-		val opprettetArrangor = arrangorer.find { it.organisasjonsnummer == manglendeArrangor.organisasjonsnummer }!!
+		val opprettetArrangor = arrangorer.first { it.organisasjonsnummer == manglendeArrangor.organisasjonsnummer }
 		opprettetArrangor.navn shouldBe manglendeArrangor.navn
 		opprettetArrangor.organisasjonsnummer shouldBe manglendeArrangor.organisasjonsnummer
 		opprettetArrangor.overordnetArrangorId shouldBe null
 
-		val eksisterende = arrangorer.find { it.organisasjonsnummer == eksisterendeArrangor.organisasjonsnummer }!!
+		val eksisterende = arrangorer.first { it.organisasjonsnummer == eksisterendeArrangor.organisasjonsnummer }
 		eksisterende.navn shouldBe eksisterendeArrangor.navn
 		eksisterende.organisasjonsnummer shouldBe eksisterendeArrangor.organisasjonsnummer
 		eksisterende.overordnetArrangorId shouldBe eksisterendeArrangor.overordnetArrangorId

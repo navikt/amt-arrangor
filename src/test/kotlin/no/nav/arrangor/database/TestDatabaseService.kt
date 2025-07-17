@@ -1,4 +1,4 @@
-package no.nav.arrangor.testutils
+package no.nav.arrangor.database
 
 import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
@@ -8,16 +8,15 @@ import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.domain.AnsattRolle
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.util.UUID
 
-class DbTestData(
-	template: NamedParameterJdbcTemplate,
+@Service
+class TestDatabaseService(
+	private val ansattRepository: AnsattRepository,
+	private val arrangorRepository: ArrangorRepository,
 ) {
-	val ansattRepository = AnsattRepository(template)
-	val arrangorRepository = ArrangorRepository(template)
-
 	fun insertAnsatt(
 		personident: String = UUID.randomUUID().toString(),
 		personId: UUID = UUID.randomUUID(),

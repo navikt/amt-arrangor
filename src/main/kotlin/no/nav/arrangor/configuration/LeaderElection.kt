@@ -1,13 +1,13 @@
 package no.nav.arrangor.configuration
 
 import no.nav.arrangor.utils.JsonUtils.fromJson
+import no.nav.arrangor.utils.UrlUtils.toUriString
 import no.nav.common.rest.client.RestClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import org.springframework.web.util.UriComponentsBuilder
 import java.net.InetAddress
 
 @Component
@@ -28,10 +28,8 @@ class LeaderElection(
 	private fun kallElector(): Boolean {
 		val hostname: String = InetAddress.getLocalHost().hostName
 
-		val uriString =
-			UriComponentsBuilder
-				.fromHttpUrl(getHttpPath(electorPath))
-				.toUriString()
+		val uriString = toUriString(electorPath)
+
 		val request =
 			Request
 				.Builder()
@@ -46,20 +44,11 @@ class LeaderElection(
 				throw RuntimeException(message)
 			}
 
-			response.body?.string()?.let {
+			response.body.string().let {
 				val leader: Leader = fromJson(it)
 				return leader.name == hostname
 			}
 		}
-
-		val message = "Kall mot elector returnerer ikke data"
-		log.error(message)
-		throw RuntimeException(message)
-	}
-
-	private fun getHttpPath(url: String): String = when (url.startsWith("http://")) {
-		true -> url
-		else -> "http://$url"
 	}
 
 	private data class Leader(
