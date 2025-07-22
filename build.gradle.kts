@@ -30,7 +30,7 @@ val mockOauth2ServerVersion = "2.2.1"
 val ktlintVersion = "1.4.1"
 val springmockkVersion = "4.0.2"
 
-val commonVersion = "3.2024.10.25_13.44-9db48a0dbe67"
+val commonVersion = "3.2025.06.23_14.50-3af3985d8555"
 
 dependencyManagement {
     imports {
