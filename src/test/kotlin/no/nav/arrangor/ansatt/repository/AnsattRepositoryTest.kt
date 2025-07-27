@@ -1,14 +1,18 @@
 package no.nav.arrangor.ansatt.repository
 
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.date.shouldBeWithin
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.nav.arrangor.RepositoryTestBase
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.VeilederType
+import no.nav.arrangor.utils.shouldBeCloseTo
+import no.nav.arrangor.utils.shouldBeCloseToNow
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -16,78 +20,48 @@ import java.util.UUID
 class AnsattRepositoryTest(
 	private val ansattRepository: AnsattRepository,
 ) : RepositoryTestBase() {
-	@Test
-	fun `insertOrUpdate - not exists - adds to database`() {
-		val ansattId = UUID.randomUUID()
-		val arrangorId = UUID.randomUUID()
-		val deltakerId = UUID.randomUUID()
-		val ansatt =
-			AnsattDbo(
-				id = ansattId,
-				personident = "123456",
-				personId = UUID.randomUUID(),
-				fornavn = "Test",
-				mellomnavn = "Mellom",
-				etternavn = "Testersen",
-				arrangorer =
-					listOf(
-						ArrangorDbo(
-							arrangorId = arrangorId,
-							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-							koordinator = emptyList(),
-						),
-					),
-			)
+	@Nested
+	inner class InsertOrUpdate {
+		@Test
+		fun `insertOrUpdate - not exists - adds to database`() {
+			val inserted = ansattRepository.insertOrUpdate(ansattInTest)
 
-		val inserted = ansattRepository.insertOrUpdate(ansatt)
+			assertSoftly(inserted) {
+				id shouldBe ansattInTest.id
+				personident shouldBe ansattInTest.personident
+				fornavn shouldBe ansattInTest.fornavn
+				mellomnavn shouldBe ansattInTest.mellomnavn
+				etternavn shouldBe ansattInTest.etternavn
+				modifiedAt.shouldBeCloseToNow()
+				lastSynchronized.shouldBeCloseToNow()
 
-		inserted.id shouldBe ansattId
-		inserted.personident shouldBe ansatt.personident
-		inserted.fornavn shouldBe ansatt.fornavn
-		inserted.mellomnavn shouldBe ansatt.mellomnavn
-		inserted.etternavn shouldBe ansatt.etternavn
-		inserted.arrangorer.size shouldBe 1
-		val arrangor = inserted.arrangorer[0]
-		arrangor.arrangorId shouldBe arrangorId
-		arrangor.roller.size shouldBe 1
-		arrangor.roller[0].rolle shouldBe AnsattRolle.VEILEDER
-		arrangor.roller[0].erGyldig() shouldBe true
-		arrangor.veileder[0].deltakerId shouldBe deltakerId
-		arrangor.veileder[0].veilederType shouldBe VeilederType.MEDVEILEDER
-		arrangor.veileder[0].erGyldig() shouldBe true
-		arrangor.koordinator.size shouldBe 0
-	}
+				arrangorer.size shouldBe 1
+				assertSoftly(inserted.arrangorer.first()) {
+					arrangorId shouldBe arrangorId
 
-	@Test
-	fun `insertOrUpdate - exists - updates`() {
-		val ansattId = UUID.randomUUID()
-		val arrangorId = UUID.randomUUID()
-		val deltakerId = UUID.randomUUID()
-		val oldAnsatt =
-			AnsattDbo(
-				id = ansattId,
-				personident = "123456",
-				personId = UUID.randomUUID(),
-				fornavn = "Test",
-				mellomnavn = "Mellom",
-				etternavn = "Testersen",
-				arrangorer =
-					listOf(
-						ArrangorDbo(
-							arrangorId = arrangorId,
-							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-							koordinator = emptyList(),
-						),
-					),
-			)
-		ansattRepository.insertOrUpdate(oldAnsatt)
-		val oppdatertAnsatt =
-			AnsattDbo(
-				id = ansattId,
-				personident = "123456",
-				personId = oldAnsatt.personId,
+					roller.size shouldBe 1
+					assertSoftly(roller.first()) {
+						rolle shouldBe AnsattRolle.VEILEDER
+						erGyldig() shouldBe true
+					}
+
+					veileder.size shouldBe 1
+					assertSoftly(veileder.first()) {
+						deltakerId shouldBe deltakerId
+						veilederType shouldBe VeilederType.MEDVEILEDER
+						erGyldig() shouldBe true
+					}
+
+					koordinator.shouldBeEmpty()
+				}
+			}
+		}
+
+		@Test
+		fun `insertOrUpdate - exists - updates`() {
+			ansattRepository.insertOrUpdate(ansattInTest)
+
+			val oppdatertAnsatt = ansattInTest.copy(
 				fornavn = "Test2",
 				mellomnavn = null,
 				etternavn = "Testersen2",
@@ -95,144 +69,150 @@ class AnsattRepositoryTest(
 					listOf(
 						ArrangorDbo(
 							arrangorId = arrangorId,
-							roller = listOf(RolleDbo(AnsattRolle.VEILEDER), RolleDbo(AnsattRolle.KOORDINATOR)),
+							roller = listOf(
+								RolleDbo(AnsattRolle.VEILEDER),
+								RolleDbo(AnsattRolle.KOORDINATOR),
+							),
 							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
 							koordinator = listOf(KoordinatorsDeltakerlisteDbo(UUID.randomUUID())),
 						),
 					),
 			)
 
-		val new = ansattRepository.insertOrUpdate(oppdatertAnsatt)
+			val updatedAnsattInDb = ansattRepository.insertOrUpdate(oppdatertAnsatt)
 
-		new.id shouldBe ansattId
-		new.personident shouldBe oldAnsatt.personident
-		new.fornavn shouldBe "Test2"
-		new.mellomnavn shouldBe null
-		new.etternavn shouldBe "Testersen2"
-		val arrangor = new.arrangorer[0]
-		arrangor.arrangorId shouldBe arrangorId
-		arrangor.roller.size shouldBe 2
-		arrangor.veileder[0].deltakerId shouldBe deltakerId
-		arrangor.koordinator.size shouldBe 1
+			assertSoftly(updatedAnsattInDb) {
+				id shouldBe ansattInTest.id
+				personident shouldBe ansattInTest.personident
+				fornavn shouldBe "Test2"
+				mellomnavn shouldBe null
+				etternavn shouldBe "Testersen2"
+
+				arrangorer.size shouldBe 1
+				assertSoftly(arrangorer.first()) {
+					arrangorId shouldBe arrangorId
+					roller.size shouldBe 2
+
+					veileder.size shouldBe 1
+					veileder.first().deltakerId shouldBe deltakerId
+
+					koordinator.size shouldBe 1
+				}
+			}
+		}
 	}
 
-	@Test
-	fun `get(UUID) - not exists - returns null`() {
-		ansattRepository.get(UUID.randomUUID()) shouldBe null
+	@Nested
+	inner class GetAll {
+		@Test
+		fun `skal returnere tom liste hvis tabell er tom`() {
+			ansattRepository.getAll(offset = 0, limit = 100).shouldBeEmpty()
+		}
+
+		@Test
+		fun `skal returnere liste sortert pa modified_at i stigende rekkefolge`() {
+			val tomorrow = LocalDateTime.now().plusDays(1)
+
+			ansattRepository.insertOrUpdate(ansattInTest)
+			ansattRepository.insertOrUpdate(
+				ansattInTest.copy(
+					id = UUID.randomUUID(),
+					personId = UUID.randomUUID(),
+					personident = "~personIdent2~",
+					modifiedAt = tomorrow,
+				),
+			)
+			ansattRepository.insertOrUpdate(
+				ansattInTest.copy(
+					id = UUID.randomUUID(),
+					personId = UUID.randomUUID(),
+					personident = "~personIdent3~",
+					modifiedAt = LocalDateTime.now().minusDays(1),
+				),
+			)
+
+			val allAnsatteInDb = ansattRepository.getAll(offset = 0, limit = 100)
+			allAnsatteInDb.size shouldBe 3
+
+			val lastAnsatt = allAnsatteInDb.last()
+			lastAnsatt.modifiedAt shouldBeCloseTo tomorrow
+		}
 	}
 
-	@Test
-	fun `get(UUID) - exists - returns Ansatt`() {
-		val ansattId = UUID.randomUUID()
-		val arrangorId = UUID.randomUUID()
-		val deltakerId = UUID.randomUUID()
-		val stored =
-			AnsattDbo(
-				id = ansattId,
-				personident = "123456",
-				personId = UUID.randomUUID(),
-				fornavn = "Test",
-				mellomnavn = "Mellom",
-				etternavn = "Testersen",
-				arrangorer =
-					listOf(
-						ArrangorDbo(
-							arrangorId = arrangorId,
-							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-							koordinator = emptyList(),
-						),
-					),
-			).let { ansattRepository.insertOrUpdate(it) }
+	@Nested
+	inner class GetById {
+		@Test
+		fun `get(UUID) - not exists - returns null`() {
+			ansattRepository.get(UUID.randomUUID()) shouldBe null
+		}
 
-		ansattRepository.get(stored.id) shouldBe stored
+		@Test
+		fun `get(UUID) - exists - returns Ansatt`() {
+			val ansattInDb = ansattRepository.insertOrUpdate(ansattInTest)
+
+			ansattRepository.get(ansattInTest.id) shouldBe ansattInDb
+		}
 	}
 
-	@Test
-	fun `get(personident) - not exists - returns null`() {
-		ansattRepository.get(UUID.randomUUID().toString()) shouldBe null
+	@Nested
+	inner class GetByPersonIdent {
+		@Test
+		fun `get(personident) - not exists - returns null`() {
+			ansattRepository.get(UUID.randomUUID().toString()) shouldBe null
+		}
+
+		@Test
+		fun `get(personident) - exists - returns Ansatt`() {
+			val ansattInDb = ansattRepository.insertOrUpdate(ansattInTest)
+
+			ansattRepository.get(ansattInTest.personident) shouldBe ansattInDb
+		}
 	}
 
-	@Test
-	fun `get(personident) - exists - returns Ansatt`() {
-		val ansattId = UUID.randomUUID()
-		val arrangorId = UUID.randomUUID()
-		val deltakerId = UUID.randomUUID()
-		val stored =
-			AnsattDbo(
-				id = ansattId,
-				personident = "123456",
-				personId = UUID.randomUUID(),
-				fornavn = "Test",
-				mellomnavn = "Mellom",
-				etternavn = "Testersen",
-				arrangorer =
-					listOf(
-						ArrangorDbo(
-							arrangorId = arrangorId,
-							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-							koordinator = emptyList(),
-						),
-					),
-			).let { ansattRepository.insertOrUpdate(it) }
+	@Nested
+	inner class GetByPersonId {
+		@Test
+		fun `getByPersonId - exists - returns Ansatt`() {
+			val ansattInDb = ansattRepository.insertOrUpdate(ansattInTest)
 
-		ansattRepository.get(stored.personident) shouldBe stored
+			ansattRepository.getByPersonId(ansattInDb.personId) shouldBe ansattInDb
+		}
+
+		@Test
+		fun `getByPersonId - not exists - returns null`() {
+			ansattRepository.getByPersonId(UUID.randomUUID()) shouldBe null
+		}
 	}
 
-	@Test
-	fun `getByPersonId - exists - returns Ansatt`() {
-		val ansattId = UUID.randomUUID()
-		val arrangorId = UUID.randomUUID()
-		val deltakerId = UUID.randomUUID()
-		val stored =
-			AnsattDbo(
-				id = ansattId,
-				personident = "123456",
-				personId = UUID.randomUUID(),
-				fornavn = "Test",
-				mellomnavn = "Mellom",
-				etternavn = "Testersen",
-				arrangorer =
-					listOf(
-						ArrangorDbo(
-							arrangorId = arrangorId,
-							roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
-							veileder = listOf(VeilederDeltakerDbo(deltakerId, VeilederType.MEDVEILEDER)),
-							koordinator = emptyList(),
-						),
-					),
-			).let { ansattRepository.insertOrUpdate(it) }
+	@Nested
+	inner class GetToSynchronize {
+		@Test
+		fun `getToSynchronize - Returns only values to synchronize`() {
+			ansattRepository.insertOrUpdate(testDatabase.ansatt())
+			val updatedAnsattInDb = ansattRepository.insertOrUpdate(
+				testDatabase.ansatt(
+					lastSynchronized = LocalDateTime.now().minusDays(8),
+				),
+			)
 
-		ansattRepository.getByPersonId(stored.personId) shouldBe stored
-	}
+			val returned = ansattRepository.getToSynchronize(5, LocalDateTime.now().minusDays(7))
 
-	@Test
-	fun `getByPersonId - not exists - returns null`() {
-		ansattRepository.getByPersonId(UUID.randomUUID()) shouldBe null
-	}
+			returned.size shouldBe 1
+			returned.first() shouldBe updatedAnsattInDb
+		}
 
-	@Test
-	fun `getToSynchronize - Returns only values to synchronize`() {
-		testDatabase.ansatt().let { ansattRepository.insertOrUpdate(it) }
-		val two = testDatabase.ansatt(lastSynchronized = LocalDateTime.now().minusDays(8)).let { ansattRepository.insertOrUpdate(it) }
+		@Test
+		fun `getToSynchronize - returns max limit and oldest ordered`() {
+			ansattRepository.insertOrUpdate(testDatabase.ansatt())
 
-		val returned = ansattRepository.getToSynchronize(5, LocalDateTime.now().minusDays(7))
+			val two = ansattRepository.insertOrUpdate(testDatabase.ansatt(lastSynchronized = LocalDateTime.now().minusDays(2)))
+			val three = ansattRepository.insertOrUpdate(testDatabase.ansatt(lastSynchronized = LocalDateTime.now().minusDays(1)))
 
-		returned.size shouldBe 1
-		returned[0] shouldBe two
-	}
+			val returned = ansattRepository.getToSynchronize(2, LocalDateTime.now().plusMinutes(7))
 
-	@Test
-	fun `getToSynchronize - returns max limit and oldest ordered`() {
-		testDatabase.ansatt().let { ansattRepository.insertOrUpdate(it) }
-		val two = testDatabase.ansatt(lastSynchronized = LocalDateTime.now().minusDays(2)).let { ansattRepository.insertOrUpdate(it) }
-		val three = testDatabase.ansatt(lastSynchronized = LocalDateTime.now().minusDays(1)).let { ansattRepository.insertOrUpdate(it) }
-
-		val returned = ansattRepository.getToSynchronize(2, LocalDateTime.now().plusMinutes(7))
-
-		returned.size shouldBe 2
-		returned shouldContainInOrder listOf(two, three)
+			returned.size shouldBe 2
+			returned shouldContainInOrder listOf(two, three)
+		}
 	}
 
 	@Test
@@ -256,6 +236,7 @@ class AnsattRepositoryTest(
 						),
 					),
 			)
+
 		val ansatt2 =
 			testDatabase.ansatt(
 				arrangorer =
@@ -280,22 +261,25 @@ class AnsattRepositoryTest(
 		oppdaterteAnsatte shouldHaveSize 2
 
 		val oppdatertAnsatt1 = oppdaterteAnsatte.first { it.id == ansatt1.id }
-		oppdatertAnsatt1.arrangorer.forEach { arr ->
-			arr.veileder
-				.first { it.deltakerId == deltaker1 }
-				.gyldigTil!!
-				.shouldBeWithin(Duration.ofSeconds(1), deaktiveringsdato)
+		oppdatertAnsatt1.arrangorer.forEach { arrangorDbo ->
+			val firstVeileder = arrangorDbo.veileder.first { it.deltakerId == deltaker1 }
+			assertSoftly(firstVeileder.gyldigTil.shouldNotBeNull()) {
+				it.shouldBeCloseTo(deaktiveringsdato)
+			}
 
-			arr.veileder.first { it.deltakerId == deltaker2 }.gyldigTil shouldBe null
+			val secondVeileder = arrangorDbo.veileder.first { it.deltakerId == deltaker2 }
+			secondVeileder.gyldigTil shouldBe null
 		}
 
 		val oppdatertAnsatt2 = oppdaterteAnsatte.first { it.id == ansatt2.id }
-		oppdatertAnsatt2.arrangorer.forEach { arr ->
-			arr.veileder
-				.first { it.deltakerId == deltaker1 }
-				.gyldigTil!!
-				.shouldBeWithin(Duration.ofSeconds(1), deaktiveringsdato)
-			arr.veileder.first { it.deltakerId == deltaker2 }.gyldigTil shouldBe null
+		oppdatertAnsatt2.arrangorer.forEach { arrangorDbo ->
+			val firstVeileder = arrangorDbo.veileder.first { it.deltakerId == deltaker1 }
+			assertSoftly(firstVeileder.gyldigTil.shouldNotBeNull()) {
+				it.shouldBeCloseTo(deaktiveringsdato)
+			}
+
+			val secondVeileder = arrangorDbo.veileder.first { it.deltakerId == deltaker2 }
+			secondVeileder.gyldigTil shouldBe null
 		}
 	}
 
@@ -320,5 +304,33 @@ class AnsattRepositoryTest(
 		ansatteArrangor2.any { it == ansatt2 } shouldBe false
 		ansatteArrangor2.any { it == ansatt3 } shouldBe true
 		ansatteArrangor2.any { it == ansatt4 } shouldBe false
+	}
+
+	companion object {
+		private val arrangorId = UUID.randomUUID()
+		private val deltakerId = UUID.randomUUID()
+
+		private val ansattInTest = AnsattDbo(
+			id = UUID.randomUUID(),
+			personident = "123456",
+			personId = UUID.randomUUID(),
+			fornavn = "Test",
+			mellomnavn = "Mellom",
+			etternavn = "Testersen",
+			arrangorer =
+				listOf(
+					ArrangorDbo(
+						arrangorId = arrangorId,
+						roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+						veileder = listOf(
+							VeilederDeltakerDbo(
+								deltakerId = deltakerId,
+								veilederType = VeilederType.MEDVEILEDER,
+							),
+						),
+						koordinator = emptyList(),
+					),
+				),
+		)
 	}
 }

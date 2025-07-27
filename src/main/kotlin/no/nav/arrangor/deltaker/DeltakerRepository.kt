@@ -3,8 +3,8 @@ package no.nav.arrangor.deltaker
 import no.nav.arrangor.kafka.model.Deltaker
 import no.nav.arrangor.kafka.model.DeltakerStatus
 import no.nav.arrangor.kafka.model.DeltakerStatusType
-import no.nav.arrangor.utils.getZonedDateTime
 import no.nav.arrangor.utils.sqlParameters
+import no.nav.arrangor.utils.toSystemZoneLocalDateTime
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
@@ -20,8 +20,8 @@ class DeltakerRepository(
 				id = UUID.fromString(rs.getString("id")),
 				status = DeltakerStatus(
 					type = DeltakerStatusType.valueOf(rs.getString("statustype")),
-					gyldigFra = rs.getZonedDateTime("gyldig_fra").toLocalDateTime(),
-					opprettetDato = rs.getZonedDateTime("opprettet_dato").toLocalDateTime(),
+					gyldigFra = rs.getTimestamp("gyldig_fra").toSystemZoneLocalDateTime(),
+					opprettetDato = rs.getTimestamp("opprettet_dato").toSystemZoneLocalDateTime(),
 				),
 			)
 		}
