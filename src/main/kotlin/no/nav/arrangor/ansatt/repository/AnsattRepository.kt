@@ -1,8 +1,8 @@
 package no.nav.arrangor.ansatt.repository
 
 import no.nav.arrangor.utils.JsonUtils
-import no.nav.arrangor.utils.getZonedDateTime
 import no.nav.arrangor.utils.sqlParameters
+import no.nav.arrangor.utils.toSystemZoneLocalDateTime
 import org.postgresql.util.PGobject
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -25,8 +25,8 @@ class AnsattRepository(
 				mellomnavn = rs.getString("mellomnavn"),
 				etternavn = rs.getString("etternavn"),
 				arrangorer = JsonUtils.fromJson(rs.getString("arrangorer")),
-				modifiedAt = rs.getZonedDateTime("modified_at").toLocalDateTime(),
-				lastSynchronized = rs.getZonedDateTime("last_synchronized").toLocalDateTime(),
+				modifiedAt = rs.getTimestamp("modified_at").toSystemZoneLocalDateTime(),
+				lastSynchronized = rs.getTimestamp("last_synchronized").toSystemZoneLocalDateTime(),
 			)
 		}
 
