@@ -77,6 +77,7 @@ dependencies {
 
     implementation("org.postgresql:postgresql")
 
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude("com.vaadin.external.google", "android-json")
     }
