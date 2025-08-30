@@ -37,11 +37,11 @@ spec:
     failureThreshold: 30
     periodSeconds: 5
   replicas:
-    min: 2
+    min: 1
     max: 4
     scalingStrategy:
       cpu:
-        thresholdPercentage: 75
+        thresholdPercentage: 1000
   resources:
     requests:
       cpu: 10m
