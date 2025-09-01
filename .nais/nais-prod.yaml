@@ -39,8 +39,8 @@ spec:
         thresholdPercentage: 200
   resources:
     requests:
-      cpu: 100m
-      memory: 600Mi
+      cpu: 40m
+      memory: 550Mi
     limits:
       memory: 1024Mi
   azure:
