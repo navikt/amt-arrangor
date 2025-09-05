@@ -11,7 +11,7 @@ spec:
     sqlInstances:
       - name: amt-arrangor
         type: POSTGRES_14
-        tier: db-custom-2-5120
+        tier: db-custom-1-3840
         databases:
           - name: amt-arrangor
             envVarPrefix: DB
