@@ -4,6 +4,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import no.nav.arrangor.RepositoryTestBase
@@ -280,6 +281,72 @@ class AnsattRepositoryTest(
 
 			val secondVeileder = arrangorDbo.veileder.first { it.deltakerId == deltaker2 }
 			secondVeileder.gyldigTil shouldBe null
+		}
+	}
+
+	@Test
+	fun `maybeReaktiverVeiledereForDeltaker - reaktiverer gyldige veiledere for deltaker`() {
+		val deltaker1 = UUID.randomUUID()
+		val deltaker2 = UUID.randomUUID()
+		val arrangor = UUID.randomUUID()
+
+		val ansatt1 =
+			testDatabase.ansatt(
+				arrangorer = listOf(
+					ArrangorDbo(
+						arrangorId = arrangor,
+						roller = listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+						veileder = listOf(
+							VeilederDeltakerDbo(
+								deltaker1,
+								VeilederType.VEILEDER,
+								ZonedDateTime.now().minusDays(2),
+								ZonedDateTime.now().plusDays(2),
+							),
+							VeilederDeltakerDbo(deltaker2, VeilederType.MEDVEILEDER),
+						),
+						koordinator = emptyList(),
+					),
+				),
+			)
+
+		val ansatt2 =
+			testDatabase.ansatt(
+				arrangorer = listOf(
+					ArrangorDbo(
+						arrangorId = arrangor,
+						roller = listOf(RolleDbo(AnsattRolle.VEILEDER, ZonedDateTime.now().minusDays(7), null)),
+						veileder = listOf(
+							VeilederDeltakerDbo(
+								deltaker1,
+								VeilederType.MEDVEILEDER,
+								ZonedDateTime.now().minusDays(3),
+								ZonedDateTime.now().plusDays(3),
+							),
+							VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER),
+						),
+						koordinator = emptyList(),
+					),
+				),
+			)
+
+		ansattRepository.insertOrUpdate(ansatt1)
+		ansattRepository.insertOrUpdate(ansatt2)
+
+		// Utfør reaktivering
+		val oppdaterteAnsatte = ansattRepository.maybeReaktiverVeiledereForDeltaker(deltaker1)
+
+		oppdaterteAnsatte shouldHaveSize 2
+
+		// Sjekk at deltaker1 er reaktivert (gyldigTil = null) og deltaker2 uendret
+		oppdaterteAnsatte.forEach { ansatt ->
+			ansatt.arrangorer.forEach { arrangorDbo ->
+				val reaktivertVeileder = arrangorDbo.veileder.first { it.deltakerId == deltaker1 }
+				reaktivertVeileder.gyldigTil shouldBe null
+
+				val uendretVeileder = arrangorDbo.veileder.first { it.deltakerId == deltaker2 }
+				uendretVeileder.gyldigTil.shouldBeNull()
+			}
 		}
 	}
 

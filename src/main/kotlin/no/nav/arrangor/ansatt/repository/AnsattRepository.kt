@@ -152,24 +152,49 @@ class AnsattRepository(
 	fun deaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime): List<AnsattDbo> {
 		val sql =
 			"""
+			WITH kandidater AS (
+			  SELECT ansatt.id, ansatt.arrangorer
+			  FROM ansatt
+			  WHERE arrangorer @>
+					jsonb_build_array(
+					  jsonb_build_object(
+						'veileder',
+						jsonb_build_array(jsonb_build_object(
+						  'deltakerId', :deltakerId,
+						  'gyldigTil', null
+						))
+					  )
+					)
+			),
+			unnested_veiledere AS (
+			  SELECT
+				kandidater.id AS ansatt_id,
+				arrangor.index - 1 AS arrangor_idx,
+				veileder.index - 1 AS veileder_idx
+			  FROM kandidater,
+				LATERAL jsonb_array_elements(kandidater.arrangorer) WITH ORDINALITY AS arrangor(value, index),
+				LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
+			  WHERE
+			  	veileder.value ->> 'deltakerId' = :deltakerId
+				AND veileder.value ->> 'gyldigTil' IS NULL
+			)
 			UPDATE ansatt
-			SET arrangorer  = jsonb_set(
-					arrangorer,
-					ARRAY [arrangor_idx::text, 'veileder', veileder_idx::text, 'gyldigTil'],
-					to_jsonb(:deaktiveringsdato),
-					false
-				),
+			SET
+				arrangorer = jsonb_set(
+				   ansatt.arrangorer,
+				   ARRAY[
+					 unnested_veiledere.arrangor_idx::text,
+					 'veileder',
+					 unnested_veiledere.veileder_idx::text,
+					 'gyldigTil'
+				   ],
+				   to_jsonb(:deaktiveringsdato),
+				   false
+			 	),
 				modified_at = current_timestamp
-			FROM (SELECT id,
-						 arrangor.index - 1 as arrangor_idx,
-						 veileder.index - 1 as veileder_idx
-				  FROM ansatt,
-					   LATERAL jsonb_array_elements(arrangorer) WITH ORDINALITY AS arrangor(value, index),
-					   LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
-				  WHERE veileder.value ->> 'deltakerId' = :deltakerId
-					AND veileder.value ->> 'gyldigTil' IS NULL) AS subquery
-			WHERE subquery.id = ansatt.id
-			RETURNING *
+			FROM unnested_veiledere
+			WHERE ansatt.id = unnested_veiledere.ansatt_id
+			RETURNING ansatt.*;
 			""".trimIndent()
 
 		val parameters =
@@ -184,24 +209,50 @@ class AnsattRepository(
 	fun maybeReaktiverVeiledereForDeltaker(deltakerId: UUID, deaktiveringsdato: ZonedDateTime = ZonedDateTime.now()): List<AnsattDbo> {
 		val sql =
 			"""
+			WITH kandidater AS (
+			  -- Filtrer først ansatte som potensielt matcher, for å bruke GIN-indeks hvis mulig
+			  SELECT ansatt.id, ansatt.arrangorer
+			  FROM ansatt
+			  WHERE arrangorer @>
+					jsonb_build_array(
+					  jsonb_build_object(
+						'veileder',
+						jsonb_build_array(jsonb_build_object(
+						  'deltakerId', :deltakerId
+						))
+					  )
+					)
+			),
+			unnested_veiledere AS (
+			  -- Finn riktige indekser for jsonb_set
+			  SELECT
+				kandidater.id AS ansatt_id,
+				arrangor.index - 1 AS arrangor_idx,
+				veileder.index - 1 AS veileder_idx
+			  FROM kandidater,
+				LATERAL jsonb_array_elements(kandidater.arrangorer) WITH ORDINALITY AS arrangor(value, index),
+				LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
+			  WHERE
+			  	veileder.value ->> 'deltakerId' = :deltakerId
+				AND veileder.value ->> 'gyldigTil' > :deaktiveringsdato
+			)
 			UPDATE ansatt
-			SET arrangorer  = jsonb_set(
-					arrangorer,
-					ARRAY [arrangor_idx::text, 'veileder', veileder_idx::text, 'gyldigTil'],
-					'null',
-					false
-				),
-				modified_at = current_timestamp
-			FROM (SELECT id,
-						 arrangor.index - 1 as arrangor_idx,
-						 veileder.index - 1 as veileder_idx
-				  FROM ansatt,
-					   LATERAL jsonb_array_elements(arrangorer) WITH ORDINALITY AS arrangor(value, index),
-					   LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
-				  WHERE veileder.value ->> 'deltakerId' = :deltakerId
-					AND veileder.value ->> 'gyldigTil' > :deaktiveringsdato) AS subquery
-			WHERE subquery.id = ansatt.id
-			RETURNING *
+				SET
+					arrangorer = jsonb_set(
+					   ansatt.arrangorer,
+					   ARRAY[
+						 unnested_veiledere.arrangor_idx::text,
+						 'veileder',
+						 unnested_veiledere.veileder_idx::text,
+						 'gyldigTil'
+					   ],
+					   'null',   -- setter gyldigTil til null
+					   false
+				 	),
+					modified_at = current_timestamp
+			FROM unnested_veiledere
+			WHERE ansatt.id = unnested_veiledere.ansatt_id
+			RETURNING ansatt.*
 			""".trimIndent()
 
 		val parameters =
