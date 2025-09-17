@@ -301,13 +301,13 @@ class AnsattRepositoryTest(
 								deltaker1,
 								VeilederType.VEILEDER,
 								ZonedDateTime.now().minusDays(2),
-								ZonedDateTime.now().plusDays(2)
+								ZonedDateTime.now().plusDays(2),
 							),
-							VeilederDeltakerDbo(deltaker2, VeilederType.MEDVEILEDER)
+							VeilederDeltakerDbo(deltaker2, VeilederType.MEDVEILEDER),
 						),
-						koordinator = emptyList()
-					)
-				)
+						koordinator = emptyList(),
+					),
+				),
 			)
 
 		val ansatt2 =
@@ -321,13 +321,13 @@ class AnsattRepositoryTest(
 								deltaker1,
 								VeilederType.MEDVEILEDER,
 								ZonedDateTime.now().minusDays(3),
-								ZonedDateTime.now().plusDays(3)
+								ZonedDateTime.now().plusDays(3),
 							),
-							VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER)
+							VeilederDeltakerDbo(deltaker2, VeilederType.VEILEDER),
 						),
-						koordinator = emptyList()
-					)
-				)
+						koordinator = emptyList(),
+					),
+				),
 			)
 
 		ansattRepository.insertOrUpdate(ansatt1)
