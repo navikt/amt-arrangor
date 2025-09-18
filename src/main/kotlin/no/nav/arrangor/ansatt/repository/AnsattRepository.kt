@@ -153,18 +153,13 @@ class AnsattRepository(
 		val sql =
 			"""
 			WITH kandidater AS (
-			  SELECT ansatt.id, ansatt.arrangorer
+			  SELECT id, arrangorer
 			  FROM ansatt
 			  WHERE arrangorer @>
-					jsonb_build_array(
-					  jsonb_build_object(
-						'veileder',
-						jsonb_build_array(jsonb_build_object(
-						  'deltakerId', :deltakerId,
-						  'gyldigTil', null
-						))
-					  )
-					)
+				format(
+				  '[{"veileder":[{"deltakerId":"%s","gyldigTil":null}]}]',
+				  :deltakerId
+				)::jsonb
 			),
 			unnested_veiledere AS (
 			  SELECT
@@ -211,17 +206,13 @@ class AnsattRepository(
 			"""
 			WITH kandidater AS (
 			  -- Filtrer først ansatte som potensielt matcher, for å bruke GIN-indeks hvis mulig
-			  SELECT ansatt.id, ansatt.arrangorer
+			  SELECT id, arrangorer
 			  FROM ansatt
 			  WHERE arrangorer @>
-					jsonb_build_array(
-					  jsonb_build_object(
-						'veileder',
-						jsonb_build_array(jsonb_build_object(
-						  'deltakerId', :deltakerId
-						))
-					  )
-					)
+				format(
+				  '[{"veileder":[{"deltakerId":"%s"}]}]',
+				  :deltakerId
+				)::jsonb
 			),
 			unnested_veiledere AS (
 			  -- Finn riktige indekser for jsonb_set
