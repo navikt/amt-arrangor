@@ -9,13 +9,13 @@ spec:
   image: {{image}}
   gcp:
     sqlInstances:
-      - name: amt-arrangor
+      - name: amt-arrangor-2
         type: POSTGRES_17
         tier: db-f1-micro
         databases:
           - name: amt-arrangor
             envVarPrefix: DB
-        diskAutoresize: true
+        diskAutoresize: false
         highAvailability: false
         insights:
           enabled: true
