@@ -9,7 +9,7 @@ spec:
   image: {{image}}
   gcp:
     sqlInstances:
-      - name: amt-arrangor
+      - name: amt-arrangor-3
         type: POSTGRES_17
         tier: db-custom-1-3840
         databases:
