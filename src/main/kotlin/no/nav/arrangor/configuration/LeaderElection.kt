@@ -1,6 +1,5 @@
 package no.nav.arrangor.configuration
 
-import no.nav.arrangor.utils.JsonUtils.fromJson
 import no.nav.arrangor.utils.UrlUtils.toUriString
 import no.nav.common.rest.client.RestClient
 import okhttp3.OkHttpClient
@@ -8,11 +7,14 @@ import okhttp3.Request
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 import java.net.InetAddress
 
 @Component
 class LeaderElection(
-	@Value("\${elector.path}") private val electorPath: String,
+	@Value($$"${elector.path}") private val electorPath: String,
+	private val objectMapper: ObjectMapper,
 ) {
 	private val client: OkHttpClient = RestClient.baseClient()
 	private val log = LoggerFactory.getLogger(javaClass)
@@ -45,7 +47,7 @@ class LeaderElection(
 			}
 
 			response.body.string().let {
-				val leader: Leader = fromJson(it)
+				val leader: Leader = objectMapper.readValue(it)
 				return leader.name == hostname
 			}
 		}

@@ -14,12 +14,17 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.junit.jupiter.api.AfterEach
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import java.time.Duration
 import java.util.UUID
 
@@ -27,6 +32,9 @@ import java.util.UUID
 abstract class IntegrationTest : RepositoryTestBase() {
 	@LocalServerPort
 	private var port: Int = 0
+
+	@Autowired
+	protected lateinit var objectMapper: ObjectMapper
 
 	fun serverUrl() = "http://localhost:$port"
 
@@ -40,11 +48,16 @@ abstract class IntegrationTest : RepositoryTestBase() {
 	fun resetMockHttpServer() = mockAmtEnhetsregiserServer.resetHttpServer()
 
 	companion object {
+		val staticObjectMapper: ObjectMapper = JsonMapper
+			.builder()
+			.apply { addModule(KotlinModule.Builder().build()) }
+			.build()
+
 		private val mockOAuth2Server = MockOAuth2Server()
-		val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer()
+		val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer(staticObjectMapper)
 		private val mockMachineToMachineHttpServer = MockMachineToMachineHttpServer()
-		val mockAltinnServer = MockAltinnServer()
-		val mockPersonServer = MockPersonServer()
+		val mockAltinnServer = MockAltinnServer(staticObjectMapper)
+		val mockPersonServer = MockPersonServer(staticObjectMapper)
 
 		private fun getDiscoveryUrl(issuer: String = Issuer.TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
 
@@ -144,6 +157,6 @@ abstract class IntegrationTest : RepositoryTestBase() {
 }
 
 fun String.toJsonRequestBody(): RequestBody {
-	val mediaTypeJson = "application/json".toMediaType()
+	val mediaTypeJson = MediaType.APPLICATION_JSON_VALUE.toMediaType()
 	return this.toRequestBody(mediaTypeJson)
 }

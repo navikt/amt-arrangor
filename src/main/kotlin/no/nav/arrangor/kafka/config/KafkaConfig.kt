@@ -19,12 +19,12 @@ import org.springframework.kafka.listener.ContainerProperties
 
 @Configuration
 class KafkaConfig(
-	@Value("\${KAFKA_BROKERS}") private val kafkaBrokers: String,
-	@Value("\${KAFKA_SECURITY_PROTOCOL:SSL}") private val kafkaSecurityProtocol: String,
-	@Value("\${KAFKA_TRUSTSTORE_PATH}") private val kafkaTruststorePath: String,
-	@Value("\${KAFKA_CREDSTORE_PASSWORD}") private val kafkaCredstorePassword: String,
-	@Value("\${KAFKA_KEYSTORE_PATH}") private val kafkaKeystorePath: String,
-	@Value("\${kafka.auto-offset-reset}") private val kafkaAutoOffsetReset: String,
+	@Value($$"${KAFKA_BROKERS}") private val kafkaBrokers: String,
+	@Value($$"${KAFKA_SECURITY_PROTOCOL:SSL}") private val kafkaSecurityProtocol: String,
+	@Value($$"${KAFKA_TRUSTSTORE_PATH}") private val kafkaTruststorePath: String,
+	@Value($$"${KAFKA_CREDSTORE_PASSWORD}") private val kafkaCredstorePassword: String,
+	@Value($$"${KAFKA_KEYSTORE_PATH}") private val kafkaKeystorePath: String,
+	@Value($$"${kafka.auto-offset-reset}") private val kafkaAutoOffsetReset: String,
 ) {
 	private val javaKeystore = "JKS"
 	private val pkcs12 = "PKCS12"
@@ -49,50 +49,36 @@ class KafkaConfig(
 	)
 
 	@Bean
-	fun kafkaListenerContainerFactory(kafkaErrorHandler: KafkaErrorHandler): ConcurrentKafkaListenerContainerFactory<String, String> {
-		val config =
-			mapOf(
-				ConsumerConfig.GROUP_ID_CONFIG to "amt-arrangor-consumer-2",
-				ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to kafkaAutoOffsetReset,
-				ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
-				ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-				ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-				ConsumerConfig.MAX_POLL_RECORDS_CONFIG to "1",
-			) + commonConfig()
-		val consumerFactory = DefaultKafkaConsumerFactory<String, String>(config)
-
-		val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-		factory.consumerFactory = consumerFactory
-		factory.setCommonErrorHandler(kafkaErrorHandler)
-		factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL_IMMEDIATE
-		return factory
-	}
+	fun kafkaListenerContainerFactory(kafkaErrorHandler: KafkaErrorHandler) =
+		createKafkaListenerContainerFactory("amt-arrangor-consumer-2", kafkaErrorHandler)
 
 	@Bean
-	fun kafkaListenerContainerFactoryDeltakerTopic(
-		kafkaErrorHandler: KafkaErrorHandler,
-	): ConcurrentKafkaListenerContainerFactory<String, String> {
-		val config =
-			mapOf(
-				ConsumerConfig.GROUP_ID_CONFIG to "amt-arrangor-consumer-4",
-				ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to kafkaAutoOffsetReset,
-				ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
-				ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-				ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-				ConsumerConfig.MAX_POLL_RECORDS_CONFIG to "1",
-			) + commonConfig()
-		val consumerFactory = DefaultKafkaConsumerFactory<String, String>(config)
-
-		val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-		factory.consumerFactory = consumerFactory
-		factory.setCommonErrorHandler(kafkaErrorHandler)
-		factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL_IMMEDIATE
-		return factory
-	}
+	fun kafkaListenerContainerFactoryDeltakerTopic(kafkaErrorHandler: KafkaErrorHandler) =
+		createKafkaListenerContainerFactory("amt-arrangor-consumer-4", kafkaErrorHandler)
 
 	@Bean
 	fun kafkaProducerFactory(): ProducerFactory<String, String> = DefaultKafkaProducerFactory(commonConfig())
 
 	@Bean
 	fun kafkaTemplate(): KafkaTemplate<String, String> = KafkaTemplate(kafkaProducerFactory())
+
+	private fun createKafkaListenerContainerFactory(
+		groupId: String,
+		kafkaErrorHandler: KafkaErrorHandler,
+	): ConcurrentKafkaListenerContainerFactory<String, String> {
+		val config = mapOf(
+			ConsumerConfig.GROUP_ID_CONFIG to groupId,
+			ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to kafkaAutoOffsetReset,
+			ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
+			ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+			ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+			ConsumerConfig.MAX_POLL_RECORDS_CONFIG to "1",
+		) + commonConfig()
+
+		return ConcurrentKafkaListenerContainerFactory<String, String>().apply {
+			setConsumerFactory(DefaultKafkaConsumerFactory(config))
+			setCommonErrorHandler(kafkaErrorHandler)
+			containerProperties.ackMode = ContainerProperties.AckMode.MANUAL_IMMEDIATE
+		}
+	}
 }
