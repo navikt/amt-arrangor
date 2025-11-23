@@ -15,7 +15,7 @@ class CxfMaskingFilter : Filter<ILoggingEvent>() {
 	}
 
 	companion object {
-		private val exclusionList = listOf(
+		private val exclusionList = setOf(
 			"org.apache.cxf",
 			"no.nav.common.cxf",
 		)
