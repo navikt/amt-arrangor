@@ -44,24 +44,23 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
+    implementation("org.springframework.boot:spring-boot-flyway")
+    implementation("org.springframework.kafka:spring-kafka")
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
+    implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
-    implementation("org.springframework.kafka:spring-kafka")
     implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion") {
         exclude("org.xerial.snappy", "snappy-java")
     }
 
     implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
 
-    implementation("org.springframework.boot:spring-boot-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
