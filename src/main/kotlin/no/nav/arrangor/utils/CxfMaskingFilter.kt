@@ -7,7 +7,7 @@ import ch.qos.logback.core.spi.FilterReply
 
 class CxfMaskingFilter : Filter<ILoggingEvent>() {
 	override fun decide(event: ILoggingEvent): FilterReply = if (event.level != Level.ERROR &&
-		exclusionList.any { event.loggerName.startsWith(it) }
+		exclusionList.any { event.loggerName?.startsWith(it) == true }
 	) {
 		FilterReply.DENY
 	} else {
