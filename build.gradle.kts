@@ -50,7 +50,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-flyway")
-    implementation("org.springframework.kafka:spring-kafka")
+    implementation("org.springframework.boot:spring-boot-kafka")
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
     implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
