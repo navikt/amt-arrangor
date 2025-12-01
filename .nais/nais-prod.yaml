@@ -71,6 +71,9 @@ spec:
           namespace: amt
           cluster: prod-gcp
   env:
+    - name: JDK_JAVA_OPTIONS
+      value: "-XX:MaxRAMPercentage=60.0"
+
     - name: AMT_ENHETSREGISTER_SCOPE
       value: api://prod-gcp.amt.amt-enhetsregister/.default
     - name: AMT_ENHETSREGISTER_URL
