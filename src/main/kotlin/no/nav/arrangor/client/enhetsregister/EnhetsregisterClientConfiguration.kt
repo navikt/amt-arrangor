@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import tools.jackson.databind.ObjectMapper
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class EnhetsregisterClientConfiguration(
 	@Value($$"${amt-enhetsregister.url}") private val baseUrl: String,
 	@Value($$"${amt-enhetsregister.scope}") private val scope: String,

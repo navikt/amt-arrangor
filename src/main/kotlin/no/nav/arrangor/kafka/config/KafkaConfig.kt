@@ -29,13 +29,7 @@ class KafkaConfig(
 	private val javaKeystore = "JKS"
 	private val pkcs12 = "PKCS12"
 
-	fun commonConfig() = mapOf(
-		BOOTSTRAP_SERVERS_CONFIG to kafkaBrokers,
-		ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-		ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-	) + securityConfig()
-
-	private fun securityConfig() = mapOf(
+	private val securityConfig = mapOf(
 		CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to kafkaSecurityProtocol,
 		// Disable server host name verification
 		SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG to "",
@@ -48,6 +42,12 @@ class KafkaConfig(
 		SslConfigs.SSL_KEY_PASSWORD_CONFIG to kafkaCredstorePassword,
 	)
 
+	val commonKafkaConfig = mapOf(
+		BOOTSTRAP_SERVERS_CONFIG to kafkaBrokers,
+		ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+		ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+	) + securityConfig
+
 	@Bean
 	fun kafkaListenerContainerFactory(kafkaErrorHandler: KafkaErrorHandler) =
 		createKafkaListenerContainerFactory("amt-arrangor-consumer-2", kafkaErrorHandler)
@@ -57,7 +57,7 @@ class KafkaConfig(
 		createKafkaListenerContainerFactory("amt-arrangor-consumer-4", kafkaErrorHandler)
 
 	@Bean
-	fun kafkaProducerFactory(): ProducerFactory<String, String> = DefaultKafkaProducerFactory(commonConfig())
+	fun kafkaProducerFactory(): ProducerFactory<String, String> = DefaultKafkaProducerFactory(commonKafkaConfig)
 
 	@Bean
 	fun kafkaTemplate(): KafkaTemplate<String, String> = KafkaTemplate(kafkaProducerFactory())
@@ -73,7 +73,7 @@ class KafkaConfig(
 			ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
 			ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
 			ConsumerConfig.MAX_POLL_RECORDS_CONFIG to "1",
-		) + commonConfig()
+		) + commonKafkaConfig
 
 		return ConcurrentKafkaListenerContainerFactory<String, String>().apply {
 			setConsumerFactory(DefaultKafkaConsumerFactory(config))

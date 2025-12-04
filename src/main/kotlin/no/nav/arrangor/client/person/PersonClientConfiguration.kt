@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import tools.jackson.databind.ObjectMapper
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class PersonClientConfiguration(
 	@Value($$"${amt-person.url}") private val baseUrl: String,
 	@Value($$"${amt-person.scope}") private val scope: String,

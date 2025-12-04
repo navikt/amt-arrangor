@@ -4,6 +4,7 @@ import no.nav.arrangor.mock.MockAltinnServer
 import no.nav.arrangor.mock.MockAmtEnhetsregiserServer
 import no.nav.arrangor.mock.MockMachineToMachineHttpServer
 import no.nav.arrangor.mock.MockPersonServer
+import no.nav.arrangor.testutils.TestKafkaConfig
 import no.nav.arrangor.utils.Issuer
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.AfterEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -28,7 +30,8 @@ import tools.jackson.module.kotlin.KotlinModule
 import java.time.Duration
 import java.util.UUID
 
-@SpringBootTest(classes = [ArrangorApplication::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(TestKafkaConfig::class)
 abstract class IntegrationTest : RepositoryTestBase() {
 	@LocalServerPort
 	private var port: Int = 0
