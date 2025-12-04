@@ -1,7 +1,7 @@
 plugins {
     val kotlinVersion = "2.2.21"
 
-    id("org.springframework.boot") version "3.5.7"
+    id("org.springframework.boot") version "4.0.0"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
     kotlin("jvm") version kotlinVersion
@@ -29,8 +29,8 @@ val mockkVersion = "1.14.6"
 val mockOauth2ServerVersion = "3.0.1"
 val ktlintVersion = "1.4.1"
 val springmockkVersion = "4.0.2"
-
-val commonVersion = "3.2025.08.18_11.44-04fe318bd185"
+val commonVersion = "3.2025.11.10_14.07-a9f44944d7bc"
+val jacksonModuleKotlinVersion = "3.0.2"
 
 dependencyManagement {
     imports {
@@ -44,25 +44,23 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-logging")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("org.springframework.boot:spring-boot-configuration-processor")
-    implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
+    implementation("org.springframework.boot:spring-boot-flyway")
+    implementation("org.springframework.boot:spring-boot-kafka")
 
     implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
+    implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
 
-    implementation("org.springframework.kafka:spring-kafka")
     implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion") {
         exclude("org.xerial.snappy", "snappy-java")
     }
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
 
-    implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
@@ -77,14 +75,16 @@ dependencies {
 
     implementation("org.postgresql:postgresql")
 
-    testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.springframework.boot:spring-boot-starter-test") {
-        exclude("com.vaadin.external.google", "android-json")
-    }
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-data-jdbc-test")
+    testImplementation("org.springframework.boot:spring-boot-resttestclient")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
     testImplementation("no.nav.security:token-validation-spring-test:$tokenSupportVersion")
-    testImplementation("org.testcontainers:postgresql")
-    testImplementation("org.testcontainers:kafka")
+
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
+    testImplementation("org.testcontainers:testcontainers-kafka")
+
     testImplementation("io.mockk:mockk-jvm:$mockkVersion")
     testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
     testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
@@ -104,11 +104,11 @@ ktlint {
     version = ktlintVersion
 }
 
-tasks.jar {
+tasks.named<Jar>("jar") {
     enabled = false
 }
 
-tasks.test {
+tasks.named<Test>("test") {
     useJUnitPlatform()
     jvmArgs(
         "-Xshare:off",

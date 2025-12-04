@@ -54,18 +54,23 @@ class AnsattRolleServiceTest(
 
 		arrangorliste.size shouldBe 2
 		val arrangor = arrangorliste.find { it.arrangorId == arrangorOne.id } ?: throw RuntimeException("Mangler arrangør")
-		arrangor.roller.size shouldBe 1
-		arrangor.roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
-		arrangor.roller[0].erGyldig() shouldBe true
-		arrangor.veileder.size shouldBe 0
-		arrangor.koordinator.size shouldBe 0
+
+		assertSoftly(arrangor) {
+			roller.size shouldBe 1
+			roller[0].rolle shouldBe AnsattRolle.KOORDINATOR
+			roller[0].erGyldig() shouldBe true
+			veileder.size shouldBe 0
+			koordinator.size shouldBe 0
+		}
 
 		val arrangor2 = arrangorliste.find { it.arrangorId == arrangorTwo.id } ?: throw RuntimeException("Mangler arrangør")
-		arrangor2.roller.size shouldBe 1
-		arrangor2.roller[0].rolle shouldBe AnsattRolle.VEILEDER
-		arrangor2.roller[0].erGyldig() shouldBe true
-		arrangor2.veileder.size shouldBe 0
-		arrangor2.koordinator.size shouldBe 0
+		assertSoftly(arrangor2) {
+			roller.size shouldBe 1
+			roller[0].rolle shouldBe AnsattRolle.VEILEDER
+			roller[0].erGyldig() shouldBe true
+			veileder.size shouldBe 0
+			koordinator.size shouldBe 0
+		}
 	}
 
 	@Test
@@ -153,6 +158,7 @@ class AnsattRolleServiceTest(
 						),
 					),
 			)
+
 		mockAltinnServer.addRoller(
 			ansatt.personident,
 			mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)),
@@ -169,16 +175,19 @@ class AnsattRolleServiceTest(
 		val arrangorOne = ansattDbo.arrangorer[0]
 		arrangorOne.roller.size shouldBe 2
 
-		val deaktivertRolle = arrangorOne.roller.first { !it.erGyldig() }
 		val gyldigRolle = arrangorOne.roller.first { it.erGyldig() }
+		assertSoftly(gyldigRolle) {
+			rolle shouldBe AnsattRolle.KOORDINATOR
+			gyldigTil shouldBe null
+			erGyldig() shouldBe true
+		}
 
-		gyldigRolle.rolle shouldBe AnsattRolle.KOORDINATOR
-		gyldigRolle.gyldigTil shouldBe null
-		gyldigRolle.erGyldig() shouldBe true
-
-		deaktivertRolle.rolle shouldBe AnsattRolle.KOORDINATOR
-		deaktivertRolle.gyldigTil shouldNotBe null
-		deaktivertRolle.erGyldig() shouldBe false
+		val deaktivertRolle = arrangorOne.roller.first { !it.erGyldig() }
+		assertSoftly(deaktivertRolle) {
+			rolle shouldBe AnsattRolle.KOORDINATOR
+			gyldigTil shouldNotBe null
+			erGyldig() shouldBe false
+		}
 	}
 
 	@Test
@@ -195,11 +204,14 @@ class AnsattRolleServiceTest(
 						),
 					),
 			)
+
 		val nyArrangorOrgnummer = "123456789"
+
 		mockAltinnServer.addRoller(
 			ansatt.personident,
 			mapOf(nyArrangorOrgnummer to listOf(AnsattRolle.KOORDINATOR)),
 		)
+
 		mockAmtEnhetsregiserServer.addVirksomhet(
 			Virksomhet(
 				organisasjonsnummer = nyArrangorOrgnummer,

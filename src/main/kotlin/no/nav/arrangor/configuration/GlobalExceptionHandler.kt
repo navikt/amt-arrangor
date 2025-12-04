@@ -6,19 +6,31 @@ import no.nav.security.token.support.spring.validation.interceptor.JwtTokenUnaut
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.RestControllerAdvice
 
-@ControllerAdvice
+@RestControllerAdvice
 class GlobalExceptionHandler {
 	private val log = LoggerFactory.getLogger(javaClass)
 
 	@ExceptionHandler(Exception::class)
 	fun handleException(ex: Exception, request: HttpServletRequest): ResponseEntity<Response> = when (ex) {
-		is JwtTokenUnauthorizedException -> buildResponse(HttpStatus.UNAUTHORIZED, ex)
-		is NoSuchElementException -> buildResponse(HttpStatus.NOT_FOUND, ex)
-		is IllegalArgumentException -> buildResponse(HttpStatus.BAD_REQUEST, ex)
-		is IllegalStateException -> buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex)
+		is JwtTokenUnauthorizedException -> {
+			buildResponse(HttpStatus.UNAUTHORIZED, ex)
+		}
+
+		is NoSuchElementException -> {
+			buildResponse(HttpStatus.NOT_FOUND, ex)
+		}
+
+		is IllegalArgumentException -> {
+			buildResponse(HttpStatus.BAD_REQUEST, ex)
+		}
+
+		is IllegalStateException -> {
+			buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex)
+		}
+
 		else -> {
 			log.error("Internal server error - ${ex.message} - ${request.method}: ${request.requestURI}", ex)
 			buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex)

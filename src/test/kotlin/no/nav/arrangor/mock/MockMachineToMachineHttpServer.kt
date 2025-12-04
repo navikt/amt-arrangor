@@ -2,6 +2,8 @@ package no.nav.arrangor.mock
 
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 
 class MockMachineToMachineHttpServer : MockHttpServer(name = "MockMachineToMachineHttpServer") {
 	companion object {
@@ -29,7 +31,10 @@ class MockMachineToMachineHttpServer : MockHttpServer(name = "MockMachineToMachi
 			}
 			""".trimIndent()
 
-		val response = MockResponse().setResponseCode(200).setBody(body).setHeader("content-type", "application/json")
+		val response = MockResponse()
+			.setResponseCode(200)
+			.setBody(body)
+			.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
 
 		addResponseHandler(predicate, response)
 	}
