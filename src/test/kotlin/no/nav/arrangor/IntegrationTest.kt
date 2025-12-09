@@ -1,10 +1,10 @@
 package no.nav.arrangor
 
+import no.nav.arrangor.kafka.TestKafkaConfig
 import no.nav.arrangor.mock.MockAltinnServer
 import no.nav.arrangor.mock.MockAmtEnhetsregiserServer
 import no.nav.arrangor.mock.MockMachineToMachineHttpServer
 import no.nav.arrangor.mock.MockPersonServer
-import no.nav.arrangor.testutils.TestKafkaConfig
 import no.nav.arrangor.utils.Issuer
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
