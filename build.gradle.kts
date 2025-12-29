@@ -19,16 +19,16 @@ repositories {
 
 val logstashEncoderVersion = "9.0"
 val kafkaClientsVersion = "4.1.1"
-val shedlockVersion = "7.2.0"
+val shedlockVersion = "7.2.1"
 val okHttpVersion = "5.3.2"
 val tokenSupportVersion = "5.0.34"
 val arrowVersion = "2.2.0"
-val kotestVersion = "6.0.5"
+val kotestVersion = "6.0.7"
 val testcontainersVersion = "2.0.2"
-val mockkVersion = "1.14.6"
+val mockkVersion = "1.14.7"
 val mockOauth2ServerVersion = "3.0.1"
 val ktlintVersion = "1.4.1"
-val springmockkVersion = "4.0.2"
+val springmockkVersion = "5.0.1"
 val commonVersion = "3.2025.11.10_14.07-a9f44944d7bc"
 val jacksonModuleKotlinVersion = "3.0.2"
 
@@ -43,7 +43,20 @@ dependencyManagement {
     }
 }
 
+// fjernes ved neste release av org.apache.kafka:kafka-clients
+configurations.configureEach {
+    resolutionStrategy {
+        capabilitiesResolution {
+            withCapability("org.lz4:lz4-java") {
+                select(candidates.first { (it.id as ModuleComponentIdentifier).group == "at.yawk.lz4" })
+            }
+        }
+    }
+}
+
 dependencies {
+    implementation("at.yawk.lz4:lz4-java:1.10.1") // fjernes ved neste release av org.apache.kafka:kafka-clients
+    implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
