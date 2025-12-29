@@ -1,12 +1,16 @@
 package no.nav.arrangor.mock
 
 import no.nav.arrangor.client.person.PersonClient
-import no.nav.arrangor.utils.JsonUtils
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
+import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
-class MockPersonServer : MockHttpServer("amt-person") {
+class MockPersonServer(
+	private val objectMapper: ObjectMapper,
+) : MockHttpServer("amt-person") {
 	fun setPerson(
 		personident: String,
 		personId: UUID,
@@ -25,7 +29,7 @@ class MockPersonServer : MockHttpServer("amt-person") {
 				MockResponse()
 					.setResponseCode(200)
 					.setBody(
-						JsonUtils.toJson(
+						objectMapper.writeValueAsString(
 							PersonClient.PersonResponse(
 								id = personId,
 								personident = personident,
@@ -34,7 +38,7 @@ class MockPersonServer : MockHttpServer("amt-person") {
 								etternavn,
 							),
 						),
-					).setHeader("content-type", "application/json"),
+					).setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE),
 		)
 	}
 }
