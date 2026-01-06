@@ -32,23 +32,23 @@ class AnsattAPI(
 
 	@PostMapping("koordinator/{arrangorId}/{deltakerlisteId}")
 	fun setKoordinatorForDeltakerliste(
-		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
-		@PathVariable("arrangorId") arrangorId: UUID,
+		@PathVariable deltakerlisteId: UUID,
+		@PathVariable arrangorId: UUID,
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
 		ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
 	}
 
 	@DeleteMapping("koordinator/{arrangorId}/{deltakerlisteId}")
 	fun fjernKoordinatorForDeltakerliste(
-		@PathVariable("deltakerlisteId") deltakerlisteId: UUID,
-		@PathVariable("arrangorId") arrangorId: UUID,
+		@PathVariable deltakerlisteId: UUID,
+		@PathVariable arrangorId: UUID,
 	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
 		ansattService.fjernKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
 	}
 
 	@PostMapping("veiledere/{deltakerId}")
 	fun oppdaterVeiledereForDeltaker(
-		@PathVariable("deltakerId") deltakerId: UUID,
+		@PathVariable deltakerId: UUID,
 		@RequestBody request: OppdaterVeiledereForDeltakerRequest,
 	) {
 		hentPersonligIdentTilInnloggetBruker().let { personident ->

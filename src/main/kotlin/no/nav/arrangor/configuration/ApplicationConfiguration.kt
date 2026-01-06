@@ -9,7 +9,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableJwtTokenValidation
 class ApplicationConfiguration {
 	@Bean
@@ -27,6 +27,7 @@ class ApplicationConfiguration {
 	@Bean
 	fun logFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> {
 		val registration = FilterRegistrationBean<LogRequestFilter>()
+		@Suppress("UsePropertyAccessSyntax")
 		registration.setFilter(LogRequestFilter("amt-arrangor", false))
 		registration.order = 1
 		registration.addUrlPatterns("/*")

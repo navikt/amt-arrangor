@@ -39,13 +39,13 @@ abstract class MockHttpServer(
 										"	Body: ${request.getBodyAsString()}",
 								)
 
-						response.count = response.count + 1
+						response.count += 1
 
 						log.info("Responding [${request.method}: ${request.path}]: ${response.toString(request)}")
 						return response.response.invoke(request)
 					}
 				}
-		} catch (e: IllegalArgumentException) {
+		} catch (_: IllegalArgumentException) {
 			log.info("${javaClass.simpleName} is already started")
 		}
 	}
@@ -71,8 +71,6 @@ abstract class MockHttpServer(
 	}
 
 	fun serverUrl(): String = server.url("").toString().removeSuffix("/")
-
-	fun requestCount(): Int = server.requestCount - lastRequestCount
 
 	private fun printHeaders(headers: Headers): String = headers.joinToString("\n") { "		${it.first} : ${it.second}" }
 

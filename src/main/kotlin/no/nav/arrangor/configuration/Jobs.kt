@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 
 @EnableScheduling
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class Jobs(
 	private val leaderElection: LeaderElection,
 	private val ansattService: AnsattService,

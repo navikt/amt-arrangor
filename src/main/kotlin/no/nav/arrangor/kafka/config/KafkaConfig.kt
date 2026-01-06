@@ -76,6 +76,7 @@ class KafkaConfig(
 		) + commonKafkaConfig
 
 		return ConcurrentKafkaListenerContainerFactory<String, String>().apply {
+			@Suppress("UsePropertyAccessSyntax")
 			setConsumerFactory(DefaultKafkaConsumerFactory(config))
 			setCommonErrorHandler(kafkaErrorHandler)
 			containerProperties.ackMode = ContainerProperties.AckMode.MANUAL_IMMEDIATE

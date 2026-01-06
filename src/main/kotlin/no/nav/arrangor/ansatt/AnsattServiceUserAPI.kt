@@ -28,7 +28,7 @@ class AnsattServiceUserAPI(
 
 	@GetMapping("{id}")
 	fun get(
-		@PathVariable("id") id: UUID,
+		@PathVariable id: UUID,
 	): Ansatt = ansattService.get(id)
 		?: throw NoSuchElementException("Ansatt $id eksisterer ikke.")
 

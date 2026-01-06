@@ -17,10 +17,8 @@ class MetricsService(
 	private val fjernetSomVeileder = registry.counter("amt_arrangor_fjernet_til_som_veilederr")
 
 	private val publishedAnsatte = registry.counter("amt_arrangor_publiserte_ansatte")
-	private val endredeAnsattRoller = registry.counter("amt_arrangor_ansatt_endret_roller")
 
 	private val consumedVirksomhetEndring = registry.counter("amt_arrangor_consumed_virksomhet")
-	private val consumedAnsatt = registry.counter("amt_arrangor_consumed_ansatt")
 	private val consumerFailed = registry.counter("amt_arrangor_consume_failed")
 
 	fun incEndredeArrangorer(count: Int = 1) = endredeArrangorer.increment(count.toDouble())
@@ -37,11 +35,7 @@ class MetricsService(
 
 	fun incPubliserteAnsatte(count: Int = 1) = publishedAnsatte.increment(count.toDouble())
 
-	fun incEndretAnsattRolle(count: Int = 1) = endredeAnsattRoller.increment(count.toDouble())
-
 	fun incConsumedVirksomhetEndring(count: Int = 1) = consumedVirksomhetEndring.increment(count.toDouble())
-
-	fun incConsumedAnsatt(count: Int = 1) = consumedAnsatt.increment(count.toDouble())
 
 	fun incConsumerFaild(count: Int = 1) = consumerFailed.increment(count.toDouble())
 }
