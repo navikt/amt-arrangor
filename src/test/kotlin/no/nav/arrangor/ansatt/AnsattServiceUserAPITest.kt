@@ -11,9 +11,10 @@ import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.toJsonRequestBody
-import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import tools.jackson.module.kotlin.readValue
 import java.util.UUID
 
 class AnsattServiceUserAPITest(
@@ -28,7 +29,7 @@ class AnsattServiceUserAPITest(
 			sendRequest(
 				method = "POST",
 				path = "/api/service/ansatt",
-				body = JsonUtils.toJson(AnsattServiceUserAPI.AnsattRequestBody("12345678910")).toJsonRequestBody(),
+				body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody("12345678910")).toJsonRequestBody(),
 			)
 
 		response.code shouldBe 401
@@ -46,7 +47,7 @@ class AnsattServiceUserAPITest(
 			method = "DELETE",
 			path = "/api/service/ansatt/tilganger",
 			body = "".toJsonRequestBody(),
-			headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = "foobar")}"),
+			headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getTokenxToken(fnr = "foobar")}"),
 		).also { it.code shouldBe 401 }
 	}
 
@@ -69,12 +70,12 @@ class AnsattServiceUserAPITest(
 			sendRequest(
 				method = "POST",
 				path = "/api/service/ansatt",
-				body = JsonUtils.toJson(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 200
-		val ansatt = JsonUtils.fromJson<Ansatt>(response.body.string())
+		val ansatt = objectMapper.readValue<Ansatt>(response.body.string())
 		ansatt.personalia.personId shouldBe personId
 		ansatt.arrangorer.size shouldBe 2
 		ansattRepository.get(personident) shouldNotBe null
@@ -94,8 +95,8 @@ class AnsattServiceUserAPITest(
 			sendRequest(
 				method = "POST",
 				path = "/api/service/ansatt",
-				body = JsonUtils.toJson(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 404
@@ -116,8 +117,8 @@ class AnsattServiceUserAPITest(
 			sendRequest(
 				method = "POST",
 				path = "/api/service/ansatt",
-				body = JsonUtils.toJson(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 400
@@ -166,11 +167,11 @@ class AnsattServiceUserAPITest(
 			sendRequest(
 				method = "GET",
 				path = "/api/service/ansatt/$ansattId",
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 200
-		val ansatt = JsonUtils.fromJson<Ansatt>(response.body.string())
+		val ansatt = objectMapper.readValue<Ansatt>(response.body.string())
 		ansatt.personalia.personId shouldBe personId
 		ansatt.arrangorer.size shouldBe 1
 		ansattRepository.get(personident) shouldNotBe null
@@ -184,7 +185,7 @@ class AnsattServiceUserAPITest(
 			sendRequest(
 				method = "GET",
 				path = "/api/service/ansatt/$ansattId",
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 404

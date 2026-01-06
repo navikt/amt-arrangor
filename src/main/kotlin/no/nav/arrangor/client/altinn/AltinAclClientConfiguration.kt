@@ -4,15 +4,17 @@ import no.nav.common.token_client.client.MachineToMachineTokenClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import tools.jackson.databind.ObjectMapper
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class AltinAclClientConfiguration(
-	@Value("\${amt-altinn.url}") private val baseUrl: String,
-	@Value("\${amt-altinn.scope}") private val scope: String,
+	@Value($$"${amt-altinn.url}") private val baseUrl: String,
+	@Value($$"${amt-altinn.scope}") private val scope: String,
 ) {
 	@Bean
-	fun altinnClient(machineToMachineTokenClient: MachineToMachineTokenClient): AltinnAclClient = AltinnAclClient(
+	fun altinnClient(machineToMachineTokenClient: MachineToMachineTokenClient, objectMapper: ObjectMapper) = AltinnAclClient(
 		baseUrl = baseUrl,
 		tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
+		objectMapper = objectMapper,
 	)
 }

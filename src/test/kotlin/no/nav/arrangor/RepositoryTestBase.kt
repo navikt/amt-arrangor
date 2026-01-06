@@ -7,19 +7,23 @@ import no.nav.arrangor.database.TestDatabaseService
 import no.nav.arrangor.deltaker.DeltakerRepository
 import org.junit.jupiter.api.AfterEach
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureJdbc
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureJdbc
+import org.springframework.boot.test.autoconfigure.json.AutoConfigureJson
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestConstructor
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import javax.sql.DataSource
 
 @ActiveProfiles("test")
-@SpringBootTest(classes = [AnsattRepository::class, ArrangorRepository::class, DeltakerRepository::class, TestDatabaseService::class])
+@SpringBootTest(
+	classes = [AnsattRepository::class, ArrangorRepository::class, DeltakerRepository::class, TestDatabaseService::class],
+)
 @AutoConfigureJdbc
+@AutoConfigureJson
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 abstract class RepositoryTestBase {
 	@Autowired
@@ -35,8 +39,7 @@ abstract class RepositoryTestBase {
 		private const val POSTGRES_DOCKER_IMAGE_NAME = "postgres:17-alpine"
 
 		@ServiceConnection
-		@Suppress("unused")
-		private val postgres = PostgreSQLContainer<Nothing>(
+		private val postgres = PostgreSQLContainer(
 			DockerImageName
 				.parse(POSTGRES_DOCKER_IMAGE_NAME)
 				.asCompatibleSubstituteFor("postgres"),

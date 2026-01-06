@@ -3,9 +3,10 @@ package no.nav.arrangor.arrangor
 import io.kotest.matchers.shouldBe
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
-import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import tools.jackson.module.kotlin.readValue
 import java.util.UUID
 
 class ArrangorServiceUserAPITest : IntegrationTest() {
@@ -31,7 +32,7 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
 			sendRequest(
 				method = "GET",
 				path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 400
@@ -46,11 +47,11 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
 			sendRequest(
 				method = "GET",
 				path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 200
-		val arrangor = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body.string())
+		val arrangor = objectMapper.readValue<ArrangorMedOverordnetArrangor>(response.body.string())
 		arrangor.organisasjonsnummer shouldBe orgnummer
 		arrangor.navn shouldBe "Navn"
 		arrangor.overordnetArrangor shouldBe null
@@ -72,11 +73,11 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
 			sendRequest(
 				method = "GET",
 				path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 200
-		val arrangor = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body.string())
+		val arrangor = objectMapper.readValue<ArrangorMedOverordnetArrangor>(response.body.string())
 		arrangor.organisasjonsnummer shouldBe orgnummer
 		arrangor.navn shouldBe "Navn"
 		arrangor.overordnetArrangor?.id shouldBe overordnetArrangor.id
@@ -101,7 +102,7 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
 			sendRequest(
 				method = "GET",
 				path = "/api/service/arrangor/${UUID.randomUUID()}",
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 404
@@ -124,11 +125,12 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
 			sendRequest(
 				method = "GET",
 				path = "/api/service/arrangor/${arrangor.id}",
-				headers = mapOf("Authorization" to "Bearer ${getAzureAdToken()}"),
+				headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
 			)
 
 		response.code shouldBe 200
-		val arrangorResponse = JsonUtils.fromJson<ArrangorMedOverordnetArrangor>(response.body.string())
+		val arrangorResponse = objectMapper.readValue<ArrangorMedOverordnetArrangor>(response.body.string())
+
 		arrangorResponse.organisasjonsnummer shouldBe orgnummer
 		arrangorResponse.navn shouldBe "Navn"
 		arrangorResponse.overordnetArrangor?.id shouldBe overordnetArrangor.id

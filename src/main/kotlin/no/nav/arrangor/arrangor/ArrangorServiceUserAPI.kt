@@ -17,7 +17,7 @@ class ArrangorServiceUserAPI(
 ) {
 	@GetMapping("/organisasjonsnummer/{orgnummer}")
 	fun getArrangor(
-		@PathVariable("orgnummer") orgnummer: String,
+		@PathVariable orgnummer: String,
 	): ArrangorMedOverordnetArrangor {
 		validerOrganisasjonsnummer(orgnummer)
 		return arrangorService.getArrangorMedOverordnetArrangor(orgnummer)
@@ -25,7 +25,7 @@ class ArrangorServiceUserAPI(
 
 	@GetMapping("{id}")
 	fun get(
-		@PathVariable("id") id: UUID,
+		@PathVariable id: UUID,
 	): ArrangorMedOverordnetArrangor = arrangorService.getArrangorMedOverordnetArrangor(id)
 		?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 

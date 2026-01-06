@@ -1,5 +1,6 @@
 package no.nav.arrangor
 
+import no.nav.arrangor.kafka.TestKafkaConfig
 import no.nav.arrangor.mock.MockAltinnServer
 import no.nav.arrangor.mock.MockAmtEnhetsregiserServer
 import no.nav.arrangor.mock.MockMachineToMachineHttpServer
@@ -14,19 +15,29 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.junit.jupiter.api.AfterEach
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.context.annotation.Import
+import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import java.time.Duration
 import java.util.UUID
 
-@SpringBootTest(classes = [ArrangorApplication::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(TestKafkaConfig::class)
 abstract class IntegrationTest : RepositoryTestBase() {
 	@LocalServerPort
 	private var port: Int = 0
+
+	@Autowired
+	protected lateinit var objectMapper: ObjectMapper
 
 	fun serverUrl() = "http://localhost:$port"
 
@@ -40,13 +51,27 @@ abstract class IntegrationTest : RepositoryTestBase() {
 	fun resetMockHttpServer() = mockAmtEnhetsregiserServer.resetHttpServer()
 
 	companion object {
+		val staticObjectMapper: ObjectMapper = JsonMapper
+			.builder()
+			.apply { addModule(KotlinModule.Builder().build()) }
+			.build()
+
 		private val mockOAuth2Server = MockOAuth2Server()
-		val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer()
+		val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer(staticObjectMapper)
 		private val mockMachineToMachineHttpServer = MockMachineToMachineHttpServer()
-		val mockAltinnServer = MockAltinnServer()
-		val mockPersonServer = MockPersonServer()
+		val mockAltinnServer = MockAltinnServer(staticObjectMapper)
+		val mockPersonServer = MockPersonServer(staticObjectMapper)
 
 		private fun getDiscoveryUrl(issuer: String = Issuer.TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
+
+		@Suppress("unused")
+		private val kafkaContainer = KafkaContainer(DockerImageName.parse("apache/kafka"))
+			.withEnv("KAFKA_LISTENERS", "PLAINTEXT://:9092,BROKER://:9093,CONTROLLER://:9094")
+			// workaround for https://github.com/testcontainers/testcontainers-java/issues/9506
+			.apply {
+				start()
+				System.setProperty("KAFKA_BROKERS", bootstrapServers)
+			}
 
 		@JvmStatic
 		@DynamicPropertySource
@@ -74,14 +99,6 @@ abstract class IntegrationTest : RepositoryTestBase() {
 			mockPersonServer.start()
 			registry.add("amt-person.url") { mockPersonServer.serverUrl() }
 			registry.add("amt-person.scope") { "test.person.scope" }
-
-			KafkaContainer(DockerImageName.parse("apache/kafka"))
-				.withEnv("KAFKA_LISTENERS", "PLAINTEXT://:9092,BROKER://:9093,CONTROLLER://:9094")
-				// workaround for https://github.com/testcontainers/testcontainers-java/issues/9506
-				.apply {
-					start()
-					System.setProperty("KAFKA_BROKERS", bootstrapServers)
-				}
 		}
 	}
 
@@ -144,6 +161,6 @@ abstract class IntegrationTest : RepositoryTestBase() {
 }
 
 fun String.toJsonRequestBody(): RequestBody {
-	val mediaTypeJson = "application/json".toMediaType()
+	val mediaTypeJson = MediaType.APPLICATION_JSON_VALUE.toMediaType()
 	return this.toRequestBody(mediaTypeJson)
 }

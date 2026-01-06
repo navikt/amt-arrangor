@@ -10,10 +10,11 @@ import no.nav.arrangor.domain.AnsattRolle.KOORDINATOR
 import no.nav.arrangor.domain.AnsattRolle.VEILEDER
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.toJsonRequestBody
-import no.nav.arrangor.utils.JsonUtils
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import tools.jackson.module.kotlin.readValue
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -46,8 +47,8 @@ class AnsattAPITest(
 			sendRequest(
 				"POST",
 				"/api/ansatt/veiledere/${UUID.randomUUID()}",
-				JsonUtils
-					.toJson(
+				objectMapper
+					.writeValueAsString(
 						AnsattAPI.OppdaterVeiledereForDeltakerRequest(
 							arrangorId = UUID.randomUUID(),
 							veilederSomLeggesTil = listOf(AnsattAPI.VeilederAnsatt(UUID.randomUUID(), VeilederType.VEILEDER)),
@@ -133,9 +134,9 @@ class AnsattAPITest(
 	private fun getAnsatt(personident: String): Ansatt = sendRequest(
 		method = "GET",
 		path = "/api/ansatt",
-		headers = mapOf("Authorization" to "Bearer ${getTokenxToken(fnr = personident)}"),
+		headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getTokenxToken(fnr = personident)}"),
 	).also { it.code shouldBe 200 }
 		.body
 		.string()
-		.let { JsonUtils.fromJson(it) }
+		.let { objectMapper.readValue(it) }
 }

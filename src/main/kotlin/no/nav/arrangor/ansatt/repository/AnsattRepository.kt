@@ -1,12 +1,13 @@
 package no.nav.arrangor.ansatt.repository
 
-import no.nav.arrangor.utils.JsonUtils
 import no.nav.arrangor.utils.sqlParameters
 import no.nav.arrangor.utils.toSystemZoneLocalDateTime
 import org.postgresql.util.PGobject
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -14,6 +15,7 @@ import java.util.UUID
 @Repository
 class AnsattRepository(
 	private val template: NamedParameterJdbcTemplate,
+	private val objectMapper: ObjectMapper,
 ) {
 	private val rowMapper =
 		RowMapper { rs, _ ->
@@ -24,7 +26,7 @@ class AnsattRepository(
 				fornavn = rs.getString("fornavn"),
 				mellomnavn = rs.getString("mellomnavn"),
 				etternavn = rs.getString("etternavn"),
-				arrangorer = JsonUtils.fromJson(rs.getString("arrangorer")),
+				arrangorer = objectMapper.readValue(rs.getString("arrangorer")),
 				modifiedAt = rs.getTimestamp("modified_at").toSystemZoneLocalDateTime(),
 				lastSynchronized = rs.getTimestamp("last_synchronized").toSystemZoneLocalDateTime(),
 			)
@@ -64,7 +66,7 @@ class AnsattRepository(
 					"fornavn" to ansatt.fornavn,
 					"mellomnavn" to ansatt.mellomnavn,
 					"etternavn" to ansatt.etternavn,
-					"arrangorer" to ansatt.arrangorer.toPGObject(),
+					"arrangorer" to ansatt.arrangorer.toPGObject(objectMapper),
 					"modified_at" to ansatt.modifiedAt,
 					"last_synchronized" to ansatt.lastSynchronized,
 				),
@@ -269,7 +271,7 @@ class AnsattRepository(
 	}
 }
 
-fun List<ArrangorDbo>.toPGObject() = PGobject().also {
+fun List<ArrangorDbo>.toPGObject(objectMapper: ObjectMapper) = PGobject().also {
 	it.type = "json"
-	it.value = JsonUtils.objectMapper().writeValueAsString(this)
+	it.value = objectMapper.writeValueAsString(this)
 }

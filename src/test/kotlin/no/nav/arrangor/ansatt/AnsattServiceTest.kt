@@ -624,12 +624,12 @@ class AnsattServiceTest(
 		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
 		val veileder = oppdatertAnsatt?.arrangorer?.first()?.veileder
 
-		assertSoftly(veileder.shouldNotBeNull()) {
+		assertSoftly(veileder.shouldNotBeNull()) { veilederDeltakerDbos ->
 			size shouldBe 2
-			it[0].deltakerId shouldBe deltakerId
-			it[1].deltakerId shouldBe deltakerId
-			it.any { it.erGyldig() } shouldBe true
-			it.any { !it.erGyldig() } shouldBe true
+			veilederDeltakerDbos[0].deltakerId shouldBe deltakerId
+			veilederDeltakerDbos[1].deltakerId shouldBe deltakerId
+			veilederDeltakerDbos.any { it.erGyldig() } shouldBe true
+			veilederDeltakerDbos.any { !it.erGyldig() } shouldBe true
 		}
 	}
 
@@ -870,13 +870,13 @@ class AnsattServiceTest(
 		val oppdatertAnsatt = ansattRepository.get(ansatt.id)
 		val koordinator = oppdatertAnsatt?.arrangorer?.first()?.koordinator
 
-		assertSoftly(koordinator.shouldNotBeNull()) {
+		assertSoftly(koordinator.shouldNotBeNull()) { deltakerlisteDbos ->
 			size shouldBe 2
-			it[0].deltakerlisteId shouldBe deltakerlisteId
-			it[0].deltakerlisteId shouldBe deltakerlisteId
-			it[1].deltakerlisteId shouldBe deltakerlisteId
-			it.any { it.erGyldig() } shouldBe true
-			it.any { !it.erGyldig() } shouldBe true
+			deltakerlisteDbos[0].deltakerlisteId shouldBe deltakerlisteId
+			deltakerlisteDbos[0].deltakerlisteId shouldBe deltakerlisteId
+			deltakerlisteDbos[1].deltakerlisteId shouldBe deltakerlisteId
+			deltakerlisteDbos.any { it.erGyldig() } shouldBe true
+			deltakerlisteDbos.any { !it.erGyldig() } shouldBe true
 		}
 	}
 }
