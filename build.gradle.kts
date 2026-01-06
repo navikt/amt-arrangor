@@ -33,10 +33,6 @@ val commonVersion = "3.2025.11.10_14.07-a9f44944d7bc"
 val jacksonModuleKotlinVersion = "3.0.3"
 
 dependencyManagement {
-    imports {
-        mavenBom("org.testcontainers:testcontainers-bom:$testcontainersVersion")
-    }
-
     dependencies {
         dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
         dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
