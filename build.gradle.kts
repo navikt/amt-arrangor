@@ -1,7 +1,7 @@
 plugins {
     val kotlinVersion = "2.2.21"
 
-    id("org.springframework.boot") version "4.0.0"
+    id("org.springframework.boot") version "4.0.1"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
     kotlin("jvm") version kotlinVersion
@@ -21,7 +21,7 @@ val logstashEncoderVersion = "9.0"
 val kafkaClientsVersion = "4.1.1"
 val shedlockVersion = "7.2.1"
 val okHttpVersion = "5.3.2"
-val tokenSupportVersion = "5.0.34"
+val tokenSupportVersion = "6.0.1"
 val arrowVersion = "2.2.0"
 val kotestVersion = "6.0.7"
 val testcontainersVersion = "2.0.2"
@@ -92,14 +92,15 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-data-jdbc-test")
     testImplementation("org.springframework.boot:spring-boot-resttestclient")
     testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
+
     testImplementation("no.nav.security:token-validation-spring-test:$tokenSupportVersion")
+    testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
 
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-kafka")
 
     testImplementation("io.mockk:mockk-jvm:$mockkVersion")
-    testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
     testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
 }
 
