@@ -25,8 +25,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 import tools.jackson.databind.ObjectMapper
-import tools.jackson.databind.json.JsonMapper
-import tools.jackson.module.kotlin.KotlinModule
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import java.time.Duration
 import java.util.UUID
 
@@ -51,10 +50,7 @@ abstract class IntegrationTest : RepositoryTestBase() {
 	fun resetMockHttpServer() = mockAmtEnhetsregiserServer.resetHttpServer()
 
 	companion object {
-		val staticObjectMapper: ObjectMapper = JsonMapper
-			.builder()
-			.apply { addModule(KotlinModule.Builder().build()) }
-			.build()
+		val staticObjectMapper: ObjectMapper = jacksonObjectMapper()
 
 		private val mockOAuth2Server = MockOAuth2Server()
 		val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer(staticObjectMapper)
