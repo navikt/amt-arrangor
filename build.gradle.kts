@@ -1,7 +1,7 @@
 plugins {
     val kotlinVersion = "2.3.10"
 
-    id("org.springframework.boot") version "4.0.2"
+    id("org.springframework.boot") version "4.0.3"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
     kotlin("jvm") version kotlinVersion
@@ -18,7 +18,7 @@ repositories {
 }
 
 val logstashEncoderVersion = "9.0"
-val kafkaClientsVersion = "4.1.1"
+val kafkaClientsVersion = "4.2.0"
 val shedlockVersion = "7.6.0"
 val okHttpVersion = "5.3.2"
 val tokenSupportVersion = "6.0.1"
@@ -30,7 +30,7 @@ val mockOauth2ServerVersion = "3.0.1"
 val ktlintVersion = "1.4.1"
 val springmockkVersion = "5.0.1"
 val commonVersion = "3.2025.11.10_14.07-a9f44944d7bc"
-val jacksonModuleKotlinVersion = "3.0.4"
+val jacksonModuleKotlinVersion = "3.1.0"
 
 dependencyManagement {
     dependencies {
