@@ -29,7 +29,7 @@ val mockkVersion = "1.14.9"
 val mockOauth2ServerVersion = "3.0.1"
 val ktlintVersion = "1.4.1"
 val springmockkVersion = "5.0.1"
-val commonVersion = "3.2025.11.10_14.07-a9f44944d7bc"
+val commonVersion = "3.2026.03.03_07.58-86d37775258a"
 val jacksonModuleKotlinVersion = "3.1.0"
 
 dependencyManagement {
@@ -40,7 +40,6 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation("at.yawk.lz4:lz4-java:1.10.3") // fjernes ved neste release av org.apache.kafka:kafka-clients
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
