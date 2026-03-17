@@ -24,7 +24,6 @@ val kafkaClientsVersion = "4.2.0"
 val shedlockVersion = "7.6.0"
 val okHttpVersion = "5.3.2"
 val tokenSupportVersion = "6.0.1"
-val arrowVersion = "2.2.1.1"
 val kotestVersion = "6.1.4"
 val testcontainersVersion = "2.0.3"
 val mockkVersion = "1.14.9"
@@ -68,9 +67,6 @@ dependencies {
     implementation("no.nav.common:token-client:$commonVersion")
     implementation("no.nav.common:rest:$commonVersion")
     implementation("no.nav.common:job:$commonVersion")
-
-    implementation("io.arrow-kt:arrow-core:$arrowVersion")
-    implementation("io.arrow-kt:arrow-fx-coroutines:$arrowVersion")
 
     implementation("org.postgresql:postgresql")
 
