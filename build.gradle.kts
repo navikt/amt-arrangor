@@ -5,7 +5,7 @@ plugins {
 
     id("org.springframework.boot") version "4.0.4"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
 }
@@ -24,7 +24,7 @@ val kafkaClientsVersion = "4.2.0"
 val shedlockVersion = "7.6.0"
 val okHttpVersion = "5.3.2"
 val tokenSupportVersion = "6.0.1"
-val kotestVersion = "6.1.6"
+val kotestVersion = "6.1.7"
 val testcontainersVersion = "2.0.3"
 val mockkVersion = "1.14.9"
 val mockOauth2ServerVersion = "3.0.1"
