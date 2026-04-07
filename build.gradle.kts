@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    val kotlinVersion = "2.3.10"
+    val kotlinVersion = "2.3.20"
 
-    id("org.springframework.boot") version "4.0.4"
+    id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
     kotlin("jvm") version kotlinVersion
@@ -24,14 +24,14 @@ val kafkaClientsVersion = "4.2.0"
 val shedlockVersion = "7.7.0"
 val okHttpVersion = "5.3.2"
 val tokenSupportVersion = "6.0.1"
-val kotestVersion = "6.1.7"
+val kotestVersion = "6.1.10"
 val testcontainersVersion = "2.0.3"
 val mockkVersion = "1.14.9"
 val mockOauth2ServerVersion = "3.0.1"
 val ktlintVersion = "1.4.1"
 val springmockkVersion = "5.0.1"
 val commonVersion = "3.2026.03.03_07.58-86d37775258a"
-val jacksonModuleKotlinVersion = "3.1.0"
+val jacksonModuleKotlinVersion = "3.1.1"
 
 dependencyManagement {
     dependencies {
