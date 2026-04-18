@@ -20,17 +20,23 @@ spec:
         insights:
           enabled: true
   port: 8080
+  terminationGracePeriodSeconds: 60
   ingresses:
     - https://amt-arrangor.intern.nav.no
   prometheus:
     enabled: true
     path: /internal/prometheus
+
+  startup:
+    path: /internal/health/liveness
+    initialDelay: 5
+    periodSeconds: 5
+    failureThreshold: 10
   readiness:
     path: /internal/health/readiness
-    initialDelay: 30
   liveness:
     path: /internal/health/liveness
-    initialDelay: 30
+
   replicas:
     min: 2
     max: 4
@@ -72,7 +78,7 @@ spec:
           cluster: prod-gcp
   env:
     - name: JDK_JAVA_OPTIONS
-      value: "-XX:MaxRAMPercentage=60.0"
+      value: "-XX:MaxRAMPercentage=60.0 -Xshare:off --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow"
 
     - name: AMT_ENHETSREGISTER_SCOPE
       value: api://prod-gcp.amt.amt-enhetsregister/.default
