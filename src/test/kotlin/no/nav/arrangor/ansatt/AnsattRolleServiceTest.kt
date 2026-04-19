@@ -75,12 +75,12 @@ class AnsattRolleServiceTest(
 
     @Test
     fun `mapAltinnRollerTilArrangorListeForNyAnsatt - en arrangor mangler - lagrer arrangor som mangler`() {
-        val nyttOrgnummer = "112233"
+        val nyttOrgnummer = "112233445"
         mockAmtEnhetsregiserServer.addVirksomhet(
             Virksomhet(
                 organisasjonsnummer = nyttOrgnummer,
                 navn = "Ny Arrangør AS",
-                overordnetEnhetOrganisasjonsnummer = "456",
+                overordnetEnhetOrganisasjonsnummer = "456789123",
                 overordnetEnhetNavn = "overordnetArrangor",
             ),
         )

@@ -10,6 +10,8 @@ import tools.jackson.databind.ObjectMapper
 class EnhetsregisterClientConfiguration(
     @Value($$"${amt-enhetsregister.url}") private val baseUrl: String,
     @Value($$"${amt-enhetsregister.scope}") private val scope: String,
+    @Value($$"${amt-enhetsregister.allowed-hosts:data.brreg.no}") private val allowedHosts: Set<String>,
+    @Value($$"${amt-enhetsregister.require-https:true}") private val requireHttps: Boolean,
 ) {
     @Bean
     fun enhetsregisterClient(
@@ -19,5 +21,7 @@ class EnhetsregisterClientConfiguration(
         baseUrl = baseUrl,
         tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
         objectMapper = objectMapper,
+        allowedHosts = allowedHosts,
+        requireHttps = requireHttps,
     )
 }

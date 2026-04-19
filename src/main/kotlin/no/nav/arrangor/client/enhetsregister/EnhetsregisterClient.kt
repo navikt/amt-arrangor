@@ -15,23 +15,34 @@ import java.time.Instant
 import java.util.function.Supplier
 
 class EnhetsregisterClient(
-    private val baseUrl: String,
+    baseUrl: String,
     private val tokenProvider: Supplier<String>,
     private val objectMapper: ObjectMapper,
+    private val allowedHosts: Set<String>,
+    private val requireHttps: Boolean = true,
     private val client: OkHttpClient = baseClient(),
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val validatedBaseUrl = validateBaseUrl(baseUrl)
 
     private fun validateBaseUrl(url: String): HttpUrl {
+        require(allowedHosts.isNotEmpty()) {
+            "allowedHosts for Enhetsregister må være konfigurert"
+        }
+
         val parsed = url.toHttpUrlOrNull()
             ?: throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister")
 
-        if (parsed.scheme != "https") {
+        if (requireHttps && parsed.scheme != "https") {
             throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister: kun https er tillatt")
         }
 
-        if (parsed.host != "data.brreg.no" && !parsed.host.endsWith(".data.brreg.no")) {
+        val host = parsed.host
+        val hostAllowed = allowedHosts.any { allowed ->
+            host == allowed || host.endsWith(".$allowed")
+        }
+
+        if (!hostAllowed) {
             throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister: host er ikke tillatt")
         }
 
