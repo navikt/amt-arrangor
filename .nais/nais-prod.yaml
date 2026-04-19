@@ -20,7 +20,6 @@ spec:
         insights:
           enabled: true
   port: 8080
-  terminationGracePeriodSeconds: 60
   ingresses:
     - https://amt-arrangor.intern.nav.no
   prometheus:
