@@ -2,6 +2,7 @@ package no.nav.arrangor.client.enhetsregister
 
 import no.nav.arrangor.utils.isFailure
 import no.nav.common.rest.client.RestClient.baseClient
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -20,6 +21,23 @@ class EnhetsregisterClient(
     private val client: OkHttpClient = baseClient(),
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
+    private val validatedBaseUrl = validateBaseUrl(baseUrl)
+
+    private fun validateBaseUrl(url: String): HttpUrl {
+        val parsed =
+            url.toHttpUrlOrNull()
+                ?: throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister")
+
+        if (parsed.scheme != "https") {
+            throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister: kun https er tillatt")
+        }
+
+        if (parsed.host != "data.brreg.no" && !parsed.host.endsWith(".data.brreg.no")) {
+            throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister: host er ikke tillatt")
+        }
+
+        return parsed
+    }
 
     fun hentVirksomhet(orgNr: String): Result<Virksomhet> {
         if (!orgNr.matches(Regex("""\d{9}"""))) {
@@ -28,14 +46,12 @@ class EnhetsregisterClient(
 
         val start = Instant.now()
         val url =
-            baseUrl
-                .toHttpUrlOrNull()
-                ?.newBuilder()
-                ?.addPathSegment("api")
-                ?.addPathSegment("enhet")
-                ?.addPathSegment(orgNr)
-                ?.build()
-                ?: return Result.failure(IllegalArgumentException("Ugyldig baseUrl for Enhetsregister"))
+            validatedBaseUrl
+                .newBuilder()
+                .addPathSegment("api")
+                .addPathSegment("enhet")
+                .addPathSegment(orgNr)
+                .build()
 
         val request =
             Request
