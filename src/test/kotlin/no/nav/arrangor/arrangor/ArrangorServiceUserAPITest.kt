@@ -58,6 +58,25 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
     }
 
     @Test
+    fun `getArrangor - autentisert, orgnummer med whitespace - returnerer arrangor`() {
+        val orgnummer = "923456789"
+        testDatabase.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = null)
+
+        val response =
+            sendRequest(
+                method = "GET",
+                path = "/api/service/arrangor/organisasjonsnummer/%20$orgnummer%20",
+                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+            )
+
+        response.code shouldBe 200
+        val arrangor = objectMapper.readValue<ArrangorMedOverordnetArrangor>(response.body.string())
+        arrangor.organisasjonsnummer shouldBe orgnummer
+        arrangor.navn shouldBe "Navn"
+        arrangor.overordnetArrangor shouldBe null
+    }
+
+    @Test
     fun `getArrangor - autentisert, arrangor har overordnet arrangor - returnerer arrangor`() {
         val orgnummerOverordnetArrangor = "987654321"
         val overordnetArrangor =

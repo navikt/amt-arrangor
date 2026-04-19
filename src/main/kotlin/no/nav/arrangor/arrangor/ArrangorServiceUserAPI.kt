@@ -20,8 +20,8 @@ class ArrangorServiceUserAPI(
     fun getArrangor(
         @PathVariable orgnummer: String,
     ): ArrangorMedOverordnetArrangor {
-        validerOrganisasjonsnummer(orgnummer)
-        return arrangorService.getArrangorMedOverordnetArrangor(orgnummer)
+        val gyldigOrgnummer = validerOrganisasjonsnummer(orgnummer)
+        return arrangorService.getArrangorMedOverordnetArrangor(gyldigOrgnummer)
     }
 
     @GetMapping("{id}")
@@ -30,9 +30,11 @@ class ArrangorServiceUserAPI(
     ): ArrangorMedOverordnetArrangor = arrangorService.getArrangorMedOverordnetArrangor(id)
         ?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 
-    private fun validerOrganisasjonsnummer(organisasjonsnummer: String) {
-        if (!Orgnummer.erGyldig(organisasjonsnummer.trim())) {
+    private fun validerOrganisasjonsnummer(organisasjonsnummer: String): String {
+        val trimmetOrganisasjonsnummer = organisasjonsnummer.trim()
+        if (!Orgnummer.erGyldig(trimmetOrganisasjonsnummer)) {
             throw IllegalArgumentException("Ugyldig organisasjonsnummer $organisasjonsnummer")
         }
+        return trimmetOrganisasjonsnummer
     }
 }
