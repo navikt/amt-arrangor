@@ -19,7 +19,6 @@ class EnhetsregisterClient(
     private val tokenProvider: Supplier<String>,
     private val objectMapper: ObjectMapper,
     private val allowedHosts: Set<String>,
-    private val requireHttps: Boolean = true,
     private val client: OkHttpClient = baseClient(),
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -32,10 +31,6 @@ class EnhetsregisterClient(
 
         val parsed = url.toHttpUrlOrNull()
             ?: throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister")
-
-        if (requireHttps && parsed.scheme != "https") {
-            throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister: kun https er tillatt")
-        }
 
         val host = parsed.host
         val hostAllowed = allowedHosts.any { allowed ->
