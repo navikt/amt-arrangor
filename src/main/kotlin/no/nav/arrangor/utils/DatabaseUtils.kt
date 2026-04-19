@@ -12,6 +12,6 @@ fun <V> sqlParameters(vararg pairs: Pair<String, V>): MapSqlParameterSource = Ma
 fun ResultSet.getNullableUUID(columnLabel: String): UUID? = this.getString(columnLabel)?.let { UUID.fromString(it) }
 
 fun Timestamp.toSystemZoneLocalDateTime(): LocalDateTime = this
-	.toInstant()
-	.atZone(ZoneId.systemDefault())
-	.toLocalDateTime()
+    .toInstant()
+    .atZone(ZoneId.systemDefault())
+    .toLocalDateTime()

@@ -12,25 +12,24 @@ import org.springframework.context.annotation.Configuration
 @Configuration(proxyBeanMethods = false)
 @EnableJwtTokenValidation
 class ApplicationConfiguration {
-	@Bean
-	fun machineToMachineTokenClient(
-		@Value($$"${nais.env.azureAppClientId}") azureAdClientId: String,
-		@Value($$"${nais.env.azureOpenIdConfigTokenEndpoint}") azureTokenEndpoint: String,
-		@Value($$"${nais.env.azureAppJWK}") azureAdJWK: String,
-	): MachineToMachineTokenClient = AzureAdTokenClientBuilder
-		.builder()
-		.withClientId(azureAdClientId)
-		.withTokenEndpointUrl(azureTokenEndpoint)
-		.withPrivateJwk(azureAdJWK)
-		.buildMachineToMachineTokenClient()
+    @Bean
+    fun machineToMachineTokenClient(
+        @Value($$"${nais.env.azureAppClientId}") azureAdClientId: String,
+        @Value($$"${nais.env.azureOpenIdConfigTokenEndpoint}") azureTokenEndpoint: String,
+        @Value($$"${nais.env.azureAppJWK}") azureAdJWK: String,
+    ): MachineToMachineTokenClient = AzureAdTokenClientBuilder
+        .builder()
+        .withClientId(azureAdClientId)
+        .withTokenEndpointUrl(azureTokenEndpoint)
+        .withPrivateJwk(azureAdJWK)
+        .buildMachineToMachineTokenClient()
 
-	@Bean
-	fun logFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> {
-		val registration = FilterRegistrationBean<LogRequestFilter>()
-		@Suppress("UsePropertyAccessSyntax")
-		registration.setFilter(LogRequestFilter("amt-arrangor", false))
-		registration.order = 1
-		registration.addUrlPatterns("/*")
-		return registration
-	}
+    @Bean
+    fun logFilterRegistrationBean(): FilterRegistrationBean<LogRequestFilter> {
+        val registration = FilterRegistrationBean<LogRequestFilter>()
+        registration.setFilter(LogRequestFilter("amt-arrangor", false))
+        registration.order = 1
+        registration.addUrlPatterns("/*")
+        return registration
+    }
 }

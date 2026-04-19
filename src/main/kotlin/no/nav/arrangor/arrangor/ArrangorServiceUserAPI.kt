@@ -13,25 +13,25 @@ import java.util.UUID
 @ProtectedWithClaims(issuer = Issuer.AZURE_AD)
 @RequestMapping("/api/service/arrangor")
 class ArrangorServiceUserAPI(
-	private val arrangorService: ArrangorService,
+    private val arrangorService: ArrangorService,
 ) {
-	@GetMapping("/organisasjonsnummer/{orgnummer}")
-	fun getArrangor(
-		@PathVariable orgnummer: String,
-	): ArrangorMedOverordnetArrangor {
-		validerOrganisasjonsnummer(orgnummer)
-		return arrangorService.getArrangorMedOverordnetArrangor(orgnummer)
-	}
+    @GetMapping("/organisasjonsnummer/{orgnummer}")
+    fun getArrangor(
+        @PathVariable orgnummer: String,
+    ): ArrangorMedOverordnetArrangor {
+        validerOrganisasjonsnummer(orgnummer)
+        return arrangorService.getArrangorMedOverordnetArrangor(orgnummer)
+    }
 
-	@GetMapping("{id}")
-	fun get(
-		@PathVariable id: UUID,
-	): ArrangorMedOverordnetArrangor = arrangorService.getArrangorMedOverordnetArrangor(id)
-		?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
+    @GetMapping("{id}")
+    fun get(
+        @PathVariable id: UUID,
+    ): ArrangorMedOverordnetArrangor = arrangorService.getArrangorMedOverordnetArrangor(id)
+        ?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 
-	private fun validerOrganisasjonsnummer(organisasjonsnummer: String) {
-		if (organisasjonsnummer.trim().length != 9 || !organisasjonsnummer.trim().matches("""\d{9}""".toRegex())) {
-			throw IllegalArgumentException("Ugyldig organisasjonsnummer $organisasjonsnummer")
-		}
-	}
+    private fun validerOrganisasjonsnummer(organisasjonsnummer: String) {
+        if (organisasjonsnummer.trim().length != 9 || !organisasjonsnummer.trim().matches("""\d{9}""".toRegex())) {
+            throw IllegalArgumentException("Ugyldig organisasjonsnummer $organisasjonsnummer")
+        }
+    }
 }

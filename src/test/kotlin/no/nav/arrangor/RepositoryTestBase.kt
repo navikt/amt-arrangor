@@ -20,32 +20,32 @@ import javax.sql.DataSource
 
 @ActiveProfiles("test")
 @SpringBootTest(
-	classes = [AnsattRepository::class, ArrangorRepository::class, DeltakerRepository::class, TestDatabaseService::class],
+    classes = [AnsattRepository::class, ArrangorRepository::class, DeltakerRepository::class, TestDatabaseService::class],
 )
 @AutoConfigureJdbc
 @AutoConfigureJson
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 abstract class RepositoryTestBase {
-	@Autowired
-	private lateinit var dataSource: DataSource
+    @Autowired
+    private lateinit var dataSource: DataSource
 
-	@Autowired
-	protected lateinit var testDatabase: TestDatabaseService
+    @Autowired
+    protected lateinit var testDatabase: TestDatabaseService
 
-	@AfterEach
-	fun cleanDatabase() = cleanDatabase(dataSource)
+    @AfterEach
+    fun cleanDatabase() = cleanDatabase(dataSource)
 
-	companion object {
-		private const val POSTGRES_DOCKER_IMAGE_NAME = "postgres:17-alpine"
+    companion object {
+        private const val POSTGRES_DOCKER_IMAGE_NAME = "postgres:17-alpine"
 
-		@ServiceConnection
-		private val postgres = PostgreSQLContainer(
-			DockerImageName
-				.parse(POSTGRES_DOCKER_IMAGE_NAME)
-				.asCompatibleSubstituteFor("postgres"),
-		).apply {
-			addEnv("TZ", "Europe/Oslo")
-			waitingFor(Wait.forListeningPort())
-		}
-	}
+        @ServiceConnection
+        private val postgres = PostgreSQLContainer(
+            DockerImageName
+                .parse(POSTGRES_DOCKER_IMAGE_NAME)
+                .asCompatibleSubstituteFor("postgres"),
+        ).apply {
+            addEnv("TZ", "Europe/Oslo")
+            waitingFor(Wait.forListeningPort())
+        }
+    }
 }

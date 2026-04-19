@@ -9,55 +9,55 @@ import java.time.ZonedDateTime
 import java.util.UUID
 
 data class AnsattDbo(
-	val id: UUID,
-	val personId: UUID,
-	val personident: String,
-	val fornavn: String,
-	val mellomnavn: String?,
-	val etternavn: String,
-	val arrangorer: List<ArrangorDbo>,
-	val modifiedAt: LocalDateTime = LocalDateTime.now(),
-	val lastSynchronized: LocalDateTime = LocalDateTime.now(),
+    val id: UUID,
+    val personId: UUID,
+    val personident: String,
+    val fornavn: String,
+    val mellomnavn: String?,
+    val etternavn: String,
+    val arrangorer: List<ArrangorDbo>,
+    val modifiedAt: LocalDateTime = LocalDateTime.now(),
+    val lastSynchronized: LocalDateTime = LocalDateTime.now(),
 ) {
-	fun toPersonalia(): Personalia = Personalia(
-		personident = personident,
-		personId = personId,
-		navn = Navn(
-			fornavn = fornavn,
-			mellomnavn = mellomnavn,
-			etternavn = etternavn,
-		),
-	)
+    fun toPersonalia(): Personalia = Personalia(
+        personident = personident,
+        personId = personId,
+        navn = Navn(
+            fornavn = fornavn,
+            mellomnavn = mellomnavn,
+            etternavn = etternavn,
+        ),
+    )
 }
 
 data class ArrangorDbo(
-	val arrangorId: UUID,
-	val roller: List<RolleDbo>,
-	val veileder: List<VeilederDeltakerDbo>,
-	val koordinator: List<KoordinatorsDeltakerlisteDbo>,
+    val arrangorId: UUID,
+    val roller: List<RolleDbo>,
+    val veileder: List<VeilederDeltakerDbo>,
+    val koordinator: List<KoordinatorsDeltakerlisteDbo>,
 )
 
 data class RolleDbo(
-	val rolle: AnsattRolle,
-	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
-	var gyldigTil: ZonedDateTime? = null,
+    val rolle: AnsattRolle,
+    val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
+    var gyldigTil: ZonedDateTime? = null,
 ) {
-	fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
+    fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
 }
 
 data class KoordinatorsDeltakerlisteDbo(
-	val deltakerlisteId: UUID,
-	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
-	var gyldigTil: ZonedDateTime? = null,
+    val deltakerlisteId: UUID,
+    val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
+    var gyldigTil: ZonedDateTime? = null,
 ) {
-	fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
+    fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
 }
 
 data class VeilederDeltakerDbo(
-	val deltakerId: UUID,
-	val veilederType: VeilederType,
-	val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
-	var gyldigTil: ZonedDateTime? = null,
+    val deltakerId: UUID,
+    val veilederType: VeilederType,
+    val gyldigFra: ZonedDateTime = ZonedDateTime.now(),
+    var gyldigTil: ZonedDateTime? = null,
 ) {
-	fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
+    fun erGyldig(): Boolean = gyldigTil?.isAfter(ZonedDateTime.now()) ?: true
 }

@@ -9,36 +9,36 @@ import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
 class MockPersonServer(
-	private val objectMapper: ObjectMapper,
+    private val objectMapper: ObjectMapper,
 ) : MockHttpServer("amt-person") {
-	fun setPerson(
-		personident: String,
-		personId: UUID,
-		fornavn: String,
-		mellomnavn: String? = null,
-		etternavn: String,
-	) {
-		resetHttpServer()
+    fun setPerson(
+        personident: String,
+        personId: UUID,
+        fornavn: String,
+        mellomnavn: String? = null,
+        etternavn: String,
+    ) {
+        resetHttpServer()
 
-		addResponseHandler(
-			predicate = { req: RecordedRequest ->
-				req.path == "/api/arrangor-ansatt" &&
-					req.method == "POST"
-			},
-			response =
-				MockResponse()
-					.setResponseCode(200)
-					.setBody(
-						objectMapper.writeValueAsString(
-							PersonClient.PersonResponse(
-								id = personId,
-								personident = personident,
-								fornavn,
-								mellomnavn,
-								etternavn,
-							),
-						),
-					).setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE),
-		)
-	}
+        addResponseHandler(
+            predicate = { req: RecordedRequest ->
+                req.path == "/api/arrangor-ansatt" &&
+                    req.method == "POST"
+            },
+            response =
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(
+                        objectMapper.writeValueAsString(
+                            PersonClient.PersonResponse(
+                                id = personId,
+                                personident = personident,
+                                fornavn,
+                                mellomnavn,
+                                etternavn,
+                            ),
+                        ),
+                    ).setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE),
+        )
+    }
 }

@@ -10,38 +10,44 @@ import java.util.UUID
 
 @Component
 class KafkaConsumer(
-	private val consumerService: ConsumerService,
-	private val objectMapper: ObjectMapper,
+    private val consumerService: ConsumerService,
+    private val objectMapper: ObjectMapper,
 ) {
-	@KafkaListener(
-		topics = [VIRKSOMHET_TOPIC, ANSATT_PERSONALIA_TOPIC],
-		properties = ["auto.offset.reset = earliest"],
-		containerFactory = "kafkaListenerContainerFactory",
-	)
-	fun listener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
-		when (record.topic()) {
-			VIRKSOMHET_TOPIC -> consumerService.handleVirksomhetEndring(record.value()?.let { objectMapper.readValue(it) })
-			ANSATT_PERSONALIA_TOPIC -> consumerService.handleAnsattPersonalia(objectMapper.readValue(record.value()))
-			else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
-		}
-		ack.acknowledge()
-	}
+    @KafkaListener(
+        topics = [VIRKSOMHET_TOPIC, ANSATT_PERSONALIA_TOPIC],
+        properties = ["auto.offset.reset = earliest"],
+        containerFactory = "kafkaListenerContainerFactory",
+    )
+    fun listener(
+        record: ConsumerRecord<String, String>,
+        ack: Acknowledgment,
+    ) {
+        when (record.topic()) {
+            VIRKSOMHET_TOPIC -> consumerService.handleVirksomhetEndring(record.value()?.let { objectMapper.readValue(it) })
+            ANSATT_PERSONALIA_TOPIC -> consumerService.handleAnsattPersonalia(objectMapper.readValue(record.value()))
+            else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
+        }
+        ack.acknowledge()
+    }
 
-	@KafkaListener(
-		topics = [DELTAKER_TOPIC],
-		properties = ["auto.offset.reset = earliest"],
-		containerFactory = "kafkaListenerContainerFactoryDeltakerTopic",
-	)
-	fun deltakerListener(record: ConsumerRecord<String, String>, ack: Acknowledgment) {
-		when (record.topic()) {
-			DELTAKER_TOPIC ->
-				consumerService.handleDeltakerEndring(
-					id = UUID.fromString(record.key()),
-					deltaker = record.value()?.let { objectMapper.readValue(it) },
-				)
+    @KafkaListener(
+        topics = [DELTAKER_TOPIC],
+        properties = ["auto.offset.reset = earliest"],
+        containerFactory = "kafkaListenerContainerFactoryDeltakerTopic",
+    )
+    fun deltakerListener(
+        record: ConsumerRecord<String, String>,
+        ack: Acknowledgment,
+    ) {
+        when (record.topic()) {
+            DELTAKER_TOPIC ->
+                consumerService.handleDeltakerEndring(
+                    id = UUID.fromString(record.key()),
+                    deltaker = record.value()?.let { objectMapper.readValue(it) },
+                )
 
-			else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
-		}
-		ack.acknowledge()
-	}
+            else -> throw IllegalStateException("Mottok melding på ukjent topic: ${record.topic()}")
+        }
+        ack.acknowledge()
+    }
 }

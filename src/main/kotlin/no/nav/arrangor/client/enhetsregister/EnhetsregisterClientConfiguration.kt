@@ -8,13 +8,16 @@ import tools.jackson.databind.ObjectMapper
 
 @Configuration(proxyBeanMethods = false)
 class EnhetsregisterClientConfiguration(
-	@Value($$"${amt-enhetsregister.url}") private val baseUrl: String,
-	@Value($$"${amt-enhetsregister.scope}") private val scope: String,
+    @Value($$"${amt-enhetsregister.url}") private val baseUrl: String,
+    @Value($$"${amt-enhetsregister.scope}") private val scope: String,
 ) {
-	@Bean
-	fun enhetsregisterClient(machineToMachineTokenClient: MachineToMachineTokenClient, objectMapper: ObjectMapper) = EnhetsregisterClient(
-		baseUrl = baseUrl,
-		tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
-		objectMapper = objectMapper,
-	)
+    @Bean
+    fun enhetsregisterClient(
+        machineToMachineTokenClient: MachineToMachineTokenClient,
+        objectMapper: ObjectMapper,
+    ) = EnhetsregisterClient(
+        baseUrl = baseUrl,
+        tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
+        objectMapper = objectMapper,
+    )
 }

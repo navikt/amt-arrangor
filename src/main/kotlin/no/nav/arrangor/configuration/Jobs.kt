@@ -10,14 +10,14 @@ import org.springframework.scheduling.annotation.Scheduled
 @EnableScheduling
 @Configuration(proxyBeanMethods = false)
 class Jobs(
-	private val leaderElection: LeaderElection,
-	private val ansattService: AnsattService,
+    private val leaderElection: LeaderElection,
+    private val ansattService: AnsattService,
 ) {
-	@Scheduled(cron = "@hourly")
-	@SchedulerLock(name = "oppdater_roller", lockAtMostFor = "120m")
-	fun updateRoller() {
-		if (leaderElection.isLeader()) {
-			JobRunner.run("Oppdater roller") { ansattService.oppdaterAnsattesRoller() }
-		}
-	}
+    @Scheduled(cron = "@hourly")
+    @SchedulerLock(name = "oppdater_roller", lockAtMostFor = "120m")
+    fun updateRoller() {
+        if (leaderElection.isLeader()) {
+            JobRunner.run("Oppdater roller") { ansattService.oppdaterAnsattesRoller() }
+        }
+    }
 }

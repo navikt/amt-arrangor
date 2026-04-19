@@ -8,13 +8,16 @@ import tools.jackson.databind.ObjectMapper
 
 @Configuration(proxyBeanMethods = false)
 class AltinAclClientConfiguration(
-	@Value($$"${amt-altinn.url}") private val baseUrl: String,
-	@Value($$"${amt-altinn.scope}") private val scope: String,
+    @Value($$"${amt-altinn.url}") private val baseUrl: String,
+    @Value($$"${amt-altinn.scope}") private val scope: String,
 ) {
-	@Bean
-	fun altinnClient(machineToMachineTokenClient: MachineToMachineTokenClient, objectMapper: ObjectMapper) = AltinnAclClient(
-		baseUrl = baseUrl,
-		tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
-		objectMapper = objectMapper,
-	)
+    @Bean
+    fun altinnClient(
+        machineToMachineTokenClient: MachineToMachineTokenClient,
+        objectMapper: ObjectMapper,
+    ) = AltinnAclClient(
+        baseUrl = baseUrl,
+        tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
+        objectMapper = objectMapper,
+    )
 }
