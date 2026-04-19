@@ -1,5 +1,11 @@
 root = true
 
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
 [*.{kt,kts}]
 indent_style = space
 indent_size = 4
@@ -12,3 +18,7 @@ ktlint_function_signature_body_expression_wrapping = default
 
 [*.kts]
 ktlint_standard_chain-method-continuation = disabled
+
+[*.md]
+trim_trailing_whitespace = false
+
