@@ -1,44 +1,30 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    val kotlinVersion = "2.3.20"
-
-    id("org.springframework.boot") version "4.0.5"
-    id("io.spring.dependency-management") version "1.1.7"
-    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
-    kotlin("jvm") version kotlinVersion
-    kotlin("plugin.spring") version kotlinVersion
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.ktlint)
 }
-
-group = "no.nav.amt-arrangor"
-version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
     maven { setUrl("https://github-package-registry-mirror.gc.nav.no/cached/maven-release") }
-    maven { setUrl("https://packages.confluent.io/maven/") }
 }
-
-val logstashEncoderVersion = "9.0"
-val kafkaClientsVersion = "4.2.0"
-val shedlockVersion = "7.7.0"
-val okHttpVersion = "5.3.2"
-val tokenSupportVersion = "6.0.5"
-val kotestVersion = "6.1.11"
-val testcontainersVersion = "2.0.3"
-val mockkVersion = "1.14.9"
-val mockOauth2ServerVersion = "3.0.1"
-val ktlintVersion = "1.4.1"
-val springmockkVersion = "5.0.1"
-val commonVersion = "3.2026.04.08_08.37-229807cc181a"
-val jacksonModuleKotlinVersion = "3.1.1"
 
 dependencyManagement {
+    imports {
+        mavenBom(libs.tools.jackson.bom.get().toString())
+    }
+
     dependencies {
-        dependency("com.squareup.okhttp3:okhttp:$okHttpVersion")
-        dependency("com.squareup.okhttp3:mockwebserver:$okHttpVersion")
+        dependency(libs.okhttp.get().toString())
+        dependency(libs.mockwebserver.get().toString())
     }
 }
+
+extra["tomcat.version"] = libs.versions.tomcat.version.get()
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
@@ -50,40 +36,39 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-flyway")
     implementation("org.springframework.boot:spring-boot-kafka")
 
-    implementation("no.nav.security:token-validation-spring:$tokenSupportVersion")
-    implementation("net.javacrumbs.shedlock:shedlock-spring:$shedlockVersion")
+    implementation(libs.token.validation.spring)
+    implementation(libs.shedlock.spring)
 
-    implementation("org.apache.kafka:kafka-clients:$kafkaClientsVersion") {
+    implementation(libs.kafka.clients) {
         exclude("org.xerial.snappy", "snappy-java")
     }
 
-    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonModuleKotlinVersion")
+    implementation(libs.tools.jackson.module.kotlin)
 
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("io.micrometer:micrometer-registry-prometheus")
-    implementation("net.logstash.logback:logstash-logback-encoder:$logstashEncoderVersion")
+    implementation(libs.logstash.encoder)
 
-    implementation("no.nav.common:log:$commonVersion")
-    implementation("no.nav.common:token-client:$commonVersion")
-    implementation("no.nav.common:rest:$commonVersion")
-    implementation("no.nav.common:job:$commonVersion")
+    implementation(libs.nav.common.log)
+    implementation(libs.nav.common.token.client)
+    implementation(libs.nav.common.rest)
+    implementation(libs.nav.common.job)
 
     implementation("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-data-jdbc-test")
     testImplementation("org.springframework.boot:spring-boot-resttestclient")
-    testImplementation("io.kotest:kotest-assertions-core-jvm:$kotestVersion")
+    testImplementation(libs.kotest.assertions.core)
 
-    testImplementation("no.nav.security:token-validation-spring-test:$tokenSupportVersion")
-    testImplementation("no.nav.security:mock-oauth2-server:$mockOauth2ServerVersion")
+    testImplementation(libs.mock.oauth2.server)
 
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-kafka")
 
-    testImplementation("io.mockk:mockk-jvm:$mockkVersion")
-    testImplementation("com.ninja-squad:springmockk:$springmockkVersion")
+    testImplementation(libs.mockk)
+    testImplementation(libs.springmockk)
 }
 
 kotlin {
@@ -98,7 +83,7 @@ kotlin {
 }
 
 ktlint {
-    version = ktlintVersion
+    version = libs.versions.ktlint.cli.version.get()
 }
 
 tasks.named<Jar>("jar") {
