@@ -6,18 +6,18 @@ import ch.qos.logback.core.filter.Filter
 import ch.qos.logback.core.spi.FilterReply
 
 class CxfMaskingFilter : Filter<ILoggingEvent>() {
-	override fun decide(event: ILoggingEvent): FilterReply = if (event.level != Level.ERROR &&
-		exclusionList.any { event.loggerName?.startsWith(it) == true }
-	) {
-		FilterReply.DENY
-	} else {
-		FilterReply.NEUTRAL
-	}
+    override fun decide(event: ILoggingEvent): FilterReply = if (event.level != Level.ERROR &&
+        exclusionList.any { event.loggerName?.startsWith(it) == true }
+    ) {
+        FilterReply.DENY
+    } else {
+        FilterReply.NEUTRAL
+    }
 
-	companion object {
-		private val exclusionList = setOf(
-			"org.apache.cxf",
-			"no.nav.common.cxf",
-		)
-	}
+    companion object {
+        private val exclusionList = setOf(
+            "org.apache.cxf",
+            "no.nav.common.cxf",
+        )
+    }
 }

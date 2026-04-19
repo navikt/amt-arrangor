@@ -17,38 +17,38 @@ import org.springframework.web.server.ResponseStatusException
 @RestController
 @RequestMapping("/internal")
 class InternalAPI(
-	private val ansattService: AnsattService,
-	private val producerService: ProducerService,
+    private val ansattService: AnsattService,
+    private val producerService: ProducerService,
 ) {
-	private val log = LoggerFactory.getLogger(InternalAPI::class.java)
+    private val log = LoggerFactory.getLogger(InternalAPI::class.java)
 
-	@Unprotected
-	@GetMapping("/ansatte/republiser")
-	fun republiserAnsatte(
-		servlet: HttpServletRequest,
-		@RequestParam(value = "startFromOffset", required = false) startFromOffset: Int?,
-	) {
-		if (isInternal(servlet)) {
-			JobRunner.runAsync("republiser-ansatte") {
-				republiserAlleAnsatte(startFromOffset ?: 0)
-			}
-		} else {
-			throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
-		}
-	}
+    @Unprotected
+    @GetMapping("/ansatte/republiser")
+    fun republiserAnsatte(
+        servlet: HttpServletRequest,
+        @RequestParam(value = "startFromOffset", required = false) startFromOffset: Int?,
+    ) {
+        if (isInternal(servlet)) {
+            JobRunner.runAsync("republiser-ansatte") {
+                republiserAlleAnsatte(startFromOffset ?: 0)
+            }
+        } else {
+            throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
+        }
+    }
 
-	private fun republiserAlleAnsatte(startOffset: Int = 0) {
-		var offset = startOffset
-		var ansatte: List<Ansatt>
+    private fun republiserAlleAnsatte(startOffset: Int = 0) {
+        var offset = startOffset
+        var ansatte: List<Ansatt>
 
-		do {
-			ansatte = ansattService.getAll(offset, 500)
-			ansatte.forEach { producerService.publishAnsatt(it) }
+        do {
+            ansatte = ansattService.getAll(offset, 500)
+            ansatte.forEach { producerService.publishAnsatt(it) }
 
-			log.info("Republiserte ansatte fra offset $offset til ${offset + ansatte.size}")
-			offset += ansatte.size
-		} while (ansatte.isNotEmpty())
-	}
+            log.info("Republiserte ansatte fra offset $offset til ${offset + ansatte.size}")
+            offset += ansatte.size
+        } while (ansatte.isNotEmpty())
+    }
 
-	private fun isInternal(servlet: HttpServletRequest): Boolean = servlet.remoteAddr == "127.0.0.1"
+    private fun isInternal(servlet: HttpServletRequest): Boolean = servlet.remoteAddr == "127.0.0.1"
 }

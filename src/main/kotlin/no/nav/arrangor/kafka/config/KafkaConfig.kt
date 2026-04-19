@@ -19,67 +19,66 @@ import org.springframework.kafka.listener.ContainerProperties
 
 @Configuration
 class KafkaConfig(
-	@Value($$"${KAFKA_BROKERS}") private val kafkaBrokers: String,
-	@Value($$"${KAFKA_SECURITY_PROTOCOL:SSL}") private val kafkaSecurityProtocol: String,
-	@Value($$"${KAFKA_TRUSTSTORE_PATH}") private val kafkaTruststorePath: String,
-	@Value($$"${KAFKA_CREDSTORE_PASSWORD}") private val kafkaCredstorePassword: String,
-	@Value($$"${KAFKA_KEYSTORE_PATH}") private val kafkaKeystorePath: String,
-	@Value($$"${kafka.auto-offset-reset}") private val kafkaAutoOffsetReset: String,
+    @Value($$"${KAFKA_BROKERS}") private val kafkaBrokers: String,
+    @Value($$"${KAFKA_SECURITY_PROTOCOL:SSL}") private val kafkaSecurityProtocol: String,
+    @Value($$"${KAFKA_TRUSTSTORE_PATH}") private val kafkaTruststorePath: String,
+    @Value($$"${KAFKA_CREDSTORE_PASSWORD}") private val kafkaCredstorePassword: String,
+    @Value($$"${KAFKA_KEYSTORE_PATH}") private val kafkaKeystorePath: String,
+    @Value($$"${kafka.auto-offset-reset}") private val kafkaAutoOffsetReset: String,
 ) {
-	private val javaKeystore = "JKS"
-	private val pkcs12 = "PKCS12"
+    private val javaKeystore = "JKS"
+    private val pkcs12 = "PKCS12"
 
-	private val securityConfig = mapOf(
-		CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to kafkaSecurityProtocol,
-		// Disable server host name verification
-		SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG to "",
-		SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG to javaKeystore,
-		SslConfigs.SSL_KEYSTORE_TYPE_CONFIG to pkcs12,
-		SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG to kafkaTruststorePath,
-		SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG to kafkaCredstorePassword,
-		SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG to kafkaKeystorePath,
-		SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG to kafkaCredstorePassword,
-		SslConfigs.SSL_KEY_PASSWORD_CONFIG to kafkaCredstorePassword,
-	)
+    private val securityConfig = mapOf(
+        CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to kafkaSecurityProtocol,
+        // Disable server host name verification
+        SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG to "",
+        SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG to javaKeystore,
+        SslConfigs.SSL_KEYSTORE_TYPE_CONFIG to pkcs12,
+        SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG to kafkaTruststorePath,
+        SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG to kafkaCredstorePassword,
+        SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG to kafkaKeystorePath,
+        SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG to kafkaCredstorePassword,
+        SslConfigs.SSL_KEY_PASSWORD_CONFIG to kafkaCredstorePassword,
+    )
 
-	val commonKafkaConfig = mapOf(
-		BOOTSTRAP_SERVERS_CONFIG to kafkaBrokers,
-		ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-		ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-	) + securityConfig
+    val commonKafkaConfig = mapOf(
+        BOOTSTRAP_SERVERS_CONFIG to kafkaBrokers,
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+    ) + securityConfig
 
-	@Bean
-	fun kafkaListenerContainerFactory(kafkaErrorHandler: KafkaErrorHandler) =
-		createKafkaListenerContainerFactory("amt-arrangor-consumer-2", kafkaErrorHandler)
+    @Bean
+    fun kafkaListenerContainerFactory(kafkaErrorHandler: KafkaErrorHandler) =
+        createKafkaListenerContainerFactory("amt-arrangor-consumer-2", kafkaErrorHandler)
 
-	@Bean
-	fun kafkaListenerContainerFactoryDeltakerTopic(kafkaErrorHandler: KafkaErrorHandler) =
-		createKafkaListenerContainerFactory("amt-arrangor-consumer-4", kafkaErrorHandler)
+    @Bean
+    fun kafkaListenerContainerFactoryDeltakerTopic(kafkaErrorHandler: KafkaErrorHandler) =
+        createKafkaListenerContainerFactory("amt-arrangor-consumer-4", kafkaErrorHandler)
 
-	@Bean
-	fun kafkaProducerFactory(): ProducerFactory<String, String> = DefaultKafkaProducerFactory(commonKafkaConfig)
+    @Bean
+    fun kafkaProducerFactory(): ProducerFactory<String, String> = DefaultKafkaProducerFactory(commonKafkaConfig)
 
-	@Bean
-	fun kafkaTemplate(): KafkaTemplate<String, String> = KafkaTemplate(kafkaProducerFactory())
+    @Bean
+    fun kafkaTemplate(): KafkaTemplate<String, String> = KafkaTemplate(kafkaProducerFactory())
 
-	private fun createKafkaListenerContainerFactory(
-		groupId: String,
-		kafkaErrorHandler: KafkaErrorHandler,
-	): ConcurrentKafkaListenerContainerFactory<String, String> {
-		val config = mapOf(
-			ConsumerConfig.GROUP_ID_CONFIG to groupId,
-			ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to kafkaAutoOffsetReset,
-			ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
-			ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-			ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-			ConsumerConfig.MAX_POLL_RECORDS_CONFIG to "1",
-		) + commonKafkaConfig
+    private fun createKafkaListenerContainerFactory(
+        groupId: String,
+        kafkaErrorHandler: KafkaErrorHandler,
+    ): ConcurrentKafkaListenerContainerFactory<String, String> {
+        val config = mapOf(
+            ConsumerConfig.GROUP_ID_CONFIG to groupId,
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to kafkaAutoOffsetReset,
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
+            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+            ConsumerConfig.MAX_POLL_RECORDS_CONFIG to "1",
+        ) + commonKafkaConfig
 
-		return ConcurrentKafkaListenerContainerFactory<String, String>().apply {
-			@Suppress("UsePropertyAccessSyntax")
-			setConsumerFactory(DefaultKafkaConsumerFactory(config))
-			setCommonErrorHandler(kafkaErrorHandler)
-			containerProperties.ackMode = ContainerProperties.AckMode.MANUAL_IMMEDIATE
-		}
-	}
+        return ConcurrentKafkaListenerContainerFactory<String, String>().apply {
+            setConsumerFactory(DefaultKafkaConsumerFactory(config))
+            setCommonErrorHandler(kafkaErrorHandler)
+            containerProperties.ackMode = ContainerProperties.AckMode.MANUAL_IMMEDIATE
+        }
+    }
 }

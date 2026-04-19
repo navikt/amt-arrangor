@@ -25,42 +25,42 @@ import java.time.Year
 @JsonTest
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 class JsonMapperTest(
-	private val springObjectMapper: ObjectMapper,
+    private val springObjectMapper: ObjectMapper,
 ) {
-	@Test
-	fun `static mapper skal serialisere samme som Spring mapper`() {
-		val dto = TestDto("John Doe", 42, now)
+    @Test
+    fun `static mapper skal serialisere samme som Spring mapper`() {
+        val dto = TestDto("John Doe", 42, now)
 
-		val jsonStatic = staticObjectMapper.writeValueAsString(dto)
-		val jsonSpring = springObjectMapper.writeValueAsString(dto)
+        val jsonStatic = staticObjectMapper.writeValueAsString(dto)
+        val jsonSpring = springObjectMapper.writeValueAsString(dto)
 
-		val mapStatic: Map<String, Any> = staticObjectMapper.readValue(jsonStatic)
-		val mapSpring: Map<String, Any> = springObjectMapper.readValue(jsonSpring)
+        val mapStatic: Map<String, Any> = staticObjectMapper.readValue(jsonStatic)
+        val mapSpring: Map<String, Any> = springObjectMapper.readValue(jsonSpring)
 
-		mapStatic shouldBe mapSpring
+        mapStatic shouldBe mapSpring
 
-		jsonSpring shouldBe """{"name":"John Doe","age":42,"timestamp":"${Year.now()}-11-23T12:34:56"}"""
-	}
+        jsonSpring shouldBe """{"name":"John Doe","age":42,"timestamp":"${Year.now()}-11-23T12:34:56"}"""
+    }
 
-	@Test
-	fun `static mapper should ignore unknown properties`() {
-		val jsonWithExtra = """{"name":"John Doe","age":42,"timestamp":"${Year.now()}-11-23T12:34:56","extra":"ignored"}"""
-		val deserialized = staticObjectMapper.readValue<TestDto>(jsonWithExtra)
+    @Test
+    fun `static mapper should ignore unknown properties`() {
+        val jsonWithExtra = """{"name":"John Doe","age":42,"timestamp":"${Year.now()}-11-23T12:34:56","extra":"ignored"}"""
+        val deserialized = staticObjectMapper.readValue<TestDto>(jsonWithExtra)
 
-		assertSoftly(deserialized) {
-			name shouldBe "John Doe"
-			age shouldBe 42
-			timestamp shouldBe now
-		}
-	}
+        assertSoftly(deserialized) {
+            name shouldBe "John Doe"
+            age shouldBe 42
+            timestamp shouldBe now
+        }
+    }
 
-	companion object {
-		private val now: LocalDateTime = LocalDateTime.of(Year.now().value, 11, 23, 12, 34, 56)
+    companion object {
+        private val now: LocalDateTime = LocalDateTime.of(Year.now().value, 11, 23, 12, 34, 56)
 
-		private data class TestDto(
-			val name: String,
-			val age: Int,
-			val timestamp: LocalDateTime,
-		)
-	}
+        private data class TestDto(
+            val name: String,
+            val age: Int,
+            val timestamp: LocalDateTime,
+        )
+    }
 }

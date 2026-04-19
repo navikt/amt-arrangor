@@ -8,13 +8,16 @@ import tools.jackson.databind.ObjectMapper
 
 @Configuration(proxyBeanMethods = false)
 class PersonClientConfiguration(
-	@Value($$"${amt-person.url}") private val baseUrl: String,
-	@Value($$"${amt-person.scope}") private val scope: String,
+    @Value($$"${amt-person.url}") private val baseUrl: String,
+    @Value($$"${amt-person.scope}") private val scope: String,
 ) {
-	@Bean
-	fun personClient(machineToMachineTokenClient: MachineToMachineTokenClient, objectMapper: ObjectMapper) = PersonClient(
-		baseUrl = baseUrl,
-		tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
-		objectMapper = objectMapper,
-	)
+    @Bean
+    fun personClient(
+        machineToMachineTokenClient: MachineToMachineTokenClient,
+        objectMapper: ObjectMapper,
+    ) = PersonClient(
+        baseUrl = baseUrl,
+        tokenProvider = { machineToMachineTokenClient.createMachineToMachineToken(scope) },
+        objectMapper = objectMapper,
+    )
 }

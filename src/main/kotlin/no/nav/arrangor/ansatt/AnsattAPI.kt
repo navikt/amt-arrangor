@@ -21,73 +21,77 @@ import java.util.UUID
 @ProtectedWithClaims(issuer = Issuer.TOKEN_X)
 @RequestMapping("/api/ansatt")
 class AnsattAPI(
-	private val ansattService: AnsattService,
-	private val contextHolder: TokenValidationContextHolder,
+    private val ansattService: AnsattService,
+    private val contextHolder: TokenValidationContextHolder,
 ) {
-	@GetMapping
-	fun getByPersonident(): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.get(personident)
-			?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
-	}
+    @GetMapping
+    fun getByPersonident(): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
+        ansattService.get(personident)
+            ?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
+    }
 
-	@PostMapping("koordinator/{arrangorId}/{deltakerlisteId}")
-	fun setKoordinatorForDeltakerliste(
-		@PathVariable deltakerlisteId: UUID,
-		@PathVariable arrangorId: UUID,
-	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
-	}
+    @PostMapping("koordinator/{arrangorId}/{deltakerlisteId}")
+    fun setKoordinatorForDeltakerliste(
+        @PathVariable deltakerlisteId: UUID,
+        @PathVariable arrangorId: UUID,
+    ): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
+        ansattService.setKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
+    }
 
-	@DeleteMapping("koordinator/{arrangorId}/{deltakerlisteId}")
-	fun fjernKoordinatorForDeltakerliste(
-		@PathVariable deltakerlisteId: UUID,
-		@PathVariable arrangorId: UUID,
-	): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
-		ansattService.fjernKoordinatorForDeltakerliste(personident = personident, deltakerlisteId = deltakerlisteId, arrangorId = arrangorId)
-	}
+    @DeleteMapping("koordinator/{arrangorId}/{deltakerlisteId}")
+    fun fjernKoordinatorForDeltakerliste(
+        @PathVariable deltakerlisteId: UUID,
+        @PathVariable arrangorId: UUID,
+    ): Ansatt = hentPersonligIdentTilInnloggetBruker().let { personident ->
+        ansattService.fjernKoordinatorForDeltakerliste(
+            personident = personident,
+            deltakerlisteId = deltakerlisteId,
+            arrangorId = arrangorId,
+        )
+    }
 
-	@PostMapping("veiledere/{deltakerId}")
-	fun oppdaterVeiledereForDeltaker(
-		@PathVariable deltakerId: UUID,
-		@RequestBody request: OppdaterVeiledereForDeltakerRequest,
-	) {
-		hentPersonligIdentTilInnloggetBruker().let { personident ->
-			ansattService.oppdaterVeiledereForDeltaker(
-				personident = personident,
-				deltakerId = deltakerId,
-				request = request,
-			)
-		}
-	}
+    @PostMapping("veiledere/{deltakerId}")
+    fun oppdaterVeiledereForDeltaker(
+        @PathVariable deltakerId: UUID,
+        @RequestBody request: OppdaterVeiledereForDeltakerRequest,
+    ) {
+        hentPersonligIdentTilInnloggetBruker().let { personident ->
+            ansattService.oppdaterVeiledereForDeltaker(
+                personident = personident,
+                deltakerId = deltakerId,
+                request = request,
+            )
+        }
+    }
 
-	private fun hentPersonligIdentTilInnloggetBruker(): String {
-		val context = contextHolder.getTokenValidationContext()
+    private fun hentPersonligIdentTilInnloggetBruker(): String {
+        val context = contextHolder.getTokenValidationContext()
 
-		val token =
-			context.firstValidToken
-				?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized, valid token is missing")
+        val token =
+            context.firstValidToken
+                ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authorized, valid token is missing")
 
-		return token.jwtTokenClaims
-			.getStringClaim("pid")
-			?.also {
-				ansattService
-					.getAnsattIdForPersonident(it)
-					?.let { id -> MDC.put("ansatt-id", id.toString()) }
-			}
-			?: throw ResponseStatusException(
-				HttpStatus.UNAUTHORIZED,
-				"PID is missing or is not a string",
-			)
-	}
+        return token.jwtTokenClaims
+            .getStringClaim("pid")
+            ?.also {
+                ansattService
+                    .getAnsattIdForPersonident(it)
+                    ?.let { id -> MDC.put("ansatt-id", id.toString()) }
+            }
+            ?: throw ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "PID is missing or is not a string",
+            )
+    }
 
-	data class OppdaterVeiledereForDeltakerRequest(
-		val arrangorId: UUID,
-		val veilederSomLeggesTil: List<VeilederAnsatt>,
-		val veilederSomFjernes: List<VeilederAnsatt>,
-	)
+    data class OppdaterVeiledereForDeltakerRequest(
+        val arrangorId: UUID,
+        val veilederSomLeggesTil: List<VeilederAnsatt>,
+        val veilederSomFjernes: List<VeilederAnsatt>,
+    )
 
-	data class VeilederAnsatt(
-		val ansattId: UUID,
-		val type: VeilederType,
-	)
+    data class VeilederAnsatt(
+        val ansattId: UUID,
+        val type: VeilederType,
+    )
 }
