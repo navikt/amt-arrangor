@@ -42,7 +42,8 @@ class EnhetsregisterClientTest {
         val ex = shouldThrow<IllegalArgumentException> {
             newClient("https://evil.example.com")
         }
-        ex.message shouldContain "host er ikke tillatt"
+        ex.message shouldContain
+            "Ugyldig baseUrl for Enhetsregister: baseUrl=https://evil.example.com, host=evil.example.com, allowedHosts=[data.brreg.no]"
     }
 
     @Test
@@ -51,7 +52,8 @@ class EnhetsregisterClientTest {
             // "evildata.brreg.no" inneholder "data.brreg.no" men er ikke et ekte subdomene
             newClient("https://evildata.brreg.no", allowedHosts = setOf("data.brreg.no"))
         }
-        ex.message shouldContain "host er ikke tillatt"
+        ex.message shouldContain "Ugyldig baseUrl for Enhetsregister: " +
+            "baseUrl=https://evildata.brreg.no, host=evildata.brreg.no, allowedHosts=[data.brreg.no]"
     }
 
     @Test
@@ -112,7 +114,3 @@ class EnhetsregisterClientTest {
         result.exceptionOrNull().shouldBeInstanceOf<IllegalArgumentException>()
     }
 }
-
-
-
-
