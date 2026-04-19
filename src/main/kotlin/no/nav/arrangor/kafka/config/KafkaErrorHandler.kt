@@ -32,7 +32,7 @@ class KafkaErrorHandler(
                 .error(
                     "Feil i prossesseringen av record med offset: ${record.offset()}, key: ${record.key()} på topic ${record.topic()}",
                     thrownException,
-                ).also { metricsService.incConsumerFaild() }
+                ).also { metricsService.incConsumerFailed() }
         }
         if (records.isEmpty()) {
             log.error("Feil i listener uten noen records", thrownException)
@@ -53,7 +53,7 @@ class KafkaErrorHandler(
                 .error(
                     "Feil i prossesseringen av record med offset: ${record.offset()}, key: ${record.key()} på topic ${record.topic()}",
                     thrownException,
-                ).also { metricsService.incConsumerFaild() }
+                ).also { metricsService.incConsumerFailed() }
         }
         if (data.isEmpty) {
             log.error("Feil i listener uten noen records", thrownException)

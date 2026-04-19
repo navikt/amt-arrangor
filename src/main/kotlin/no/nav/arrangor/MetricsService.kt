@@ -37,5 +37,5 @@ class MetricsService(
 
     fun incConsumedVirksomhetEndring(count: Int = 1) = consumedVirksomhetEndring.increment(count.toDouble())
 
-    fun incConsumerFaild(count: Int = 1) = consumerFailed.increment(count.toDouble())
+    fun incConsumerFailed(count: Int = 1) = consumerFailed.increment(count.toDouble())
 }
