@@ -24,9 +24,8 @@ class EnhetsregisterClient(
     private val validatedBaseUrl = validateBaseUrl(baseUrl)
 
     private fun validateBaseUrl(url: String): HttpUrl {
-        val parsed =
-            url.toHttpUrlOrNull()
-                ?: throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister")
+        val parsed = url.toHttpUrlOrNull()
+            ?: throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister")
 
         if (parsed.scheme != "https") {
             throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister: kun https er tillatt")
@@ -45,37 +44,34 @@ class EnhetsregisterClient(
         }
 
         val start = Instant.now()
-        val url =
-            validatedBaseUrl
-                .newBuilder()
-                .addPathSegment("api")
-                .addPathSegment("enhet")
-                .addPathSegment(orgNr)
-                .build()
+        val url = validatedBaseUrl
+            .newBuilder()
+            .addPathSegment("api")
+            .addPathSegment("enhet")
+            .addPathSegment(orgNr)
+            .build()
 
-        val request =
-            Request
-                .Builder()
-                .url(url)
-                .addHeader(HttpHeaders.AUTHORIZATION, "Bearer ${tokenProvider.get()}")
-                .get()
-                .build()
+        val request = Request
+            .Builder()
+            .url(url)
+            .addHeader(HttpHeaders.AUTHORIZATION, "Bearer ${tokenProvider.get()}")
+            .get()
+            .build()
 
-        val virksomhet =
-            client
-                .newCall(request)
-                .execute()
-                .also { res -> isFailure(res, log)?.let { exception -> return Result.failure(exception) } }
-                .body
-                .string()
-                .let { objectMapper.readValue<Virksomhet>(it) }
-                .also {
-                    log.info(
-                        "hentVirksomhet $orgNr executed in ${
-                            Duration.between(start, Instant.now()).toMillis()
-                        } ms.",
-                    )
-                }
+        val virksomhet = client
+            .newCall(request)
+            .execute()
+            .also { res -> isFailure(res, log)?.let { exception -> return Result.failure(exception) } }
+            .body
+            .string()
+            .let { objectMapper.readValue<Virksomhet>(it) }
+            .also {
+                log.info(
+                    "hentVirksomhet $orgNr executed in ${
+                        Duration.between(start, Instant.now()).toMillis()
+                    } ms.",
+                )
+            }
 
         return Result.success(virksomhet)
     }
