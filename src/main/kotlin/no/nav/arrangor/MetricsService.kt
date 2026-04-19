@@ -27,7 +27,7 @@ class MetricsService(
 
     fun incLagtTilSomKoordinator(count: Int = 1) = lagtTilSomKoordinator.increment(count.toDouble())
 
-    fun incFjernetSomKoodrinator(count: Int = 1) = fjernetSomKoordinator.increment(count.toDouble())
+    fun incFjernetSomKoordinator(count: Int = 1) = fjernetSomKoordinator.increment(count.toDouble())
 
     fun incLagtTilSomVeileder(count: Int = 1) = lagtTilSomVeileder.increment(count.toDouble())
 

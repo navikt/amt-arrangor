@@ -102,7 +102,7 @@ class AnsattService(
 
             mapToAnsatt(ansattRepository.insertOrUpdate(ansattDbo))
                 .also { ansatt -> producerService.publishAnsatt(ansatt) }
-                .also { metricsService.incFjernetSomKoodrinator() }
+                .also { metricsService.incFjernetSomKoordinator() }
                 .also { logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId") }
         }
 
