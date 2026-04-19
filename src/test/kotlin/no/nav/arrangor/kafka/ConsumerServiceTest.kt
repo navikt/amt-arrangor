@@ -100,7 +100,7 @@ class ConsumerServiceTest(
         val overordnetArrangorId = UUID.randomUUID()
         val overordnetOrgnummer = "888887776"
         val nyOverordnetArrangorId = UUID.randomUUID()
-        val nyOverordnetOrgnummer = "111122222"
+        val nyOverordnetOrgnummer = "811122222"
         val arrangorId = UUID.randomUUID()
         val orgnummer = "999988888"
         arrangorRepository.insertOrUpdate(
@@ -146,7 +146,7 @@ class ConsumerServiceTest(
     fun `finnes med annen overordnet arrangor,ny overordnet arrangor finnes ikke - ny overordnet arrangor lagres`() {
         val overordnetArrangorId = UUID.randomUUID()
         val overordnetOrgnummer = "888887776"
-        val nyOverordnetOrgnummer = "111122222"
+        val nyOverordnetOrgnummer = "811122222"
         val arrangorId = UUID.randomUUID()
         val orgnummer = "999988888"
         mockAmtEnhetsregiserServer.addVirksomhet(

@@ -2,6 +2,7 @@ package no.nav.arrangor.arrangor
 
 import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
 import no.nav.arrangor.utils.Issuer
+import no.nav.arrangor.utils.Orgnummer
 import no.nav.security.token.support.core.api.ProtectedWithClaims
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -30,7 +31,7 @@ class ArrangorServiceUserAPI(
         ?: throw NoSuchElementException("Arrangør med id $id eksisterer ikke")
 
     private fun validerOrganisasjonsnummer(organisasjonsnummer: String) {
-        if (organisasjonsnummer.trim().length != 9 || !organisasjonsnummer.trim().matches("""\d{9}""".toRegex())) {
+        if (!Orgnummer.erGyldig(organisasjonsnummer.trim())) {
             throw IllegalArgumentException("Ugyldig organisasjonsnummer $organisasjonsnummer")
         }
     }

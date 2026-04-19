@@ -1,5 +1,6 @@
 package no.nav.arrangor.client.enhetsregister
 
+import no.nav.arrangor.utils.Orgnummer
 import no.nav.arrangor.utils.isFailure
 import no.nav.common.rest.client.RestClient.baseClient
 import okhttp3.HttpUrl
@@ -45,7 +46,7 @@ class EnhetsregisterClient(
     }
 
     fun hentVirksomhet(orgNr: String): Result<Virksomhet> {
-        if (!orgNr.matches(Regex("""\d{9}"""))) {
+        if (!Orgnummer.erGyldig(orgNr)) {
             return Result.failure(IllegalArgumentException("Ugyldig organisasjonsnummer"))
         }
 

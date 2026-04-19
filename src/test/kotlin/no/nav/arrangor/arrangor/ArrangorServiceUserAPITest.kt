@@ -40,7 +40,7 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
 
     @Test
     fun `getArrangor - autentisert, arrangor har ikke overordnet arrangor - returnerer arrangor`() {
-        val orgnummer = "123456789"
+        val orgnummer = "923456789"
         testDatabase.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = null)
 
         val response =
@@ -66,7 +66,7 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
                 organisasjonsnummer = orgnummerOverordnetArrangor,
                 overordnetArrangorId = null,
             )
-        val orgnummer = "123456789"
+        val orgnummer = "923456789"
         testDatabase.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
 
         val response =
@@ -117,7 +117,7 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
                 organisasjonsnummer = orgnummerOverordnetArrangor,
                 overordnetArrangorId = null,
             )
-        val orgnummer = "123456789"
+        val orgnummer = "923456789"
         val arrangor =
             testDatabase.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
 
