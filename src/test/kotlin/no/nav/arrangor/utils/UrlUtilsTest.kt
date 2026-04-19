@@ -8,7 +8,7 @@ import org.springframework.web.util.InvalidUrlException
 
 class UrlUtilsTest {
     @Test
-    fun `skal returnere samme URL nar URL starter med http `() {
+    fun `skal returnere samme URL nar URL starter med http`() {
         val url = toUriString("http://localhost")
 
         url shouldBe "http://localhost"
