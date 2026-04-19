@@ -115,7 +115,7 @@ class ConsumerService(
                 producerService.publishArrangor(nyOverordnetArrangor.toDomain())
                 metricsService.incEndredeArrangorer()
             } else {
-                logger.warn("Kunne ikke opprette ovrordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer")
+                logger.warn("Kunne ikke opprette overordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer")
             }
             nyOverordnetArrangor?.id
         }
