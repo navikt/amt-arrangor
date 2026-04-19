@@ -26,11 +26,11 @@ class EnhetsregisterClient(
 
     private fun validateBaseUrl(url: String): HttpUrl {
         require(allowedHosts.isNotEmpty()) {
-            "allowedHosts for Enhetsregister må være konfigurert"
+            "allowedHosts for Enhetsregister må være konfigurert (baseUrl=$url)"
         }
 
         val parsed = url.toHttpUrlOrNull()
-            ?: throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister")
+            ?: throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister: baseUrl=$url")
 
         val host = parsed.host
         val hostAllowed = allowedHosts.any { allowed ->
@@ -38,7 +38,9 @@ class EnhetsregisterClient(
         }
 
         if (!hostAllowed) {
-            throw IllegalArgumentException("Ugyldig baseUrl for Enhetsregister: host er ikke tillatt")
+            throw IllegalArgumentException(
+                "Ugyldig baseUrl for Enhetsregister: baseUrl=$url, host=$host, allowedHosts=$allowedHosts",
+            )
         }
 
         return parsed
