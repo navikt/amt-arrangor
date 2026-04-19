@@ -33,7 +33,7 @@ class ArrangorServiceUserAPI(
     private fun validerOrganisasjonsnummer(organisasjonsnummer: String): String {
         val trimmetOrganisasjonsnummer = organisasjonsnummer.trim()
         if (!Orgnummer.erGyldig(trimmetOrganisasjonsnummer)) {
-            throw IllegalArgumentException("Ugyldig organisasjonsnummer $organisasjonsnummer")
+            throw IllegalArgumentException("Ugyldig organisasjonsnummer $trimmetOrganisasjonsnummer")
         }
         return trimmetOrganisasjonsnummer
     }
