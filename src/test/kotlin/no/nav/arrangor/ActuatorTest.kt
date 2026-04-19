@@ -57,7 +57,7 @@ class ActuatorTest(
 
         val response = restTemplate.getForEntity<String>(uri)
 
-        // GlobalExceptionHandler er konfigurert til å returnere INTERNAL_SERVER_ERROR f0r NOT_FOUND
+        // GlobalExceptionHandler er konfigurert til å returnere INTERNAL_SERVER_ERROR for NOT_FOUND
         response.statusCode shouldBe HttpStatus.INTERNAL_SERVER_ERROR
     }
 }
