@@ -5,7 +5,7 @@ ktlint-plugin = "14.2.0"
 ktlint-cli-version = "1.8.0"
 
 # Spring
-spring-boot = "4.0.5"
+spring-boot = "4.0.6"
 spring-dependency-management = "1.1.7"
 
 # Serialization / Avro
@@ -27,10 +27,6 @@ kotest = "6.1.11"
 mockk = "1.14.9"
 mock-oauth2-server = "3.0.1"
 
-# CVE-fixes
-tools-jackson-version = "3.1.2"
-tomcat-version = "11.0.21"
-
 kafka-clients = "4.2.0"
 springmockk = "5.0.1"
 
@@ -41,7 +37,6 @@ spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
 
-
 [libraries]
 
 springmockk = { module = "com.ninja-squad:springmockk", version.ref = "springmockk" }
@@ -49,7 +44,6 @@ springmockk = { module = "com.ninja-squad:springmockk", version.ref = "springmoc
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-clients" }
 
 # Jackson
-tools-jackson-bom = { module = "tools.jackson:jackson-bom", version.ref = "tools-jackson-version" } # CVE-fix
 tools-jackson-module-kotlin = { module = "tools.jackson.module:jackson-module-kotlin", version.ref = "jackson-module-kotlin" }
 
 # HTTP

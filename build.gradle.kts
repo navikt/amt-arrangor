@@ -14,17 +14,11 @@ repositories {
 }
 
 dependencyManagement {
-    imports {
-        mavenBom(libs.tools.jackson.bom.get().toString())
-    }
-
     dependencies {
         dependency(libs.okhttp.get().toString())
         dependency(libs.mockwebserver.get().toString())
     }
 }
-
-extra["tomcat.version"] = libs.versions.tomcat.version.get()
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
