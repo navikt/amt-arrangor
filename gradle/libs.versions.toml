@@ -17,7 +17,7 @@ logstash-encoder = "9.0"
 
 # NAV
 nav-common = "3.2026.04.08_08.37-229807cc181a"
-token-support = "6.0.5"
+token-support = "6.0.6"
 
 # Misc
 shedlock = "7.7.0"
