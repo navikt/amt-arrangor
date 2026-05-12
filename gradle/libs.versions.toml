@@ -16,7 +16,7 @@ okhttp = "5.3.2"
 logstash-encoder = "9.0"
 
 # NAV
-nav-common = "3.2026.04.08_08.37-229807cc181a"
+nav-common = "4.2026.05.05_06.25-f72fab488a93"
 token-support = "6.0.6"
 
 # Misc
