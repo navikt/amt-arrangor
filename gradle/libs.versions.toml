@@ -27,7 +27,7 @@ kotest = "6.1.11"
 mockk = "1.14.9"
 mock-oauth2-server = "3.0.3"
 
-kafka-clients = "4.2.0"
+kafka-clients = "4.2.1"
 springmockk = "5.0.1"
 
 [plugins]
