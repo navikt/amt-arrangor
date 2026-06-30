@@ -10,6 +10,11 @@ class OrgnummerTest {
     @Nested
     inner class ErGyldigTests {
         @Test
+        fun `9 siffer som starter med 1 (hack for utenlandske organisasjoner) - true`() {
+            Orgnummer.erGyldig("112345678") shouldBe true
+        }
+
+        @Test
         fun `9 siffer som starter med 8 - true`() {
             Orgnummer.erGyldig("812345678") shouldBe true
         }
@@ -21,7 +26,7 @@ class OrgnummerTest {
 
         @Test
         fun `9 siffer som starter med annet enn 8 eller 9 - false`() {
-            Orgnummer.erGyldig("123456789") shouldBe false
+            Orgnummer.erGyldig("223456789") shouldBe false
             Orgnummer.erGyldig("712345678") shouldBe false
         }
 
