@@ -9,7 +9,7 @@ spring-boot = "4.1.0"
 spring-dependency-management = "1.1.7"
 
 # Serialization / Avro
-jackson-module-kotlin = "3.2.0"
+jackson-module-kotlin = "3.2.1"
 
 # HTTP / logging
 okhttp = "5.4.0"
@@ -23,7 +23,7 @@ token-support = "6.0.11"
 shedlock = "7.7.0"
 
 # Testing
-kotest = "6.2.1"
+kotest = "6.2.2"
 mockk = "1.14.11"
 mock-oauth2-server = "5.0.2"
 
