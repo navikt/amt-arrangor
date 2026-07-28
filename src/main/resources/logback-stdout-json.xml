@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <included>
-    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
     <appender name="stdout_json_masked" class="no.nav.common.log.MaskingAppender">
         <filter class="no.nav.arrangor.utils.CxfMaskingFilter"/>
@@ -16,12 +16,11 @@
     </root>
 
     <!-- Logger cookies dersom den ikke parses riktig, noe vi ikke ønsker -->
-    <logger name="org.apache.tomcat.util.http.parser.Cookie" level="OFF" />
+    <logger name="org.apache.tomcat.util.http.parser.Cookie" level="OFF"/>
 
     <logger name="org.apache" level="INFO"/>
     <logger name="org.apache.cxf" level="ERROR"/>
     <logger name="no.nav.common.cxf" level="ERROR"/>
     <logger name="org.apache.http.client.protocol.ResponseProcessCookies" level="ERROR"/>
     <logger name="org.apache.wss4j.common.crypto.CryptoBase" level="ERROR"/>
-
 </included>
