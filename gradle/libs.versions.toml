@@ -9,10 +9,10 @@ spring-boot = "4.1.0"
 spring-dependency-management = "1.1.7"
 
 # Serialization / Avro
-jackson-module-kotlin = "3.2.1"
+jackson-module-kotlin = "3.2.2"
 
 # HTTP / logging
-okhttp = "5.4.0"
+okhttp = "5.5.0"
 logstash-encoder = "9.0"
 
 # NAV
@@ -20,10 +20,10 @@ nav-common = "4.2026.07.17_11.36-f5bba2c96561"
 token-support = "6.0.11"
 
 # Misc
-shedlock = "7.7.0"
+shedlock = "7.8.0"
 
 # Testing
-kotest = "6.2.3"
+kotest = "6.2.4"
 mockk = "1.14.11"
 mock-oauth2-server = "6.0.0"
 
