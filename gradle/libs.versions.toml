@@ -20,7 +20,7 @@ nav-common = "4.2026.09.14_05.43-2bd32bda23c4"
 token-support = "6.0.12"
 
 # Misc
-shedlock = "7.10.0"
+shedlock = "7.10.1"
 
 # Testing
 kotest = "6.2.4"
