@@ -20,47 +20,45 @@ dependencyManagement {
     }
 }
 
-// midlertidig fix for CVE-2026-65182
-extra["tomcat.version"] = "11.0.25"
-
 dependencies {
     constraints {
         implementation("at.yawk.lz4:lz4-java") {
-            version {
-                strictly("1.11.2")
-            }
+            version { strictly("1.11.2") }
             because("Fixes CVE-2026-59949")
         }
     }
 
+    runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-logging")
+    implementation("org.springframework.boot:spring-boot-starter-web") {
+        exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
+    }
+    implementation("org.springframework.boot:spring-boot-starter-jetty")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-flyway")
     implementation("org.springframework.boot:spring-boot-kafka")
 
     implementation(libs.token.validation.spring)
-    implementation(libs.shedlock.spring)
-
     implementation(libs.kafka.clients) {
         exclude("org.xerial.snappy", "snappy-java")
     }
 
     implementation(libs.tools.jackson.module.kotlin)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
-    implementation("org.flywaydb:flyway-database-postgresql")
-    implementation("io.micrometer:micrometer-registry-prometheus")
-    implementation(libs.logstash.encoder)
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
+    implementation("org.postgresql:postgresql")
+
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
+    runtimeOnly(libs.logstash.encoder)
 
     implementation(libs.nav.common.log)
     implementation(libs.nav.common.token.client)
     implementation(libs.nav.common.rest)
     implementation(libs.nav.common.job)
 
-    implementation("org.postgresql:postgresql")
+    implementation(libs.amt.lib.utils)
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-data-jdbc-test")
