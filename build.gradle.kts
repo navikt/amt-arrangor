@@ -48,7 +48,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
-    runtimeOnly("org.postgresql:postgresql")
+    implementation("org.postgresql:postgresql")
 
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     runtimeOnly(libs.logstash.encoder)
