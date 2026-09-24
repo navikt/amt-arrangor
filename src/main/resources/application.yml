@@ -1,0 +1,91 @@
+spring:
+  main:
+    banner-mode: "off"
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
+  datasource:
+    url: ${DB_JDBC_URL}
+    hikari:
+      maximum-pool-size: 3
+  flyway:
+    postgresql:
+      transactional-lock: false
+
+server:
+  shutdown: graceful
+
+management:
+  endpoint:
+    prometheus:
+      access: read_only
+    health:
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include:
+            - livenessState
+        readiness:
+          include:
+            - readinessState
+            - db
+
+  endpoints:
+    web:
+      base-path: /internal
+      exposure:
+        include: prometheus,health
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+amt-enhetsregister:
+  url: ${AMT_ENHETSREGISTER_URL}
+  scope: ${AMT_ENHETSREGISTER_SCOPE}
+  allowed-hosts: ${AMT_ENHETSREGISTER_ALLOWED_HOSTS}
+
+amt-altinn:
+  url: ${AMT_ALTINN_URL}
+  scope: ${AMT_ALTINN_SCOPE}
+
+amt-person:
+  url: ${AMT_PERSON_URL}
+  scope: ${AMT_PERSON_SCOPE}
+
+nais:
+  env:
+    azureAppClientId: ${AZURE_APP_CLIENT_ID}
+    azureAppJWK: ${AZURE_APP_JWK}
+    azureOpenIdConfigTokenEndpoint: ${AZURE_OPENID_CONFIG_TOKEN_ENDPOINT}
+
+"no":
+  nav:
+    security:
+      jwt:
+        issuer:
+          tokenx:
+            discovery-url: ${TOKEN_X_WELL_KNOWN_URL}
+            accepted-audience: ${TOKEN_X_CLIENT_ID}
+          azuread:
+            discovery-url: ${AZURE_APP_WELL_KNOWN_URL:#{null}}
+            accepted-audience: ${AZURE_APP_CLIENT_ID:#{null}}
+
+        client:
+          registration:
+            amt-enhetsregister-tokenx:
+              token-endpoint-url: ${TOKEN_X_TOKEN_ENDPOINT}
+              grant-type: urn:ietf:params:oauth:grant-type:token-exchange
+              authentication:
+                client-id: ${TOKEN_X_CLIENT_ID}
+                client-jwk: ${TOKEN_X_PRIVATE_JWK}
+                client-auth-method: private_key_jwt
+              token-exchange:
+                audience: ${AMT_ENHETSREGISTER_TOKENX_CLIENT_ID}
+
+kafka:
+  auto-offset-reset: earliest
