@@ -1,6 +1,7 @@
 package no.nav.arrangor.client.altinn
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import no.nav.arrangor.client.RestClientTestBase
 import no.nav.arrangor.domain.AnsattRolle
 import org.junit.jupiter.api.Test
@@ -55,5 +56,37 @@ class AltinnAclClientTest(
             .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
 
         sut.hentRoller("12345678910").isFailure shouldBe true
+    }
+
+    @Test
+    fun `hentRoller - 404 returnerer failure med NoSuchElementException`() {
+        server
+            .expect(requestTo("http://amt-altinn/api/v1/rolle/tiltaksarrangor"))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND))
+
+        sut.hentRoller("12345678910").exceptionOrNull().shouldBeInstanceOf<NoSuchElementException>()
+    }
+
+    @Test
+    fun `hentRoller - ukjent rolle returnerer failure med UkjentAltinnRolleException`() {
+        server
+            .expect(requestTo("http://amt-altinn/api/v1/rolle/tiltaksarrangor"))
+            .andRespond(
+                withSuccess(
+                    """
+                    {
+                      "roller": [
+                        {
+                          "organisasjonsnummer": "123456789",
+                          "roller": ["UKJENT_ROLLE"]
+                        }
+                      ]
+                    }
+                    """.trimIndent(),
+                    MediaType.APPLICATION_JSON,
+                ),
+            )
+
+        sut.hentRoller("12345678910").exceptionOrNull().shouldBeInstanceOf<UkjentAltinnRolleException>()
     }
 }

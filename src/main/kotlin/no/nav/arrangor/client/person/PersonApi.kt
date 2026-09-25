@@ -1,7 +1,6 @@
 package no.nav.arrangor.client.person
 
 import no.nav.arrangor.client.AMT_PERSON_CLIENT_ID
-import no.nav.arrangor.domain.Navn
 import org.springframework.security.oauth2.client.annotation.ClientRegistrationId
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.service.annotation.HttpExchange
@@ -26,7 +25,5 @@ interface PersonApi {
         val fornavn: String,
         val mellomnavn: String?,
         val etternavn: String,
-    ) {
-        fun navn() = Navn(fornavn, mellomnavn, etternavn)
-    }
+    )
 }

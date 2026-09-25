@@ -2,6 +2,7 @@ package no.nav.arrangor.configuration
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import jakarta.servlet.http.HttpServletRequest
+import no.nav.arrangor.client.altinn.UkjentAltinnRolleException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -18,22 +19,13 @@ class GlobalExceptionHandler {
         ex: Exception,
         request: HttpServletRequest,
     ): ResponseEntity<Response> = when (ex) {
-        is ResponseStatusException -> {
-            buildResponse(HttpStatus.valueOf(ex.statusCode.value()), ex)
-        }
-
-        is NoSuchElementException -> {
-            buildResponse(HttpStatus.NOT_FOUND, ex)
-        }
-
-        is IllegalArgumentException -> {
-            buildResponse(HttpStatus.BAD_REQUEST, ex)
-        }
-
-        is IllegalStateException -> {
-            buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex)
-        }
-
+        // Uventet/ugyldig data fra en nedstrøms tjeneste (Altinn), ikke ugyldig input fra
+        // kalleren - derfor 502 Bad Gateway og ikke 400 som IllegalArgumentException under.
+        is UkjentAltinnRolleException -> buildResponse(HttpStatus.BAD_GATEWAY, ex)
+        is ResponseStatusException -> buildResponse(HttpStatus.valueOf(ex.statusCode.value()), ex)
+        is NoSuchElementException -> buildResponse(HttpStatus.NOT_FOUND, ex)
+        is IllegalArgumentException -> buildResponse(HttpStatus.BAD_REQUEST, ex)
+        is IllegalStateException -> buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex)
         else -> {
             log.error("Internal server error - ${ex.message} - ${request.method}: ${request.requestURI}", ex)
             buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex)

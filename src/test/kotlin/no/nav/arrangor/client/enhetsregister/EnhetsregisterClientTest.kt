@@ -3,6 +3,7 @@ package no.nav.arrangor.client.enhetsregister
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import no.nav.arrangor.client.RestClientTestBase
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -59,6 +60,15 @@ class EnhetsregisterClientTest(
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
 
             sut.hentVirksomhet("123456789").isFailure shouldBe true
+        }
+
+        @Test
+        fun `404 returnerer failure med NoSuchElementException`() {
+            server
+                .expect(requestTo("http://amt-enhetsregister/api/enhet/123456789"))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND))
+
+            sut.hentVirksomhet("123456789").exceptionOrNull().shouldBeInstanceOf<NoSuchElementException>()
         }
     }
 

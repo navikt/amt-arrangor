@@ -25,6 +25,6 @@ class AltinnAclClient(
     private fun mapTiltaksarrangorRolle(rolle: String): AnsattRolle = when (rolle) {
         "KOORDINATOR" -> AnsattRolle.KOORDINATOR
         "VEILEDER" -> AnsattRolle.VEILEDER
-        else -> throw IllegalArgumentException("Ukjent tiltaksarrangør rolle $rolle")
+        else -> throw UkjentAltinnRolleException(rolle)
     }
 }
