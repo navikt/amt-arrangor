@@ -19,6 +19,7 @@
     <logger name="org.apache.tomcat.util.http.parser.Cookie" level="OFF"/>
 
     <logger name="org.apache" level="INFO"/>
+    <logger name="no.nav.common.rest.filter.LogRequestFilter" level="DEBUG"/>
     <logger name="org.apache.cxf" level="ERROR"/>
     <logger name="no.nav.common.cxf" level="ERROR"/>
     <logger name="org.apache.http.client.protocol.ResponseProcessCookies" level="ERROR"/>
