@@ -29,9 +29,9 @@ abstract class ControllerTestBase : IntegrationTest() {
             request.contentType(MediaType.APPLICATION_JSON)
         }
         headers.forEach { (name, value) -> request.header(name, value) }
-        return requireNotNull(mockMvc) {
-            "MockMvc is only available in controller tests annotated with @AutoConfigureMockMvc"
-        }.perform(request)
+
+        return mockMvc
+            .perform(request)
             .andReturn()
             .response
             .let(::TestResponse)
