@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.AuthenticationException
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint
 import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.stereotype.Component
@@ -23,6 +24,10 @@ class RestAuthenticationEntryPoint(
 ) : AuthenticationEntryPoint {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    // Delegerer til Spring sin egen entrypoint for å sette WWW-Authenticate-headeren og status
+    // per RFC 6750 (error/error_description/scope) - se kommentar i commence() under.
+    private val bearerTokenEntryPoint = BearerTokenAuthenticationEntryPoint()
+
     override fun commence(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -35,7 +40,10 @@ class RestAuthenticationEntryPoint(
         // (forventet issuer/audience, årsak til token-parsing-feil o.l.) som ikke skal ut i
         // responsen til en uautentisert kaller.
         log.warn("Uautentisert forespørsel: ${authException.message}, ${request.method} ${request.requestURI}")
-        response.writeErrorResponse(objectMapper, HttpStatus.UNAUTHORIZED, "Ikke autentisert")
+        // Setter WWW-Authenticate-header og status (vanligvis 401, men kan variere ved ugyldig
+        // scope) før vi overskriver body med vår egen JSON-kontrakt.
+        bearerTokenEntryPoint.commence(request, response, authException)
+        response.writeErrorResponse(objectMapper, HttpStatus.valueOf(response.status), "Ikke autentisert")
     }
 }
 

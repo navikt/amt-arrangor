@@ -14,8 +14,12 @@ class AltinnAclClient(
         altinnAclApi
             .hentRoller(AltinnAclApi.HentRollerRequest(personident))
             .roller
-            .map { roller -> AltinnRolle(roller.organisasjonsnummer, roller.roller.map(::mapTiltaksarrangorRolle)) }
-            .also { log.debug("Hentet roller for person") }
+            .map { roller ->
+                AltinnRolle(
+                    organisasjonsnummer = roller.organisasjonsnummer,
+                    roller = roller.roller.map(::mapTiltaksarrangorRolle),
+                )
+            }.also { log.debug("Hentet roller for person") }
     }
 
     private fun mapTiltaksarrangorRolle(rolle: String): AnsattRolle = when (rolle) {

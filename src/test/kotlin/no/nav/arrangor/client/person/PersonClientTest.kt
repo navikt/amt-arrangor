@@ -1,6 +1,7 @@
 package no.nav.arrangor.client.person
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import no.nav.arrangor.client.RestClientTestBase
 import org.junit.jupiter.api.Test
 import org.springframework.boot.restclient.test.autoconfigure.RestClientTest
@@ -55,5 +56,14 @@ class PersonClientTest(
             .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR))
 
         sut.hentPersonalia("12345678910").isFailure shouldBe true
+    }
+
+    @Test
+    fun `hentPersonalia - 404 returnerer failure med NoSuchElementException`() {
+        server
+            .expect(requestTo("http://amt-person/api/arrangor-ansatt"))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND))
+
+        sut.hentPersonalia("12345678910").exceptionOrNull().shouldBeInstanceOf<NoSuchElementException>()
     }
 }

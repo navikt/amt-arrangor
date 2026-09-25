@@ -12,14 +12,6 @@ class PersonClient(
     fun hentPersonalia(personident: String): Result<PersonApi.PersonResponse> = runCatching {
         personApi
             .hentPersonalia(PersonApi.PersonRequest(personident))
-            .let {
-                PersonApi.PersonResponse(
-                    id = it.id,
-                    personident = it.personident,
-                    fornavn = it.fornavn,
-                    mellomnavn = it.mellomnavn,
-                    etternavn = it.etternavn,
-                )
-            }.also { log.debug("Hentet personalia for person") }
+            .also { log.debug("Hentet personalia for person") }
     }
 }
