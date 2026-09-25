@@ -22,7 +22,6 @@ import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.security.oauth2.jwt.JwtDecoders
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
@@ -127,10 +126,11 @@ class SecurityConfig {
         audience: String,
         authenticationConverter: JwtAuthenticationConverter,
     ): AuthenticationManager {
-        // fromIssuerLocation henter alltid en NimbusJwtDecoder, men returtypen er det generelle
-        // JwtDecoder-interfacet. Vi caster for å få tilgang til setJwtValidator, som trengs for
-        // å legge på audience-sjekken (se under) i tillegg til standardvalideringen (issuer, utløp).
-        val decoder = JwtDecoders.fromIssuerLocation(issuer) as NimbusJwtDecoder
+        // withIssuerLocation gjør samme OIDC-discovery som JwtDecoders.fromIssuerLocation, men
+        // returnerer NimbusJwtDecoder direkte (ikke det generelle JwtDecoder-interfacet), så vi
+        // slipper unchecked cast for å nå setJwtValidator - som trengs for å legge på
+        // audience-sjekken (se under) i tillegg til standardvalideringen (issuer, utløp).
+        val decoder = NimbusJwtDecoder.withIssuerLocation(issuer).build()
         decoder.setJwtValidator(
             DelegatingOAuth2TokenValidator(
                 JwtValidators.createDefaultWithIssuer(issuer),
