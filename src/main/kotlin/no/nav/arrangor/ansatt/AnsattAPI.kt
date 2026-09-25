@@ -2,8 +2,8 @@ package no.nav.arrangor.ansatt
 
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.VeilederType
+import no.nav.arrangor.utils.personIdent
 import org.slf4j.MDC
-import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 import java.util.UUID
 
 @RestController
@@ -24,7 +23,7 @@ class AnsattAPI(
     @GetMapping
     fun getByPersonident(
         @AuthenticationPrincipal jwt: Jwt,
-    ): Ansatt = hentPersonligIdentTilInnloggetBruker(jwt).let { personident ->
+    ): Ansatt = hentPersonidentOgSettMdc(jwt).let { personident ->
         ansattService.get(personident)
             ?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
     }
@@ -34,7 +33,7 @@ class AnsattAPI(
         @PathVariable deltakerlisteId: UUID,
         @PathVariable arrangorId: UUID,
         @AuthenticationPrincipal jwt: Jwt,
-    ): Ansatt = hentPersonligIdentTilInnloggetBruker(jwt).let { personident ->
+    ): Ansatt = hentPersonidentOgSettMdc(jwt).let { personident ->
         ansattService.setKoordinatorForDeltakerliste(
             personident = personident,
             deltakerlisteId = deltakerlisteId,
@@ -47,7 +46,7 @@ class AnsattAPI(
         @PathVariable deltakerlisteId: UUID,
         @PathVariable arrangorId: UUID,
         @AuthenticationPrincipal jwt: Jwt,
-    ): Ansatt = hentPersonligIdentTilInnloggetBruker(jwt).let { personident ->
+    ): Ansatt = hentPersonidentOgSettMdc(jwt).let { personident ->
         ansattService.fjernKoordinatorForDeltakerliste(
             personident = personident,
             deltakerlisteId = deltakerlisteId,
@@ -61,7 +60,7 @@ class AnsattAPI(
         @RequestBody request: OppdaterVeiledereForDeltakerRequest,
         @AuthenticationPrincipal jwt: Jwt,
     ) {
-        hentPersonligIdentTilInnloggetBruker(jwt).let { personident ->
+        hentPersonidentOgSettMdc(jwt).let { personident ->
             ansattService.oppdaterVeiledereForDeltaker(
                 personident = personident,
                 deltakerId = deltakerId,
@@ -70,14 +69,13 @@ class AnsattAPI(
         }
     }
 
-    private fun hentPersonligIdentTilInnloggetBruker(jwt: Jwt): String = jwt
-        .getClaimAsString("pid")
-        ?.also {
+    private fun hentPersonidentOgSettMdc(jwt: Jwt): String = jwt
+        .personIdent()
+        .also {
             ansattService
                 .getAnsattIdForPersonident(it)
                 ?.let { id -> MDC.put("ansatt-id", id.toString()) }
         }
-        ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "PID is missing or is not a string")
 
     data class OppdaterVeiledereForDeltakerRequest(
         val arrangorId: UUID,
