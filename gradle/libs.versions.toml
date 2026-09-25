@@ -15,8 +15,8 @@ jackson-module-kotlin = "3.2.2"
 logstash-encoder = "9.0"
 
 # Nav
-nav-common = "4.2026.09.14_05.43-2bd32bda23c4"
-amt-lib = "1.2026.09.19_14.04-d95fadb1dbac"
+nav-common = "4.2026.09.24_06.17-80dfc0eacb29"
+amt-lib = "1.2026.09.25_06.39-d5698e1c7d87"
 
 # Testing
 kotest = "6.2.5"
