@@ -42,9 +42,7 @@ class ActuatorTest(
                 .buildAndExpand(managementPort)
                 .toUri()
 
-        val response = restTemplate.getForEntity<String>(uri)
-
-        response.statusCode shouldBe HttpStatus.OK
+        restTemplate.getForEntity<String>(uri).statusCode shouldBe HttpStatus.OK
     }
 
     @Test
@@ -55,9 +53,7 @@ class ActuatorTest(
                 .buildAndExpand(managementPort)
                 .toUri()
 
-        val response = restTemplate.getForEntity<String>(uri)
-
         // GlobalExceptionHandler er konfigurert til å returnere INTERNAL_SERVER_ERROR for NOT_FOUND
-        response.statusCode shouldBe HttpStatus.INTERNAL_SERVER_ERROR
+        restTemplate.getForEntity<String>(uri).statusCode shouldBe HttpStatus.INTERNAL_SERVER_ERROR
     }
 }

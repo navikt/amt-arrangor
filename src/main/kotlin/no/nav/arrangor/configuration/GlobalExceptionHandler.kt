@@ -2,12 +2,12 @@ package no.nav.arrangor.configuration
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import jakarta.servlet.http.HttpServletRequest
-import no.nav.security.token.support.spring.validation.interceptor.JwtTokenUnauthorizedException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.server.ResponseStatusException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -18,8 +18,8 @@ class GlobalExceptionHandler {
         ex: Exception,
         request: HttpServletRequest,
     ): ResponseEntity<Response> = when (ex) {
-        is JwtTokenUnauthorizedException -> {
-            buildResponse(HttpStatus.UNAUTHORIZED, ex)
+        is ResponseStatusException -> {
+            buildResponse(HttpStatus.valueOf(ex.statusCode.value()), ex)
         }
 
         is NoSuchElementException -> {

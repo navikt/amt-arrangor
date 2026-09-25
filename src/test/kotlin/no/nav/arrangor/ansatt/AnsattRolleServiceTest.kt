@@ -13,7 +13,6 @@ import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
 import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.ansatt.repository.VeilederDeltakerDbo
 import no.nav.arrangor.arrangor.ArrangorRepository
-import no.nav.arrangor.client.altinn.AltinnAclClient
 import no.nav.arrangor.client.altinn.AltinnRolle
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.domain.AnsattRolle
@@ -76,7 +75,7 @@ class AnsattRolleServiceTest(
     @Test
     fun `mapAltinnRollerTilArrangorListeForNyAnsatt - en arrangor mangler - lagrer arrangor som mangler`() {
         val nyttOrgnummer = "812233445"
-        mockAmtEnhetsregiserServer.addVirksomhet(
+        mockVirksomhet(
             Virksomhet(
                 organisasjonsnummer = nyttOrgnummer,
                 navn = "Ny Arrangør AS",
@@ -112,7 +111,7 @@ class AnsattRolleServiceTest(
                 lastSynchronized = LocalDateTime.now().minusMonths(1),
             )
 
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             ansatt.personident,
             mapOf(
                 arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR),
@@ -159,7 +158,7 @@ class AnsattRolleServiceTest(
                     ),
             )
 
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             ansatt.personident,
             mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)),
         )
@@ -207,12 +206,12 @@ class AnsattRolleServiceTest(
 
         val nyArrangorOrgnummer = "923456789"
 
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             ansatt.personident,
             mapOf(nyArrangorOrgnummer to listOf(AnsattRolle.KOORDINATOR)),
         )
 
-        mockAmtEnhetsregiserServer.addVirksomhet(
+        mockVirksomhet(
             Virksomhet(
                 organisasjonsnummer = nyArrangorOrgnummer,
                 navn = "Ny Arrangør AS",
@@ -254,7 +253,7 @@ class AnsattRolleServiceTest(
                     ),
             )
 
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             ansatt.personident,
             mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)),
         )
@@ -287,7 +286,7 @@ class AnsattRolleServiceTest(
                     ),
             )
 
-        mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
+        mockAltinnRoller(ansatt.personident, emptyList())
 
         val ansattDbo =
             rolleService
@@ -318,7 +317,7 @@ class AnsattRolleServiceTest(
                     ),
             )
 
-        mockAltinnServer.addRoller(ansatt.personident, AltinnAclClient.ResponseWrapper(listOf()))
+        mockAltinnRoller(ansatt.personident, emptyList())
 
         val ansattDbo =
             rolleService
@@ -354,7 +353,7 @@ class AnsattRolleServiceTest(
                     ),
             )
 
-        mockAltinnServer.addRoller(ansatt.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)))
+        mockAltinnRoller(ansatt.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)))
 
         val ansattDbo =
             rolleService
@@ -388,7 +387,7 @@ class AnsattRolleServiceTest(
                     ),
             )
 
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             ansatt.personident,
             mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR)),
         )

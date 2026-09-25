@@ -2,7 +2,7 @@ package no.nav.arrangor.ansatt
 
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.arrangor.IntegrationTest
+import no.nav.arrangor.ControllerTestBase
 import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
@@ -10,8 +10,6 @@ import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
 import no.nav.arrangor.ansatt.repository.RolleDbo
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.AnsattRolle
-import no.nav.arrangor.toJsonRequestBody
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import tools.jackson.module.kotlin.readValue
@@ -19,25 +17,89 @@ import java.util.UUID
 
 class AnsattServiceUserAPITest(
     private val ansattRepository: AnsattRepository,
-) : IntegrationTest() {
-    @AfterEach
-    fun tearDown() = resetMockServers()
-
+) : ControllerTestBase() {
     @Test
     fun `getAnsatt - ikke gyldig token - unauthorized`() {
-        val response =
-            sendRequest(
-                method = "POST",
-                path = "/api/service/ansatt",
-                body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody("12345678910")).toJsonRequestBody(),
-            )
+        val response = sendRequest(
+            method = "POST",
+            path = "/api/service/ansatt",
+            body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody("12345678910")),
+        )
+
+        response.code shouldBe 401
+        response.contentType shouldBe "application/json"
+        val error = objectMapper.readTree(response.body.string())
+        error["status"].asInt() shouldBe 401
+        error["title"].asString() shouldBe "401 UNAUTHORIZED"
+    }
+
+    @Test
+    fun `getAnsatt - Azure AD-token uten access_as_application-rolle - forbidden`() {
+        val response = sendRequest(
+            method = "POST",
+            path = "/api/service/ansatt",
+            body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody("12345678910")),
+            headers = mapOf(
+                HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken(claims = emptyMap())}",
+            ),
+        )
+
+        response.code shouldBe 403
+        response.contentType shouldBe "application/json"
+        val error = objectMapper.readTree(response.body.string())
+        error["status"].asInt() shouldBe 403
+        error["title"].asString() shouldBe "403 FORBIDDEN"
+    }
+
+    @Test
+    fun `getAnsatt - TokenX-token - unauthorized`() {
+        val response = sendRequest(
+            method = "POST",
+            path = "/api/service/ansatt",
+            body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody("12345678910")),
+            headers = mapOf(
+                HttpHeaders.AUTHORIZATION to "Bearer ${getTokenxToken("12345678910")}",
+            ),
+        )
+
+        response.code shouldBe 401
+    }
+
+    @Test
+    fun `getAnsatt - Azure AD-token med feil audience - unauthorized`() {
+        val response = sendRequest(
+            method = "POST",
+            path = "/api/service/ansatt",
+            body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody("12345678910")),
+            headers = mapOf(
+                HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken(audience = "wrong-audience")}",
+            ),
+        )
+
+        response.code shouldBe 401
+        response.contentType shouldBe "application/json"
+        val error = objectMapper.readTree(response.body.string())
+        error["status"].asInt() shouldBe 401
+        error["title"].asString() shouldBe "401 UNAUTHORIZED"
+    }
+
+    @Test
+    fun `getAnsatt - utløpt Azure AD-token - unauthorized`() {
+        val response = sendRequest(
+            method = "POST",
+            path = "/api/service/ansatt",
+            body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody("12345678910")),
+            headers = mapOf(
+                HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken(expiry = -1)}",
+            ),
+        )
 
         response.code shouldBe 401
     }
 
     @Test
     fun `fjernTilgangerHosArrangor - no token - unauthorized`() {
-        sendRequest("DELETE", "/api/service/ansatt/tilganger", "".toJsonRequestBody())
+        sendRequest("DELETE", "/api/service/ansatt/tilganger", "")
             .also { it.code shouldBe 401 }
     }
 
@@ -46,7 +108,7 @@ class AnsattServiceUserAPITest(
         sendRequest(
             method = "DELETE",
             path = "/api/service/ansatt/tilganger",
-            body = "".toJsonRequestBody(),
+            body = "",
             headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getTokenxToken(fnr = "foobar")}"),
         ).also { it.code shouldBe 401 }
     }
@@ -57,22 +119,21 @@ class AnsattServiceUserAPITest(
         val arrangorTwo = testDatabase.insertArrangor()
         val personident = "12345678910"
         val personId = UUID.randomUUID()
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             personident,
             mapOf(
                 arrangorOne.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR),
                 arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.KOORDINATOR, AnsattRolle.VEILEDER),
             ),
         )
-        mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+        mockPerson(personident, personId, "Test", null, "Testersen")
 
-        val response =
-            sendRequest(
-                method = "POST",
-                path = "/api/service/ansatt",
-                body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
-                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
-            )
+        val response = sendRequest(
+            method = "POST",
+            path = "/api/service/ansatt",
+            body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)),
+            headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+        )
 
         response.code shouldBe 200
         val ansatt = objectMapper.readValue<Ansatt>(response.body.string())
@@ -85,19 +146,18 @@ class AnsattServiceUserAPITest(
     fun `getAnsatt - autentisert, ansatt finnes ikke og har ingen roller - returnerer 404 og oppretter ikke ansatt`() {
         val personident = "12345678910"
         val personId = UUID.randomUUID()
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             personident,
             emptyMap(),
         )
-        mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+        mockPerson(personident, personId, "Test", null, "Testersen")
 
-        val response =
-            sendRequest(
-                method = "POST",
-                path = "/api/service/ansatt",
-                body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
-                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
-            )
+        val response = sendRequest(
+            method = "POST",
+            path = "/api/service/ansatt",
+            body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)),
+            headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+        )
 
         response.code shouldBe 404
         ansattRepository.get(personident) shouldBe null
@@ -107,17 +167,17 @@ class AnsattServiceUserAPITest(
     fun `getAnsatt - autentisert, personident har feil format - returnerer 400 og oppretter ikke ansatt`() {
         val personident = "123456789101"
         val personId = UUID.randomUUID()
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             personident,
             emptyMap(),
         )
-        mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+        mockPerson(personident, personId, "Test", null, "Testersen")
 
         val response =
             sendRequest(
                 method = "POST",
                 path = "/api/service/ansatt",
-                body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)).toJsonRequestBody(),
+                body = objectMapper.writeValueAsString(AnsattServiceUserAPI.AnsattRequestBody(personident)),
                 headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
             )
 
@@ -161,7 +221,7 @@ class AnsattServiceUserAPITest(
                     ),
             ),
         )
-        mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+        mockPerson(personident, personId, "Test", null, "Testersen")
 
         val response =
             sendRequest(

@@ -1,25 +1,20 @@
 package no.nav.arrangor.arrangor
 
 import io.kotest.matchers.shouldBe
-import no.nav.arrangor.IntegrationTest
+import no.nav.arrangor.ControllerTestBase
 import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import tools.jackson.module.kotlin.readValue
 import java.util.UUID
 
-class ArrangorServiceUserAPITest : IntegrationTest() {
-    @AfterEach
-    fun tearDown() = resetMockServers()
-
+class ArrangorServiceUserAPITest : ControllerTestBase() {
     @Test
     fun `getArrangor - ikke gyldig token - unauthorized`() {
-        val response =
-            sendRequest(
-                method = "GET",
-                path = "/api/service/arrangor/organisasjonsnummer/123456789",
-            )
+        val response = sendRequest(
+            method = "GET",
+            path = "/api/service/arrangor/organisasjonsnummer/123456789",
+        )
 
         response.code shouldBe 401
     }
@@ -28,12 +23,11 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
     fun `getArrangor - autentisert, orgnummer har feil format - returnerer 400`() {
         val orgnummer = "12345678910"
 
-        val response =
-            sendRequest(
-                method = "GET",
-                path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
-            )
+        val response = sendRequest(
+            method = "GET",
+            path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
+            headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+        )
 
         response.code shouldBe 400
     }
@@ -43,12 +37,11 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
         val orgnummer = "923456789"
         testDatabase.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = null)
 
-        val response =
-            sendRequest(
-                method = "GET",
-                path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
-            )
+        val response = sendRequest(
+            method = "GET",
+            path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
+            headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+        )
 
         response.code shouldBe 200
         val arrangor = objectMapper.readValue<ArrangorMedOverordnetArrangor>(response.body.string())
@@ -62,12 +55,11 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
         val orgnummer = "923456789"
         testDatabase.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = null)
 
-        val response =
-            sendRequest(
-                method = "GET",
-                path = "/api/service/arrangor/organisasjonsnummer/%20$orgnummer%20",
-                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
-            )
+        val response = sendRequest(
+            method = "GET",
+            path = "/api/service/arrangor/organisasjonsnummer/%20$orgnummer%20",
+            headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+        )
 
         response.code shouldBe 200
         val arrangor = objectMapper.readValue<ArrangorMedOverordnetArrangor>(response.body.string())
@@ -79,21 +71,19 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
     @Test
     fun `getArrangor - autentisert, arrangor har overordnet arrangor - returnerer arrangor`() {
         val orgnummerOverordnetArrangor = "987654321"
-        val overordnetArrangor =
-            testDatabase.insertArrangor(
-                navn = "Overordnet",
-                organisasjonsnummer = orgnummerOverordnetArrangor,
-                overordnetArrangorId = null,
-            )
+        val overordnetArrangor = testDatabase.insertArrangor(
+            navn = "Overordnet",
+            organisasjonsnummer = orgnummerOverordnetArrangor,
+            overordnetArrangorId = null,
+        )
         val orgnummer = "923456789"
         testDatabase.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
 
-        val response =
-            sendRequest(
-                method = "GET",
-                path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
-                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
-            )
+        val response = sendRequest(
+            method = "GET",
+            path = "/api/service/arrangor/organisasjonsnummer/$orgnummer",
+            headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+        )
 
         response.code shouldBe 200
         val arrangor = objectMapper.readValue<ArrangorMedOverordnetArrangor>(response.body.string())
@@ -106,23 +96,21 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
 
     @Test
     fun `getArrangor (id) - ikke gyldig token - unauthorized`() {
-        val response =
-            sendRequest(
-                method = "GET",
-                path = "/api/service/arrangor/${UUID.randomUUID()}",
-            )
+        val response = sendRequest(
+            method = "GET",
+            path = "/api/service/arrangor/${UUID.randomUUID()}",
+        )
 
         response.code shouldBe 401
     }
 
     @Test
     fun `getArrangor (id) - autentisert, arrangor finnes ikke - returnerer 404`() {
-        val response =
-            sendRequest(
-                method = "GET",
-                path = "/api/service/arrangor/${UUID.randomUUID()}",
-                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
-            )
+        val response = sendRequest(
+            method = "GET",
+            path = "/api/service/arrangor/${UUID.randomUUID()}",
+            headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+        )
 
         response.code shouldBe 404
     }
@@ -130,22 +118,20 @@ class ArrangorServiceUserAPITest : IntegrationTest() {
     @Test
     fun `getArrangor (id) - autentisert, arrangor har overordnet arrangor - returnerer arrangor`() {
         val orgnummerOverordnetArrangor = "987654321"
-        val overordnetArrangor =
-            testDatabase.insertArrangor(
-                navn = "Overordnet",
-                organisasjonsnummer = orgnummerOverordnetArrangor,
-                overordnetArrangorId = null,
-            )
+        val overordnetArrangor = testDatabase.insertArrangor(
+            navn = "Overordnet",
+            organisasjonsnummer = orgnummerOverordnetArrangor,
+            overordnetArrangorId = null,
+        )
         val orgnummer = "923456789"
         val arrangor =
             testDatabase.insertArrangor(navn = "Navn", organisasjonsnummer = orgnummer, overordnetArrangorId = overordnetArrangor.id)
 
-        val response =
-            sendRequest(
-                method = "GET",
-                path = "/api/service/arrangor/${arrangor.id}",
-                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
-            )
+        val response = sendRequest(
+            method = "GET",
+            path = "/api/service/arrangor/${arrangor.id}",
+            headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+        )
 
         response.code shouldBe 200
         val arrangorResponse = objectMapper.readValue<ArrangorMedOverordnetArrangor>(response.body.string())

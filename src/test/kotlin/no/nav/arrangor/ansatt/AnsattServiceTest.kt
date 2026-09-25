@@ -35,7 +35,7 @@ class AnsattServiceTest(
 
     @BeforeEach
     fun setUp() {
-        resetMockServers()
+        resetClientMocks()
         clearMocks(producerService)
         arrangorOne = testDatabase.insertArrangor()
         arrangorTwo = testDatabase.insertArrangor()
@@ -51,7 +51,7 @@ class AnsattServiceTest(
                         ArrangorDbo(arrangorTwo.id, listOf(RolleDbo(AnsattRolle.VEILEDER)), emptyList(), emptyList()),
                     ),
             )
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             ansattDbo.personident,
             mapOf(arrangorTwo.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)),
         )
@@ -92,7 +92,7 @@ class AnsattServiceTest(
                         ),
                     ),
             )
-        mockAltinnServer.addRoller(
+        mockAltinnRoller(
             ansattDbo.personident,
             mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)),
         )
@@ -151,7 +151,7 @@ class AnsattServiceTest(
                         ),
                     ),
             )
-        mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+        mockAltinnRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
 
         ansattService.oppdaterRoller(ansattDbo)
 
@@ -214,7 +214,7 @@ class AnsattServiceTest(
                         ),
                     ),
             )
-        mockAltinnServer.addRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
+        mockAltinnRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
 
         ansattService.oppdaterRoller(ansattDbo)
 
