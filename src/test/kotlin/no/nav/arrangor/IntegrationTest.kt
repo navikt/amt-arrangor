@@ -10,7 +10,6 @@ import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.client.person.PersonApi
 import no.nav.arrangor.client.person.PersonClient
 import no.nav.arrangor.kafka.TestKafkaConfig
-import no.nav.arrangor.utils.Issuer
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
 import org.junit.jupiter.api.AfterEach
@@ -45,9 +44,12 @@ abstract class IntegrationTest : RepositoryTestBase() {
     }
 
     companion object {
+        const val TOKEN_X = "tokenx"
+        const val AZURE_AD = "azuread"
+
         private val mockOAuth2Server = MockOAuth2Server()
 
-        private fun getDiscoveryUrl(issuer: String = Issuer.TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
+        private fun getDiscoveryUrl(issuer: String = TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
 
         @Suppress("unused")
         private val kafkaContainer = KafkaContainer(DockerImageName.parse("apache/kafka"))
@@ -65,12 +67,12 @@ abstract class IntegrationTest : RepositoryTestBase() {
             mockOAuth2Server.start()
             registry.add(
                 "AZURE_OPENID_CONFIG_ISSUER",
-            ) { getDiscoveryUrl(Issuer.AZURE_AD).removeSuffix("/.well-known/openid-configuration") }
+            ) { getDiscoveryUrl(AZURE_AD).removeSuffix("/.well-known/openid-configuration") }
             registry.add("AZURE_APP_CLIENT_ID") { "test-aud" }
             registry.add("AZURE_APP_CLIENT_SECRET") { "test-client-secret" }
             registry.add("AZURE_APP_JWK") { "test-jwk" }
             registry.add("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") { "http://azuread/token" }
-            registry.add("TOKEN_X_ISSUER") { getDiscoveryUrl(Issuer.TOKEN_X).removeSuffix("/.well-known/openid-configuration") }
+            registry.add("TOKEN_X_ISSUER") { getDiscoveryUrl(TOKEN_X).removeSuffix("/.well-known/openid-configuration") }
             registry.add("TOKEN_X_CLIENT_ID") { "amt-arrangor-client-id" }
 
             registry.add("AMT_ENHETSREGISTER_URL") { "http://amt-enhetsregister" }
@@ -120,7 +122,7 @@ abstract class IntegrationTest : RepositoryTestBase() {
     protected fun getTokenxToken(
         fnr: String,
         audience: String = "amt-arrangor-client-id",
-        issuerId: String = Issuer.TOKEN_X,
+        issuerId: String = TOKEN_X,
         clientId: String = "amt-tiltaksarrangor-bff",
         expiry: Long = 3600,
         claims: Map<String, Any> =
@@ -146,7 +148,7 @@ abstract class IntegrationTest : RepositoryTestBase() {
     protected fun getAzureAdToken(
         subject: String = "test",
         audience: String = "test-aud",
-        issuerId: String = Issuer.AZURE_AD,
+        issuerId: String = AZURE_AD,
         expiry: Long = 3600,
         claims: Map<String, Any> = mapOf("roles" to listOf("access_as_application")),
     ): String = mockOAuth2Server
