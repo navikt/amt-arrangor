@@ -18,10 +18,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
-import org.springframework.security.oauth2.core.OAuth2Error
-import org.springframework.security.oauth2.core.OAuth2TokenValidator
-import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
-import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtAudienceValidator
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
@@ -129,12 +126,14 @@ class SecurityConfig {
         // withIssuerLocation gjør samme OIDC-discovery som JwtDecoders.fromIssuerLocation, men
         // returnerer NimbusJwtDecoder direkte (ikke det generelle JwtDecoder-interfacet), så vi
         // slipper unchecked cast for å nå setJwtValidator - som trengs for å legge på
-        // audience-sjekken (se under) i tillegg til standardvalideringen (issuer, utløp).
+        // audience-sjekken i tillegg til standardvalideringen (issuer, utløp). Spring validerer
+        // kun issuer og utløp som standard - audience må legges til eksplisitt for å hindre at et
+        // token utstedt til en annen klient (men med samme issuer) godtas her.
         val decoder = NimbusJwtDecoder.withIssuerLocation(issuer).build()
         decoder.setJwtValidator(
             DelegatingOAuth2TokenValidator(
                 JwtValidators.createDefaultWithIssuer(issuer),
-                audienceValidator(audience),
+                JwtAudienceValidator(audience),
             ),
         )
 
@@ -153,17 +152,5 @@ class SecurityConfig {
                 setAuthorityPrefix("ROLE_")
             },
         )
-    }
-
-    // Spring validerer kun issuer og utløp som standard - audience må sjekkes eksplisitt for å hindre
-    // at et token utstedt til en annen klient (men med samme issuer) godtas her.
-    private fun audienceValidator(audience: String) = OAuth2TokenValidator<Jwt> { token ->
-        if (token.audience?.contains(audience) == true) {
-            OAuth2TokenValidatorResult.success()
-        } else {
-            OAuth2TokenValidatorResult.failure(
-                OAuth2Error("invalid_token", "Token has invalid audience", null),
-            )
-        }
     }
 }
