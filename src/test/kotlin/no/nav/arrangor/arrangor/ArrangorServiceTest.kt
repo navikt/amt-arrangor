@@ -20,7 +20,7 @@ class ArrangorServiceTest(
                 overordnetEnhetOrganisasjonsnummer = randomOrgnr(),
                 overordnetEnhetNavn = null,
             )
-        mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
+        mockVirksomhet(virksomhet)
 
         val arrangor = arrangorService.getOrCreate(virksomhet.organisasjonsnummer)
         arrangor.navn shouldBe virksomhet.navn
@@ -37,7 +37,7 @@ class ArrangorServiceTest(
                 overordnetEnhetOrganisasjonsnummer = null,
                 overordnetEnhetNavn = null,
             )
-        mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
+        mockVirksomhet(virksomhet)
 
         val arrangor = arrangorService.getOrCreate(virksomhet.organisasjonsnummer)
         arrangor.navn shouldBe virksomhet.navn
@@ -54,7 +54,7 @@ class ArrangorServiceTest(
                 overordnetEnhetOrganisasjonsnummer = randomOrgnr(),
                 overordnetEnhetNavn = "Bar",
             )
-        mockAmtEnhetsregiserServer.addVirksomhet(virksomhet)
+        mockVirksomhet(virksomhet)
 
         val arrangor = arrangorService.getOrCreate(virksomhet.organisasjonsnummer)
         arrangor.navn shouldBe virksomhet.navn
@@ -85,7 +85,7 @@ class ArrangorServiceTest(
                 overordnetArrangorId = null,
             )
         arrangorRepository.insertOrUpdate(eksisterendeArrangor)
-        mockAmtEnhetsregiserServer.addVirksomhet(manglendeArrangor)
+        mockVirksomhet(manglendeArrangor)
 
         val arrangorer =
             arrangorService.getOrCreate(listOf(manglendeArrangor.organisasjonsnummer, eksisterendeArrangor.organisasjonsnummer))

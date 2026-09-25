@@ -2,14 +2,13 @@ package no.nav.arrangor.ansatt
 
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
-import no.nav.arrangor.IntegrationTest
+import no.nav.arrangor.ControllerTestBase
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.AnsattRolle.KOORDINATOR
 import no.nav.arrangor.domain.AnsattRolle.VEILEDER
 import no.nav.arrangor.domain.VeilederType
-import no.nav.arrangor.toJsonRequestBody
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -20,7 +19,7 @@ import java.util.UUID
 
 class AnsattAPITest(
     private val ansattRepository: AnsattRepository,
-) : IntegrationTest() {
+) : ControllerTestBase() {
     @Nested
     @DisplayName("Tester at alle endepunkt er sikret")
     inner class EndpointsSecuredTests {
@@ -32,7 +31,7 @@ class AnsattAPITest(
 
         @Test
         fun `setKoordinatorForDeltakerliste - no token - unauthorized`() {
-            sendRequest("POST", "/api/ansatt/koordinator/${UUID.randomUUID()}/${UUID.randomUUID()}", "".toJsonRequestBody())
+            sendRequest("POST", "/api/ansatt/koordinator/${UUID.randomUUID()}/${UUID.randomUUID()}", "")
                 .also { it.code shouldBe 401 }
         }
 
@@ -54,7 +53,58 @@ class AnsattAPITest(
                             veilederSomLeggesTil = listOf(AnsattAPI.VeilederAnsatt(UUID.randomUUID(), VeilederType.VEILEDER)),
                             veilederSomFjernes = emptyList(),
                         ),
-                    ).toJsonRequestBody(),
+                    ),
+            ).also { it.code shouldBe 401 }
+        }
+
+        @Test
+        fun `getByPersonident - token uten pid-claim - unauthorized`() {
+            val token = getTokenxToken(
+                fnr = UUID.randomUUID().toString(),
+                claims = mapOf(
+                    "acr" to "Level4",
+                    "idp" to "idporten",
+                    "client_id" to "amt-tiltaksarrangor-bff",
+                ),
+            )
+
+            sendRequest(
+                method = "GET",
+                path = "/api/ansatt",
+                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer $token"),
+            ).also { it.code shouldBe 401 }
+        }
+
+        @Test
+        fun `getByPersonident - Azure AD-token - unauthorized`() {
+            sendRequest(
+                method = "GET",
+                path = "/api/ansatt",
+                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
+            ).also { it.code shouldBe 401 }
+        }
+
+        @Test
+        fun `getByPersonident - TokenX-token med feil audience - unauthorized`() {
+            sendRequest(
+                method = "GET",
+                path = "/api/ansatt",
+                headers = mapOf(
+                    HttpHeaders.AUTHORIZATION to
+                        "Bearer ${getTokenxToken(UUID.randomUUID().toString(), audience = "wrong-audience")}",
+                ),
+            ).also { it.code shouldBe 401 }
+        }
+
+        @Test
+        fun `getByPersonident - utløpt TokenX-token - unauthorized`() {
+            sendRequest(
+                method = "GET",
+                path = "/api/ansatt",
+                headers = mapOf(
+                    HttpHeaders.AUTHORIZATION to
+                        "Bearer ${getTokenxToken(UUID.randomUUID().toString(), expiry = -1)}",
+                ),
             ).also { it.code shouldBe 401 }
         }
     }
@@ -69,7 +119,7 @@ class AnsattAPITest(
             val personident = UUID.randomUUID().toString()
             val personId = UUID.randomUUID()
 
-            mockAltinnServer.addRoller(
+            mockAltinnRoller(
                 personident,
                 mapOf(
                     arrangorOne.organisasjonsnummer to listOf(KOORDINATOR),
@@ -77,7 +127,7 @@ class AnsattAPITest(
                 ),
             )
 
-            mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+            mockPerson(personident, personId, "Test", null, "Testersen")
 
             val ansatt = getAnsatt(personident)
 
@@ -96,7 +146,7 @@ class AnsattAPITest(
             val personident = UUID.randomUUID().toString()
             val personId = UUID.randomUUID()
 
-            mockAltinnServer.addRoller(
+            mockAltinnRoller(
                 personident,
                 mapOf(
                     arrangorOne.organisasjonsnummer to listOf(KOORDINATOR),
@@ -104,13 +154,13 @@ class AnsattAPITest(
                 ),
             )
 
-            mockPersonServer.setPerson(personident, personId, "Test", null, "Testersen")
+            mockPerson(personident, personId, "Test", null, "Testersen")
             val oldAnsatt = getAnsatt(personident)
 
             ansattRepository.setSynchronized(oldAnsatt.id, LocalDateTime.now().minusMinutes(61))
 
-            resetMockServers()
-            mockAltinnServer.addRoller(
+            resetClientMocks()
+            mockAltinnRoller(
                 personident,
                 mapOf(
                     arrangorTwo.organisasjonsnummer to listOf(KOORDINATOR),

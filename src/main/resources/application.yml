@@ -13,6 +13,46 @@ spring:
   flyway:
     postgresql:
       transactional-lock: false
+  http:
+    clients:
+      connect-timeout: 5s
+      read-timeout: 20s
+    serviceclient:
+      amt-enhetsregister:
+        base-url: ${AMT_ENHETSREGISTER_URL}
+      amt-altinn:
+        base-url: ${AMT_ALTINN_URL}
+      amt-person:
+        base-url: ${AMT_PERSON_URL}
+
+  security:
+    oauth2:
+      client:
+        provider:
+          azuread:
+            token-uri: ${AZURE_OPENID_CONFIG_TOKEN_ENDPOINT}
+        registration:
+          amt-enhetsregister:
+            provider: azuread
+            client-id: ${AZURE_APP_CLIENT_ID}
+            client-secret: ${AZURE_APP_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope:
+              - ${AMT_ENHETSREGISTER_SCOPE}
+          amt-altinn:
+            provider: azuread
+            client-id: ${AZURE_APP_CLIENT_ID}
+            client-secret: ${AZURE_APP_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope:
+              - ${AMT_ALTINN_SCOPE}
+          amt-person:
+            provider: azuread
+            client-id: ${AZURE_APP_CLIENT_ID}
+            client-secret: ${AZURE_APP_CLIENT_SECRET}
+            authorization-grant-type: client_credentials
+            scope:
+              - ${AMT_PERSON_SCOPE}
 
 server:
   shutdown: graceful
@@ -56,36 +96,6 @@ amt-altinn:
 amt-person:
   url: ${AMT_PERSON_URL}
   scope: ${AMT_PERSON_SCOPE}
-
-nais:
-  env:
-    azureAppClientId: ${AZURE_APP_CLIENT_ID}
-    azureAppJWK: ${AZURE_APP_JWK}
-    azureOpenIdConfigTokenEndpoint: ${AZURE_OPENID_CONFIG_TOKEN_ENDPOINT}
-
-"no":
-  nav:
-    security:
-      jwt:
-        issuer:
-          tokenx:
-            discovery-url: ${TOKEN_X_WELL_KNOWN_URL}
-            accepted-audience: ${TOKEN_X_CLIENT_ID}
-          azuread:
-            discovery-url: ${AZURE_APP_WELL_KNOWN_URL:#{null}}
-            accepted-audience: ${AZURE_APP_CLIENT_ID:#{null}}
-
-        client:
-          registration:
-            amt-enhetsregister-tokenx:
-              token-endpoint-url: ${TOKEN_X_TOKEN_ENDPOINT}
-              grant-type: urn:ietf:params:oauth:grant-type:token-exchange
-              authentication:
-                client-id: ${TOKEN_X_CLIENT_ID}
-                client-jwk: ${TOKEN_X_PRIVATE_JWK}
-                client-auth-method: private_key_jwt
-              token-exchange:
-                audience: ${AMT_ENHETSREGISTER_TOKENX_CLIENT_ID}
 
 kafka:
   auto-offset-reset: earliest

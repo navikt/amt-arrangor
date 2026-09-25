@@ -13,13 +13,6 @@ repositories {
     maven { setUrl("https://github-package-registry-mirror.gc.nav.no/cached/maven-release") }
 }
 
-dependencyManagement {
-    dependencies {
-        dependency(libs.okhttp.get().toString())
-        dependency(libs.mockwebserver.get().toString())
-    }
-}
-
 dependencies {
     constraints {
         implementation("at.yawk.lz4:lz4-java") {
@@ -28,6 +21,7 @@ dependencies {
         }
     }
 
+    // Spring Boot – kjerne og webserver (Jetty i stedet for medfølgende Tomcat)
     runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -35,42 +29,54 @@ dependencies {
         exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
     }
     implementation("org.springframework.boot:spring-boot-starter-jetty")
+
+    // Database – JDBC, Flyway-migrering og PostgreSQL-driver
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("org.springframework.boot:spring-boot-flyway")
-    implementation("org.springframework.boot:spring-boot-kafka")
+    runtimeOnly("org.flywaydb:flyway-database-postgresql")
+    implementation("org.postgresql:postgresql")
 
-    implementation(libs.token.validation.spring)
+    // Kafka
+    implementation("org.springframework.boot:spring-boot-kafka")
     implementation(libs.kafka.clients) {
         exclude("org.xerial.snappy", "snappy-java")
     }
 
+    // Utgående HTTP-kall og OAuth2 (TokenX/Azure AD client credentials)
+    implementation("org.springframework.boot:spring-boot-restclient")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+
+    // Serialisering og Kotlin-coroutines
     implementation(libs.tools.jackson.module.kotlin)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
-    runtimeOnly("org.flywaydb:flyway-database-postgresql")
-    implementation("org.postgresql:postgresql")
-
+    // Observability – metrikker og strukturert logging
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     runtimeOnly(libs.logstash.encoder)
 
+    // Nav-interne biblioteker
     implementation(libs.nav.common.log)
-    implementation(libs.nav.common.token.client)
     implementation(libs.nav.common.rest)
     implementation(libs.nav.common.job)
-
     implementation(libs.amt.lib.utils)
+    implementation(libs.amt.lib.spring.boot)
 
+    // Test – Spring Boot testoppsett (JDBC, RestClient, MVC)
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-data-jdbc-test")
     testImplementation("org.springframework.boot:spring-boot-resttestclient")
-    testImplementation(libs.kotest.assertions.core)
+    testImplementation("org.springframework.boot:spring-boot-restclient-test")
+    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
 
-    testImplementation(libs.mock.oauth2.server)
-
+    // Test – Testcontainers (Postgres og Kafka)
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-kafka")
 
+    // Test – autentisering, assertions og mocking
+    testImplementation(libs.mock.oauth2.server)
+    testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.mockk)
     testImplementation(libs.springmockk)
 }

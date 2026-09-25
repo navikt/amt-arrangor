@@ -1,64 +1,55 @@
 package no.nav.arrangor
 
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.clearMocks
+import io.mockk.every
+import no.nav.arrangor.client.altinn.AltinnAclClient
+import no.nav.arrangor.client.altinn.AltinnRolle
+import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
+import no.nav.arrangor.client.enhetsregister.Virksomhet
+import no.nav.arrangor.client.person.PersonApi
+import no.nav.arrangor.client.person.PersonClient
 import no.nav.arrangor.kafka.TestKafkaConfig
-import no.nav.arrangor.mock.MockAltinnServer
-import no.nav.arrangor.mock.MockAmtEnhetsregiserServer
-import no.nav.arrangor.mock.MockMachineToMachineHttpServer
-import no.nav.arrangor.mock.MockPersonServer
-import no.nav.arrangor.utils.Issuer
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import org.junit.jupiter.api.AfterEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Import
-import org.springframework.http.MediaType
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 import tools.jackson.databind.ObjectMapper
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import java.time.Duration
 import java.util.UUID
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestKafkaConfig::class)
 abstract class IntegrationTest : RepositoryTestBase() {
-    @LocalServerPort
-    private var port: Int = 0
-
     @Autowired
     protected lateinit var objectMapper: ObjectMapper
 
-    fun serverUrl() = "http://localhost:$port"
+    @MockkBean
+    protected lateinit var altinnAclClient: AltinnAclClient
 
-    private val client =
-        OkHttpClient
-            .Builder()
-            .callTimeout(Duration.ofMinutes(5))
-            .build()
+    @MockkBean
+    protected lateinit var enhetsregisterClient: EnhetsregisterClient
+
+    @MockkBean
+    protected lateinit var personClient: PersonClient
 
     @AfterEach
-    fun resetMockHttpServer() = mockAmtEnhetsregiserServer.resetHttpServer()
+    fun resetClientMocksAfterTest() {
+        resetClientMocks()
+    }
 
     companion object {
-        val staticObjectMapper: ObjectMapper = jacksonObjectMapper()
+        const val TOKEN_X = "tokenx"
+        const val AZURE_AD = "azuread"
 
         private val mockOAuth2Server = MockOAuth2Server()
-        val mockAmtEnhetsregiserServer = MockAmtEnhetsregiserServer(staticObjectMapper)
-        private val mockMachineToMachineHttpServer = MockMachineToMachineHttpServer()
-        val mockAltinnServer = MockAltinnServer(staticObjectMapper)
-        val mockPersonServer = MockPersonServer(staticObjectMapper)
 
-        private fun getDiscoveryUrl(issuer: String = Issuer.TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
+        private fun getDiscoveryUrl(issuer: String = TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
 
         @Suppress("unused")
         private val kafkaContainer = KafkaContainer(DockerImageName.parse("apache/kafka"))
@@ -74,60 +65,66 @@ abstract class IntegrationTest : RepositoryTestBase() {
         @Suppress("unused")
         fun registerProperties(registry: DynamicPropertyRegistry) {
             mockOAuth2Server.start()
-            registry.add("no.nav.security.jwt.issuer.azuread.discovery-url") { getDiscoveryUrl(Issuer.AZURE_AD) }
-            registry.add("no.nav.security.jwt.issuer.azuread.accepted-audience") { "test-aud" }
-            registry.add("no.nav.security.jwt.issuer.tokenx.discovery-url") { getDiscoveryUrl(Issuer.TOKEN_X) }
-            registry.add("no.nav.security.jwt.issuer.tokenx.accepted-audience") { "amt-arrangor-client-id" }
+            registry.add(
+                "AZURE_OPENID_CONFIG_ISSUER",
+            ) { getDiscoveryUrl(AZURE_AD).removeSuffix("/.well-known/openid-configuration") }
+            registry.add("AZURE_APP_CLIENT_ID") { "test-aud" }
+            registry.add("AZURE_APP_CLIENT_SECRET") { "test-client-secret" }
+            registry.add("AZURE_APP_JWK") { "test-jwk" }
+            registry.add("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") { "http://azuread/token" }
+            registry.add("TOKEN_X_ISSUER") { getDiscoveryUrl(TOKEN_X).removeSuffix("/.well-known/openid-configuration") }
+            registry.add("TOKEN_X_CLIENT_ID") { "amt-arrangor-client-id" }
 
-            mockMachineToMachineHttpServer.start()
-            registry.add("nais.env.azureOpenIdConfigTokenEndpoint") {
-                mockMachineToMachineHttpServer.serverUrl() + MockMachineToMachineHttpServer.TOKEN_PATH
-            }
-
-            mockAmtEnhetsregiserServer.start()
-            registry.add("amt-enhetsregister.url") { mockAmtEnhetsregiserServer.serverUrl() }
-            registry.add("amt-enhetsregister.scope") { "test.enhetsregister.scope" }
-
-            mockAltinnServer.start()
-            registry.add("amt-altinn.url") { mockAltinnServer.serverUrl() }
-            registry.add("amt-altinn.scope") { "test.altinn.scope" }
-
-            mockPersonServer.start()
-            registry.add("amt-person.url") { mockPersonServer.serverUrl() }
-            registry.add("amt-person.scope") { "test.person.scope" }
+            registry.add("AMT_ENHETSREGISTER_URL") { "http://amt-enhetsregister" }
+            registry.add("AMT_ENHETSREGISTER_SCOPE") { "test.enhetsregister.scope" }
+            registry.add("AMT_ENHETSREGISTER_ALLOWED_HOSTS") { "amt-enhetsregister" }
+            registry.add("AMT_ALTINN_URL") { "http://amt-altinn" }
+            registry.add("AMT_ALTINN_SCOPE") { "test.altinn.scope" }
+            registry.add("AMT_PERSON_URL") { "http://amt-person" }
+            registry.add("AMT_PERSON_SCOPE") { "test.person.scope" }
         }
     }
 
-    protected fun resetMockServers() {
-        mockAmtEnhetsregiserServer.resetHttpServer()
-        mockAltinnServer.resetHttpServer()
-        mockPersonServer.resetHttpServer()
+    protected fun mockVirksomhet(virksomhet: Virksomhet) {
+        every { enhetsregisterClient.hentVirksomhet(virksomhet.organisasjonsnummer) } returns Result.success(virksomhet)
     }
 
-    protected fun sendRequest(
-        method: String,
-        path: String,
-        body: RequestBody? = null,
-        headers: Map<String, String> = emptyMap(),
-    ): Response {
-        val reqBuilder =
-            Request
-                .Builder()
-                .url("${serverUrl()}$path")
-                .method(method, body)
+    protected fun mockAltinnRoller(
+        personident: String,
+        roller: Map<String, List<no.nav.arrangor.domain.AnsattRolle>>,
+    ) {
+        mockAltinnRoller(personident, roller.map { (organisasjonsnummer, roller) -> AltinnRolle(organisasjonsnummer, roller) })
+    }
 
-        headers.forEach {
-            reqBuilder.addHeader(it.key, it.value)
-        }
+    protected fun mockAltinnRoller(
+        personident: String,
+        roller: List<AltinnRolle>,
+    ) {
+        every { altinnAclClient.hentRoller(personident) } returns Result.success(roller)
+    }
 
-        return client.newCall(reqBuilder.build()).execute()
+    protected fun mockPerson(
+        personident: String,
+        id: UUID,
+        fornavn: String,
+        mellomnavn: String?,
+        etternavn: String,
+    ) {
+        every { personClient.hentPersonalia(personident) } returns Result.success(
+            PersonApi.PersonResponse(id, personident, fornavn, mellomnavn, etternavn),
+        )
+    }
+
+    protected fun resetClientMocks() {
+        clearMocks(altinnAclClient, enhetsregisterClient, personClient)
     }
 
     protected fun getTokenxToken(
         fnr: String,
         audience: String = "amt-arrangor-client-id",
-        issuerId: String = Issuer.TOKEN_X,
+        issuerId: String = TOKEN_X,
         clientId: String = "amt-tiltaksarrangor-bff",
+        expiry: Long = 3600,
         claims: Map<String, Any> =
             mapOf(
                 "acr" to "Level4",
@@ -144,19 +141,44 @@ abstract class IntegrationTest : RepositoryTestBase() {
                 subject = UUID.randomUUID().toString(),
                 audience = listOf(audience),
                 claims = claims,
-                expiry = 3600,
+                expiry = expiry,
             ),
         ).serialize()
 
     protected fun getAzureAdToken(
         subject: String = "test",
         audience: String = "test-aud",
-        issuerId: String = Issuer.AZURE_AD,
-        claims: Map<String, Any> = emptyMap(),
-    ): String = mockOAuth2Server.issueToken(issuerId, subject, audience, claims).serialize()
+        issuerId: String = AZURE_AD,
+        expiry: Long = 3600,
+        claims: Map<String, Any> = mapOf("roles" to listOf("access_as_application")),
+    ): String = mockOAuth2Server
+        .issueToken(
+            issuerId,
+            subject,
+            DefaultOAuth2TokenCallback(
+                issuerId = issuerId,
+                subject = subject,
+                audience = listOf(audience),
+                claims = claims,
+                expiry = expiry,
+            ),
+        ).serialize()
 }
 
-fun String.toJsonRequestBody(): RequestBody {
-    val mediaTypeJson = MediaType.APPLICATION_JSON_VALUE.toMediaType()
-    return this.toRequestBody(mediaTypeJson)
+class TestResponse(
+    private val response: org.springframework.mock.web.MockHttpServletResponse,
+) {
+    val code: Int
+        get() = response.status
+
+    val contentType: String?
+        get() = response.contentType
+
+    val body = TestResponseBody(response.contentAsByteArray)
+}
+
+class TestResponseBody(
+    private val content: ByteArray,
+) {
+    fun string(): String = content.decodeToString()
 }

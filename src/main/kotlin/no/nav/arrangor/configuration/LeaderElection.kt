@@ -3,37 +3,30 @@ package no.nav.arrangor.configuration
 import no.nav.amt.lib.utils.leaderelection.Leader
 import no.nav.amt.lib.utils.leaderelection.LeaderElectionClient
 import no.nav.amt.lib.utils.leaderelection.LeaderProvider
-import no.nav.common.rest.client.RestClient
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import tools.jackson.databind.ObjectMapper
+import org.springframework.http.HttpStatusCode
+import org.springframework.web.client.RestClient
+import org.springframework.web.client.requiredBody
 
 @Configuration(proxyBeanMethods = false)
 class LeaderElection(
     @Value($$"${elector.path}") private val electorPath: String,
-    private val objectMapper: ObjectMapper,
+    restClientBuilder: RestClient.Builder,
 ) {
-    private val httpClient: OkHttpClient = RestClient.baseClient()
+    private val restClient = restClientBuilder.build()
 
     @Bean
     fun leaderElectionClient(): LeaderElectionClient {
         val leaderProvider = LeaderProvider { path ->
-            val request =
-                Request
-                    .Builder()
-                    .url(if (path.startsWith("http://")) path else "http://$path")
-                    .get()
-                    .build()
-
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw RuntimeException("Kall mot elector feiler med HTTP-${response.code}")
-                }
-                objectMapper.readValue(response.body.string(), Leader::class.java)
-            }
+            restClient
+                .get()
+                .uri(if (path.startsWith("http://")) path else "http://$path")
+                .retrieve()
+                .onStatus(HttpStatusCode::isError) { _, response ->
+                    throw RuntimeException("Kall mot elector feiler med HTTP-${response.statusCode.value()}")
+                }.requiredBody<Leader>()
         }
 
         return LeaderElectionClient(leaderProvider, electorPath)

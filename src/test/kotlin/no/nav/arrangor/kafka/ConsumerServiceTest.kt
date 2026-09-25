@@ -21,7 +21,6 @@ import no.nav.arrangor.kafka.model.Deltaker
 import no.nav.arrangor.kafka.model.DeltakerStatus
 import no.nav.arrangor.kafka.model.DeltakerStatusType
 import no.nav.arrangor.kafka.model.VirksomhetDto
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -39,16 +38,13 @@ class ConsumerServiceTest(
     val personId: UUID = UUID.randomUUID()
 
     @BeforeEach
-    fun setUp() = mockPersonServer.setPerson(
+    fun setUp() = mockPerson(
         personident = personIdent,
-        personId = personId,
+        id = personId,
         fornavn = "Test",
         mellomnavn = null,
         etternavn = "Testersen",
     )
-
-    @AfterEach
-    fun tearDown() = resetMockServers()
 
     @Test
     fun `handleVirksomhetEndring - finnes i db med annet navn - arrangornavn oppdateres i db`() {
@@ -65,7 +61,7 @@ class ConsumerServiceTest(
 
         val arrangorId = UUID.randomUUID()
         val orgnummer = "999988888"
-        mockAmtEnhetsregiserServer.addVirksomhet(
+        mockVirksomhet(
             Virksomhet(
                 organisasjonsnummer = orgnummer,
                 navn = "Arrangør",
@@ -149,7 +145,7 @@ class ConsumerServiceTest(
         val nyOverordnetOrgnummer = "811122222"
         val arrangorId = UUID.randomUUID()
         val orgnummer = "999988888"
-        mockAmtEnhetsregiserServer.addVirksomhet(
+        mockVirksomhet(
             Virksomhet(
                 organisasjonsnummer = nyOverordnetOrgnummer,
                 navn = "Ny Overordnet arrangør",
