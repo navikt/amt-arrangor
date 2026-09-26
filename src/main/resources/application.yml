@@ -99,3 +99,8 @@ amt-person:
 
 kafka:
   auto-offset-reset: earliest
+
+app:
+  unleash:
+    url: ${UNLEASH_SERVER_API_URL}/api
+    api-token: ${UNLEASH_SERVER_API_TOKEN}

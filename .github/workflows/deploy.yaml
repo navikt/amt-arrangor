@@ -58,6 +58,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Deploy Unleash API token
+        uses: nais/deploy/actions/deploy@027a91857992525139798892f2804b0ca21f4af6 # v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/unleash-apitoken-dev.yaml
+
       - name: Deploy application
         uses: nais/deploy/actions/deploy@027a91857992525139798892f2804b0ca21f4af6 # v2
         env:
@@ -76,6 +82,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Deploy Unleash API token
+        uses: nais/deploy/actions/deploy@027a91857992525139798892f2804b0ca21f4af6 # v2
+        env:
+          CLUSTER: prod-gcp
+          RESOURCE: .nais/unleash-apitoken-prod.yaml
 
       - name: Deploy application
         uses: nais/deploy/actions/deploy@027a91857992525139798892f2804b0ca21f4af6 # v2

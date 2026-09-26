@@ -35,24 +35,36 @@ class AnsattRepository(
     fun insertOrUpdate(ansatt: AnsattDbo): AnsattDbo {
         val sql =
             """
-            INSERT INTO ansatt(id, person_id, personident, fornavn, mellomnavn, etternavn, arrangorer, modified_at, last_synchronized)
-            VALUES (:id,
-                    :person_id,
-                    :personident,
-                    :fornavn,
-                    :mellomnavn,
-                    :etternavn,
-            		:arrangorer,
-                    :modified_at,
-                    :last_synchronized)
+            INSERT INTO ansatt(
+                id,
+                person_id,
+                personident,
+                fornavn,
+                mellomnavn,
+                etternavn,
+                arrangorer,
+                modified_at,
+                last_synchronized
+            )
+            VALUES (
+                :id,
+                :person_id,
+                :personident,
+                :fornavn,
+                :mellomnavn,
+                :etternavn,
+                :arrangorer,
+                :modified_at,
+                :last_synchronized
+            )
             ON CONFLICT (person_id) DO UPDATE SET
-            	personident		  = :personident,
-                fornavn           = :fornavn,
-                mellomnavn        = :mellomnavn,
-                etternavn         = :etternavn,
-            	arrangorer		  = :arrangorer,
+                personident       = EXCLUDED.personident,
+                fornavn           = EXCLUDED.fornavn,
+                mellomnavn        = EXCLUDED.mellomnavn,
+                etternavn         = EXCLUDED.etternavn,
+                arrangorer        = EXCLUDED.arrangorer,
                 modified_at       = current_timestamp,
-                last_synchronized = :last_synchronized
+                last_synchronized = EXCLUDED.last_synchronized
             RETURNING *
             """.trimIndent()
 
@@ -73,6 +85,32 @@ class AnsattRepository(
                 rowMapper,
             ).first()
     }
+
+    /** Oppdaterer bare personalia, slik at et foreldet snapshot ikke kan overskrive `arrangorer`. */
+    fun updatePersonalia(
+        ansattId: UUID,
+        personident: String,
+        fornavn: String,
+        mellomnavn: String?,
+        etternavn: String,
+    ): Boolean = template.update(
+        """
+        UPDATE ansatt
+        SET personident = :personident,
+            fornavn = :fornavn,
+            mellomnavn = :mellomnavn,
+            etternavn = :etternavn,
+            modified_at = current_timestamp
+        WHERE id = :ansattId
+        """.trimIndent(),
+        sqlParameters(
+            "ansattId" to ansattId,
+            "personident" to personident,
+            "fornavn" to fornavn,
+            "mellomnavn" to mellomnavn,
+            "etternavn" to etternavn,
+        ),
+    ) == 1
 
     fun get(id: UUID): AnsattDbo? = template
         .query(
@@ -99,6 +137,13 @@ class AnsattRepository(
             rowMapper,
         ).firstOrNull()
 
+    fun getIdForPersonident(personident: String): UUID? = template
+        .queryForList(
+            "SELECT id FROM ansatt WHERE personident = :personident",
+            sqlParameters("personident" to personident),
+            UUID::class.java,
+        ).firstOrNull()
+
     fun setSynchronized(
         id: UUID,
         timestamp: LocalDateTime,
@@ -119,7 +164,7 @@ class AnsattRepository(
             SELECT *
             FROM ansatt
             WHERE last_synchronized < :synchronized_before
-            ORDER BY last_synchronized asc
+            ORDER BY last_synchronized
             limit :limit
             """.trimIndent()
 
@@ -140,7 +185,7 @@ class AnsattRepository(
             """
             SELECT *
             FROM ansatt
-            ORDER BY modified_at asc
+            ORDER BY modified_at
             OFFSET :offset
             LIMIT :limit
             """.trimIndent()
@@ -242,7 +287,7 @@ class AnsattRepository(
             	LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
               WHERE
               	veileder.value ->> 'deltakerId' = :deltakerId
-            	AND veileder.value ->> 'gyldigTil' > :deaktiveringsdato
+                AND veileder.value ->> 'gyldigTil' > :deaktiveringsdato
             )
             UPDATE ansatt
             	SET

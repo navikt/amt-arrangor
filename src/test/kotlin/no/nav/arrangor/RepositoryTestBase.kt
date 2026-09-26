@@ -1,5 +1,6 @@
 package no.nav.arrangor
 
+import no.nav.arrangor.ansatt.repository.AnsattArrangorRepository
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.arrangor.ArrangorRepository
 import no.nav.arrangor.database.DbTestDataUtils.cleanDatabase
@@ -20,7 +21,13 @@ import javax.sql.DataSource
 
 @ActiveProfiles("test")
 @SpringBootTest(
-    classes = [AnsattRepository::class, ArrangorRepository::class, DeltakerRepository::class, TestDatabaseService::class],
+    classes = [
+        AnsattRepository::class,
+        AnsattArrangorRepository::class,
+        ArrangorRepository::class,
+        DeltakerRepository::class,
+        TestDatabaseService::class,
+    ],
 )
 @AutoConfigureJdbc
 @AutoConfigureJson

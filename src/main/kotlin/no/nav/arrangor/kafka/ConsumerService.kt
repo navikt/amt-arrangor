@@ -60,14 +60,17 @@ class ConsumerService(
                 ?: return logger.warn("Mottok personalia men fant ikke ansatt med personId ${ansattPersonalia.id}")
 
         if (harPersonaliaEndringer(ansatt, ansattPersonalia)) {
-            ansattRepository.insertOrUpdate(
-                ansatt.copy(
-                    fornavn = ansattPersonalia.fornavn,
-                    mellomnavn = ansattPersonalia.mellomnavn,
-                    etternavn = ansattPersonalia.etternavn,
-                    personident = ansattPersonalia.personident,
-                ),
+            val oppdatert = ansattRepository.updatePersonalia(
+                ansattId = ansatt.id,
+                personident = ansattPersonalia.personident,
+                fornavn = ansattPersonalia.fornavn,
+                mellomnavn = ansattPersonalia.mellomnavn,
+                etternavn = ansattPersonalia.etternavn,
             )
+            if (!oppdatert) {
+                logger.warn("Ansatt ${ansatt.id} ble fjernet før personalia kunne oppdateres")
+                return
+            }
             logger.info("Oppdaterte personalia for ansatt ${ansatt.id}")
         }
     }

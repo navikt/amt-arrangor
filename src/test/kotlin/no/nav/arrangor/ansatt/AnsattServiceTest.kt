@@ -2,13 +2,16 @@ package no.nav.arrangor.ansatt
 
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.clearMocks
+import io.mockk.every
 import io.mockk.verify
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.MetricsService
+import no.nav.arrangor.ansatt.repository.AnsattArrangorRepository
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
 import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
@@ -27,6 +30,8 @@ import java.util.UUID
 class AnsattServiceTest(
     private val ansattService: AnsattService,
     private val ansattRepository: AnsattRepository,
+    private val ansattArrangorRepository: AnsattArrangorRepository,
+    @MockkBean(relaxed = true) private val featureToggle: AnsattArrangorFeatureToggle,
     @MockkBean(relaxed = true) private val producerService: ProducerService,
     @MockkBean(relaxed = true) @Suppress("unused") private val metricsService: MetricsService,
 ) : IntegrationTest() {
@@ -36,9 +41,105 @@ class AnsattServiceTest(
     @BeforeEach
     fun setUp() {
         resetClientMocks()
-        clearMocks(producerService)
+        clearMocks(featureToggle, producerService)
+        every { featureToggle.lesFraNormaliserteTabeller() } returns false
         arrangorOne = testDatabase.insertArrangor()
         arrangorTwo = testDatabase.insertArrangor()
+    }
+
+    @Test
+    fun `get - normalisert toggle pa - returnerer arrangorer fra nye tabeller`() {
+        val ansatt = testDatabase.insertAnsatt(
+            arrangorer = listOf(
+                ArrangorDbo(
+                    arrangorOne.id,
+                    listOf(RolleDbo(AnsattRolle.VEILEDER)),
+                    emptyList(),
+                    emptyList(),
+                ),
+            ),
+        )
+        ansattArrangorRepository.replaceForAnsatt(
+            ansatt.id,
+            listOf(
+                ArrangorDbo(
+                    arrangorTwo.id,
+                    listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+                    emptyList(),
+                    emptyList(),
+                ),
+            ),
+        )
+        every { featureToggle.lesFraNormaliserteTabeller() } returns true
+
+        val resultat = ansattService.get(ansatt.id).shouldNotBeNull()
+
+        resultat.arrangorer shouldHaveSize 1
+        resultat.arrangorer.single().arrangorId shouldBe arrangorTwo.id
+        resultat.arrangorer.single().roller shouldBe listOf(AnsattRolle.KOORDINATOR)
+    }
+
+    @Test
+    fun `oppdaterVeiledereForDeltaker - normalisert toggle pa - bruker normalisert rolle for tilgangskontroll`() {
+        val ansatt = testDatabase.insertAnsatt(
+            arrangorer = listOf(
+                ArrangorDbo(
+                    arrangorOne.id,
+                    listOf(RolleDbo(AnsattRolle.VEILEDER)),
+                    emptyList(),
+                    emptyList(),
+                ),
+            ),
+        )
+        ansattArrangorRepository.replaceForAnsatt(
+            ansatt.id,
+            listOf(
+                ArrangorDbo(
+                    arrangorOne.id,
+                    listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+                    emptyList(),
+                    emptyList(),
+                ),
+            ),
+        )
+        every { featureToggle.lesFraNormaliserteTabeller() } returns true
+
+        ansattService.oppdaterVeiledereForDeltaker(
+            ansatt.personident,
+            UUID.randomUUID(),
+            AnsattAPI.OppdaterVeiledereForDeltakerRequest(
+                arrangorId = arrangorOne.id,
+                veilederSomLeggesTil = emptyList(),
+                veilederSomFjernes = emptyList(),
+            ),
+        )
+    }
+
+    @Test
+    fun `oppdaterVeiledereForDeltaker - normalisert toggle pa - faller ikke tilbake til jsonb`() {
+        val ansatt = testDatabase.insertAnsatt(
+            arrangorer = listOf(
+                ArrangorDbo(
+                    arrangorOne.id,
+                    listOf(RolleDbo(AnsattRolle.KOORDINATOR)),
+                    emptyList(),
+                    emptyList(),
+                ),
+            ),
+        )
+        every { featureToggle.lesFraNormaliserteTabeller() } returns true
+
+        assertThrows<IllegalArgumentException> {
+            ansattService.oppdaterVeiledereForDeltaker(
+                ansatt.personident,
+                UUID.randomUUID(),
+                AnsattAPI.OppdaterVeiledereForDeltakerRequest(
+                    arrangorId = arrangorOne.id,
+                    veilederSomLeggesTil = emptyList(),
+                    veilederSomFjernes = emptyList(),
+                ),
+            )
+        }
     }
 
     @Test
@@ -151,6 +252,7 @@ class AnsattServiceTest(
                         ),
                     ),
             )
+        ansattArrangorRepository.replaceForAnsatt(ansattDbo.id, ansattDbo.arrangorer)
         mockAltinnRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
 
         ansattService.oppdaterRoller(ansattDbo)
@@ -180,6 +282,9 @@ class AnsattServiceTest(
             ?.koordinator
             ?.first()
             ?.erGyldig() shouldBe false
+        val normalisert = ansattArrangorRepository.getArrangorerForAnsatt(ansattDbo.id).single()
+        normalisert.roller.first { it.rolle == AnsattRolle.KOORDINATOR }.erGyldig() shouldBe false
+        normalisert.koordinator.single().erGyldig() shouldBe false
 
         verify(exactly = 1) {
             producerService.publishAnsatt(
@@ -214,6 +319,7 @@ class AnsattServiceTest(
                         ),
                     ),
             )
+        ansattArrangorRepository.replaceForAnsatt(ansattDbo.id, ansattDbo.arrangorer)
         mockAltinnRoller(ansattDbo.personident, mapOf(arrangorOne.organisasjonsnummer to listOf(AnsattRolle.VEILEDER)))
 
         ansattService.oppdaterRoller(ansattDbo)
@@ -235,6 +341,10 @@ class AnsattServiceTest(
             ?.first()
             ?.roller
             ?.any { it.rolle == AnsattRolle.VEILEDER && !it.erGyldig() } shouldBe true
+        val normaliserteRoller = ansattArrangorRepository.getArrangorerForAnsatt(ansattDbo.id).single().roller
+        normaliserteRoller shouldHaveSize 2
+        normaliserteRoller.any { it.rolle == AnsattRolle.VEILEDER && it.erGyldig() } shouldBe true
+        normaliserteRoller.any { it.rolle == AnsattRolle.VEILEDER && !it.erGyldig() } shouldBe true
 
         verify(exactly = 1) {
             producerService.publishAnsatt(
@@ -362,6 +472,16 @@ class AnsattServiceTest(
         veileder2Arrangor?.veileder?.find {
             it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig()
         } shouldNotBe null
+        ansattArrangorRepository
+            .getArrangorerForAnsatt(veileder2.id)
+            .single()
+            .veileder
+            .single()
+            .let {
+                it.deltakerId shouldBe deltakerId
+                it.veilederType shouldBe VeilederType.VEILEDER
+                it.erGyldig() shouldBe true
+            }
     }
 
     @Test
@@ -415,6 +535,8 @@ class AnsattServiceTest(
                         ),
                     ),
             )
+        ansattArrangorRepository.replaceForAnsatt(veileder1.id, veileder1.arrangorer)
+        ansattArrangorRepository.replaceForAnsatt(veileder2.id, veileder2.arrangorer)
         val request =
             AnsattAPI.OppdaterVeiledereForDeltakerRequest(
                 arrangorId = arrangorOne.id,
@@ -446,10 +568,23 @@ class AnsattServiceTest(
         veileder2Arrangor?.veileder?.find {
             it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig()
         } shouldNotBe null
+        ansattArrangorRepository
+            .getArrangorerForAnsatt(veileder1.id)
+            .single()
+            .veileder
+            .single()
+            .erGyldig() shouldBe false
+        ansattArrangorRepository
+            .getArrangorerForAnsatt(veileder2.id)
+            .single()
+            .veileder
+            .single()
+            .erGyldig() shouldBe true
     }
 
     @Test
     fun `oppdaterVeiledereForDeltaker - skal legge til og fjerne ansatt som veileder - ansatte blir oppdatert`() {
+        // Arrange
         val deltakerId = UUID.randomUUID()
         val koordinator =
             testDatabase.insertAnsatt(
@@ -542,27 +677,41 @@ class AnsattServiceTest(
                     ),
             )
 
+        // Act
         ansattService.oppdaterVeiledereForDeltaker(koordinator.personident, deltakerId, request)
 
+        // Assert
         val veileder1Db = ansattRepository.get(veileder1.id)
-        val veileder1Arrangor = veileder1Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
-        veileder1Arrangor?.veileder?.size shouldBe 2
-        veileder1Arrangor?.veileder?.find {
+        val veileder1Arrangor = veileder1Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }.shouldNotBeNull()
+        veileder1Arrangor.veileder.size shouldBe 2
+        veileder1Arrangor.veileder.find {
             it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && it.erGyldig()
         } shouldNotBe null
-        veileder1Arrangor?.veileder?.find {
+        veileder1Arrangor.veileder.find {
             it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && !it.erGyldig()
         } shouldNotBe null
 
         val veileder2Db = ansattRepository.get(veileder2.id)
-        val veileder2Arrangor = veileder2Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
-        veileder2Arrangor?.veileder?.size shouldBe 2
-        veileder2Arrangor?.veileder?.find {
+        val veileder2Arrangor = veileder2Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }.shouldNotBeNull()
+        veileder2Arrangor.veileder.size shouldBe 2
+        veileder2Arrangor.veileder.find {
             it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER && !it.erGyldig()
         } shouldNotBe null
-        veileder2Arrangor?.veileder?.find {
+        veileder2Arrangor.veileder.find {
             it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER && it.erGyldig()
         } shouldNotBe null
+
+        val veileder1Fjerningstidspunkt = veileder1Arrangor.veileder
+            .find { it.deltakerId == deltakerId && it.veilederType == VeilederType.MEDVEILEDER }
+            ?.gyldigTil
+            .shouldNotBeNull()
+            .toInstant()
+        val veileder2Fjerningstidspunkt = veileder2Arrangor.veileder
+            .find { it.deltakerId == deltakerId && it.veilederType == VeilederType.VEILEDER }
+            ?.gyldigTil
+            .shouldNotBeNull()
+            .toInstant()
+        veileder1Fjerningstidspunkt shouldBe veileder2Fjerningstidspunkt
 
         val veileder3Db = ansattRepository.get(veileder3.id)
         val veileder3Arrangor = veileder3Db?.arrangorer?.find { it.arrangorId == arrangorOne.id }
@@ -648,6 +797,7 @@ class AnsattServiceTest(
                         ),
                     ),
             )
+        ansattArrangorRepository.replaceForAnsatt(koordinator.id, koordinator.arrangorer)
 
         ansattService.fjernKoordinatorForDeltakerliste(
             koordinator.personident,
@@ -660,12 +810,21 @@ class AnsattServiceTest(
             .arrangorer[0]
             .koordinator[0]
             .gyldigTil shouldNotBe null
+        ansattArrangorRepository
+            .getArrangorerForAnsatt(koordinator.id)
+            .single()
+            .koordinator
+            .single()
+            .erGyldig() shouldBe false
     }
 
     @Test
     fun `fjernTilgangerHosArrangor - koordinator skal fjernes`() {
         val deltakerliste = UUID.randomUUID()
-        val arrangor = testDatabase.ansattArrangorDbo(koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste)))
+        val arrangor = testDatabase.ansattArrangorDbo(
+            arrangorId = arrangorOne.id,
+            koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste)),
+        )
         val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor))
 
         ansattService.fjernTilgangerHosArrangor(deltakerliste, emptyList(), arrangor.arrangorId)
@@ -685,6 +844,7 @@ class AnsattServiceTest(
 
         val arrangor =
             testDatabase.ansattArrangorDbo(
+                arrangorId = arrangorOne.id,
                 koordinator =
                     listOf(
                         KoordinatorsDeltakerlisteDbo(deltakerliste1),
@@ -708,6 +868,7 @@ class AnsattServiceTest(
         val deltaker = UUID.randomUUID()
         val arrangor =
             testDatabase.ansattArrangorDbo(
+                arrangorId = arrangorOne.id,
                 roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
                 veileder = listOf(VeilederDeltakerDbo(deltaker, VeilederType.VEILEDER)),
             )
@@ -731,6 +892,7 @@ class AnsattServiceTest(
 
         val arrangor1 =
             testDatabase.ansattArrangorDbo(
+                arrangorId = arrangorOne.id,
                 roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
                 veileder =
                     listOf(
@@ -740,6 +902,7 @@ class AnsattServiceTest(
             )
         val arrangor2 =
             testDatabase.ansattArrangorDbo(
+                arrangorId = arrangorTwo.id,
                 roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
                 veileder =
                     listOf(
@@ -763,12 +926,14 @@ class AnsattServiceTest(
 
     @Test
     fun `fjernTilgangerHosArrangor - ansatt er koordinator og veileder hos arrangor - fjerner riktige tilganger`() {
+        // Arrange
         val deltaker1 = UUID.randomUUID()
 
         val deltakerliste = UUID.randomUUID()
 
         val arrangor1 =
             testDatabase.ansattArrangorDbo(
+                arrangorId = arrangorOne.id,
                 roller = listOf(RolleDbo(AnsattRolle.KOORDINATOR), RolleDbo(AnsattRolle.VEILEDER)),
                 veileder =
                     listOf(
@@ -777,15 +942,32 @@ class AnsattServiceTest(
                 koordinator = listOf(KoordinatorsDeltakerlisteDbo(deltakerliste)),
             )
         val ansatt = testDatabase.insertAnsatt(arrangorer = listOf(arrangor1))
+        ansattArrangorRepository.replaceForAnsatt(ansatt.id, ansatt.arrangorer)
 
+        // Act
         ansattService.fjernTilgangerHosArrangor(deltakerliste, listOf(deltaker1), arrangor1.arrangorId)
+
+        // Assert
         val ansattInDb = ansattRepository.get(ansatt.id)
         ansattInDb.shouldNotBeNull()
 
         val ansattArrangor1Tilganger = ansattInDb.arrangorer.first { it.arrangorId == arrangor1.arrangorId }
-
         ansattArrangor1Tilganger.veileder.first { it.deltakerId == deltaker1 }.erGyldig() shouldBe false
         ansattArrangor1Tilganger.koordinator.first { it.deltakerlisteId == deltakerliste }.erGyldig() shouldBe false
+        val veilederFjerningstidspunkt = ansattArrangor1Tilganger.veileder
+            .first { it.deltakerId == deltaker1 }
+            .gyldigTil
+            .shouldNotBeNull()
+            .toInstant()
+        val koordinatorFjerningstidspunkt = ansattArrangor1Tilganger.koordinator
+            .first { it.deltakerlisteId == deltakerliste }
+            .gyldigTil
+            .shouldNotBeNull()
+            .toInstant()
+        veilederFjerningstidspunkt shouldBe koordinatorFjerningstidspunkt
+        val normaliserteTilganger = ansattArrangorRepository.getArrangorerForAnsatt(ansatt.id).single()
+        normaliserteTilganger.veileder.single().erGyldig() shouldBe false
+        normaliserteTilganger.koordinator.single().erGyldig() shouldBe false
     }
 
     @Test
@@ -814,6 +996,15 @@ class AnsattServiceTest(
             first().deltakerlisteId shouldBe deltakerlisteId
             first().erGyldig() shouldBe true
         }
+        ansattArrangorRepository
+            .getArrangorerForAnsatt(ansatt.id)
+            .single()
+            .koordinator
+            .single()
+            .let {
+                it.deltakerlisteId shouldBe deltakerlisteId
+                it.erGyldig() shouldBe true
+            }
     }
 
     @Test
