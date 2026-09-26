@@ -22,6 +22,7 @@ amt-lib = "1.2026.09.25_06.39-d5698e1c7d87"
 kotest = "6.2.5"
 mockk = "1.14.11"
 mock-oauth2-server = "6.0.2"
+unleash = "12.3.0"
 
 kafka-clients = "4.3.1"
 springmockk = "5.0.1"
@@ -48,7 +49,6 @@ logstash-encoder = { module = "net.logstash.logback:logstash-logback-encoder", v
 nav-common-log = { module = "no.nav.common:log", version.ref = "nav-common" }
 nav-common-job = { module = "no.nav.common:job", version.ref = "nav-common" }
 nav-common-rest = { module = "no.nav.common:rest", version.ref = "nav-common" }
-nav-common-token-client = { module = "no.nav.common:token-client", version.ref = "nav-common" }
 
 amt-lib-utils = { module = "no.nav.amt.deltakelser.lib:utils", version.ref = "amt-lib" }
 amt-lib-spring-boot = { module = "no.nav.amt.deltakelser.lib:spring-boot", version.ref = "amt-lib" }
@@ -57,3 +57,4 @@ amt-lib-spring-boot = { module = "no.nav.amt.deltakelser.lib:spring-boot", versi
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 mockk = { module = "io.mockk:mockk-jvm", version.ref = "mockk" }
 mock-oauth2-server = { module = "no.nav.security:mock-oauth2-server", version.ref = "mock-oauth2-server" }
+unleash = { module = "io.getunleash:unleash-client-java", version.ref = "unleash" }

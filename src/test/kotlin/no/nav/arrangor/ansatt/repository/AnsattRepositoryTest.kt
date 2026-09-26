@@ -104,6 +104,71 @@ class AnsattRepositoryTest(
     }
 
     @Nested
+    inner class UpdatePersonalia {
+        @Test
+        fun `stale personaliasnapshot overskriver ikke nyere arrangortilstand`() {
+            // Arrange
+            val opprinneligAnsatt = testDatabase.insertAnsatt(
+                arrangorer = listOf(testDatabase.ansattArrangorDbo()),
+            )
+            val foreldetSnapshot = ansattRepository.get(opprinneligAnsatt.id).shouldNotBeNull()
+            val nyArrangorTilstand = listOf(
+                testDatabase.ansattArrangorDbo(
+                    roller = listOf(RolleDbo(AnsattRolle.VEILEDER)),
+                    veileder = emptyList(),
+                    koordinator = emptyList(),
+                ),
+            )
+            val nyLastSynchronized = LocalDateTime.now().minusDays(3)
+            val nyereAnsatt = ansattRepository.insertOrUpdate(
+                foreldetSnapshot.copy(
+                    arrangorer = nyArrangorTilstand,
+                    lastSynchronized = nyLastSynchronized,
+                ),
+            )
+
+            // Act
+            val oppdatert = ansattRepository.updatePersonalia(
+                ansattId = foreldetSnapshot.id,
+                personident = "oppdatert-ident",
+                fornavn = "Oppdatert",
+                mellomnavn = null,
+                etternavn = "Etternavn",
+            )
+
+            // Assert
+            oppdatert shouldBe true
+            val faktiskAnsatt = ansattRepository.get(foreldetSnapshot.id).shouldNotBeNull()
+            assertSoftly(faktiskAnsatt) {
+                personident shouldBe "oppdatert-ident"
+                fornavn shouldBe "Oppdatert"
+                mellomnavn shouldBe null
+                etternavn shouldBe "Etternavn"
+                arrangorer shouldBe nyereAnsatt.arrangorer
+                lastSynchronized shouldBe nyereAnsatt.lastSynchronized
+            }
+        }
+
+        @Test
+        fun `returnerer false nar ansatt ikke lenger finnes`() {
+            // Arrange
+            val manglendeAnsattId = UUID.randomUUID()
+
+            // Act
+            val oppdatert = ansattRepository.updatePersonalia(
+                ansattId = manglendeAnsattId,
+                personident = "ident",
+                fornavn = "Fornavn",
+                mellomnavn = null,
+                etternavn = "Etternavn",
+            )
+
+            // Assert
+            oppdatert shouldBe false
+        }
+    }
+
+    @Nested
     inner class GetAll {
         @Test
         fun `skal returnere tom liste hvis tabell er tom`() {
@@ -167,6 +232,21 @@ class AnsattRepositoryTest(
             val ansattInDb = ansattRepository.insertOrUpdate(ansattInTest)
 
             ansattRepository.get(ansattInTest.personident) shouldBe ansattInDb
+        }
+    }
+
+    @Nested
+    inner class GetIdForPersonident {
+        @Test
+        fun `getIdForPersonident - not exists - returns null`() {
+            ansattRepository.getIdForPersonident(UUID.randomUUID().toString()) shouldBe null
+        }
+
+        @Test
+        fun `getIdForPersonident - exists - returns ansatt id`() {
+            val ansattInDb = ansattRepository.insertOrUpdate(ansattInTest)
+
+            ansattRepository.getIdForPersonident(ansattInTest.personident) shouldBe ansattInDb.id
         }
     }
 

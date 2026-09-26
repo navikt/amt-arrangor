@@ -23,9 +23,11 @@ class AnsattAPI(
     @GetMapping
     fun getByPersonident(
         @AuthenticationPrincipal jwt: Jwt,
-    ): Ansatt = hentPersonidentOgSettMdc(jwt).let { personident ->
-        ansattService.get(personident)
+    ): Ansatt {
+        val ansatt = ansattService.get(jwt.personIdent())
             ?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
+        MDC.put("ansatt-id", ansatt.id.toString())
+        return ansatt
     }
 
     @PostMapping("koordinator/{arrangorId}/{deltakerlisteId}")

@@ -74,6 +74,10 @@ spec:
         - application: amt-person-service
           namespace: amt
           cluster: dev-gcp
+      external:
+        - host: amt-unleash-api.nav.cloud.nais.io
+  envFrom:
+    - secret: amt-arrangor-unleash-api-token
   env:
     - name: JDK_JAVA_OPTIONS
       value: "-XX:MaxRAMPercentage=60.0"

@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.nav.common.job)
     implementation(libs.amt.lib.utils)
     implementation(libs.amt.lib.spring.boot)
+    implementation(libs.unleash)
 
     // Test – Spring Boot testoppsett (JDBC, RestClient, MVC)
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -85,10 +86,7 @@ kotlin {
     jvmToolchain(25)
     compilerOptions {
         jvmTarget = JvmTarget.JVM_25
-        freeCompilerArgs.addAll(
-            "-Xjsr305=strict",
-            "-Xannotation-default-target=param-property",
-        )
+        freeCompilerArgs.addAll("-Xjsr305=strict")
     }
 }
 
@@ -102,6 +100,10 @@ tasks.named<Jar>("jar") {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
+    testLogging {
+        events("failed", "skipped")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
     jvmArgs(
         "-Xshare:off",
         "-XX:+EnableDynamicAgentLoading",
