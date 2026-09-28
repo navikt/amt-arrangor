@@ -89,4 +89,14 @@ class AltinnAclClientTest(
 
         sut.hentRoller("12345678910").exceptionOrNull().shouldBeInstanceOf<UkjentAltinnRolleException>()
     }
+
+    @Test
+    fun `ukjent rollekode kan logges uten å logge uventet innhold`() {
+        val exception = UkjentAltinnRolleException("UKJENT_ROLLE")
+
+        exception.message shouldBe "Ukjent tiltaksarrangørrolle"
+        exception.rolleForLogging shouldBe "UKJENT_ROLLE"
+        UkjentAltinnRolleException("12345678910").rolleForLogging shouldBe "uventet format"
+        UkjentAltinnRolleException(" ").rolleForLogging shouldBe "uventet format"
+    }
 }
