@@ -58,6 +58,8 @@ server:
   shutdown: graceful
 
 management:
+  server:
+    port: 8081
   endpoint:
     prometheus:
       access: read_only
@@ -75,9 +77,10 @@ management:
 
   endpoints:
     web:
-      base-path: /internal
       exposure:
-        include: prometheus,health
+        include:
+          - prometheus
+          - health
 
   prometheus:
     metrics:

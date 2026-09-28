@@ -26,7 +26,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher
-import org.springframework.security.web.util.matcher.OrRequestMatcher
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -74,9 +73,9 @@ class SecurityConfig {
                 // Reglene evalueres i rekkefølge, og første treff vinner - derfor må de mest spesifikke
                 // stiene (health/prometheus, /internal, /api/ansatt) stå før catch-all-regelen til slutt.
                 authorize(
-                    OrRequestMatcher(
-                        EndpointRequest.to(HealthEndpoint::class.java),
-                        EndpointRequest.to(PrometheusScrapeEndpoint::class.java),
+                    EndpointRequest.to(
+                        HealthEndpoint::class.java,
+                        PrometheusScrapeEndpoint::class.java,
                     ),
                     permitAll,
                 )

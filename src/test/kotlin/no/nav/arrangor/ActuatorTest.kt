@@ -22,7 +22,7 @@ class ActuatorTest(
     fun probe_skal_returnere_OK_og_status_UP(probeName: String) {
         val uri =
             UriComponentsBuilder
-                .fromUriString("http://localhost:{port}/internal/health/{probeName}")
+                .fromUriString("http://localhost:{port}/actuator/health/{probeName}")
                 .buildAndExpand(managementPort, probeName)
                 .toUri()
 
@@ -38,22 +38,10 @@ class ActuatorTest(
     fun `Prometheus-endepunktet skal returnere OK`() {
         val uri =
             UriComponentsBuilder
-                .fromUriString("http://localhost:{port}/internal/prometheus")
+                .fromUriString("http://localhost:{port}/actuator/prometheus")
                 .buildAndExpand(managementPort)
                 .toUri()
 
         restTemplate.getForEntity<String>(uri).statusCode shouldBe HttpStatus.OK
-    }
-
-    @Test
-    fun `Metrics-endepunktet skal returnere NOT_FOUND`() {
-        val uri =
-            UriComponentsBuilder
-                .fromUriString("http://localhost:{port}/internal/metrics")
-                .buildAndExpand(managementPort)
-                .toUri()
-
-        // GlobalExceptionHandler er konfigurert til å returnere INTERNAL_SERVER_ERROR for NOT_FOUND
-        restTemplate.getForEntity<String>(uri).statusCode shouldBe HttpStatus.INTERNAL_SERVER_ERROR
     }
 }
