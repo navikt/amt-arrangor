@@ -7,6 +7,9 @@ metadata:
     team: amt
 spec:
   image: {{image}}
+  port: 8080
+  terminationGracePeriodSeconds: 60
+
   gcp:
     sqlInstances:
       - name: amt-arrangor-3
@@ -19,9 +22,7 @@ spec:
         highAvailability: false
         insights:
           enabled: true
-  port: 8080
-  ingresses:
-    - https://amt-arrangor.intern.nav.no
+
   prometheus:
     enabled: true
     path: /internal/prometheus
