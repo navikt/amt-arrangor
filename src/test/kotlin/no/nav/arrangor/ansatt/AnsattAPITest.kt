@@ -30,6 +30,23 @@ class AnsattAPITest(
         }
 
         @Test
+        fun `getByPersonident - TokenX-token med feil audience - sanert challenge`() {
+            val token = getTokenxToken(
+                fnr = UUID.randomUUID().toString(),
+                audience = "wrong-audience",
+            )
+
+            val response = sendRequest(
+                method = "GET",
+                path = "/api/ansatt",
+                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer $token"),
+            )
+
+            response.code shouldBe 401
+            response.header(HttpHeaders.WWW_AUTHENTICATE) shouldBe "Bearer"
+        }
+
+        @Test
         fun `getByPersonident - TokenX-token uten pid - unauthorized med samme feiltekst`() {
             val tokenUtenPid = getTokenxToken(
                 fnr = "",

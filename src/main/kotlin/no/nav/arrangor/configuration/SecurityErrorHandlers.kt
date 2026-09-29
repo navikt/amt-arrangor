@@ -3,6 +3,7 @@ package no.nav.arrangor.configuration
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
@@ -41,13 +42,14 @@ class RestAuthenticationEntryPoint(
             request.method,
             authException.javaClass.simpleName,
         )
-        // Setter WWW-Authenticate-header og status (vanligvis 401, men kan variere ved ugyldig
-        // scope) før vi overskriver body med vår egen JSON-kontrakt.
+        // Behold Spring sin statuskode, men erstatt headeren etterpå fordi OAuth-feilbeskrivelsen
+        // kan inneholde interne valideringsdetaljer som ikke skal sendes til kalleren.
         bearerTokenEntryPoint.commence(
             request,
             response,
             authException,
         )
+        response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
         response.writeErrorResponse(
             objectMapper = objectMapper,
             status = HttpStatus.valueOf(response.status),
