@@ -30,6 +30,45 @@ class AnsattAPITest(
         }
 
         @Test
+        fun `getByPersonident - TokenX-token med feil audience - sanert challenge`() {
+            val token = getTokenxToken(
+                fnr = UUID.randomUUID().toString(),
+                audience = "wrong-audience",
+            )
+
+            val response = sendRequest(
+                method = "GET",
+                path = "/api/ansatt",
+                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer $token"),
+            )
+
+            response.code shouldBe 401
+            response.header(HttpHeaders.WWW_AUTHENTICATE) shouldBe "Bearer"
+        }
+
+        @Test
+        fun `getByPersonident - TokenX-token uten pid - unauthorized med samme feiltekst`() {
+            val tokenUtenPid = getTokenxToken(
+                fnr = "",
+                claims = mapOf(
+                    "acr" to "Level4",
+                    "idp" to "idporten",
+                    "client_id" to "amt-tiltaksarrangor-bff",
+                ),
+            )
+
+            val response = sendRequest(
+                method = "GET",
+                path = "/api/ansatt",
+                headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer $tokenUtenPid"),
+            )
+
+            response.code shouldBe 401
+            response.contentType shouldBe "application/problem+json"
+            objectMapper.readTree(response.body.string())["detail"].asString() shouldBe "Ikke autentisert"
+        }
+
+        @Test
         fun `setKoordinatorForDeltakerliste - no token - unauthorized`() {
             sendRequest("POST", "/api/ansatt/koordinator/${UUID.randomUUID()}/${UUID.randomUUID()}", "")
                 .also { it.code shouldBe 401 }

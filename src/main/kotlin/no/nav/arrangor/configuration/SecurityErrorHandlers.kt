@@ -3,6 +3,7 @@ package no.nav.arrangor.configuration
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
@@ -14,9 +15,8 @@ import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
 /**
- * Sørger for at 401/403 fra Spring Security-filterkjeden (som kjører før DispatcherServlet
- * og dermed ikke fanges av GlobalExceptionHandler) returnerer samme Response-kontrakt som
- * resten av APIet.
+ * Sørger for at 401/403 fra Spring Security-filterkjeden (før DispatcherServlet)
+ * returnerer samme ProblemDetail-kontrakt som resten av APIet.
  */
 @Component
 class RestAuthenticationEntryPoint(
@@ -36,14 +36,24 @@ class RestAuthenticationEntryPoint(
         // Denne kalles både når det mangler Authorization-header (ExceptionTranslationFilter) og når
         // selve JWT-en er ugyldig (BearerTokenAuthenticationFilter) - se SecurityConfig for hvor begge
         // kobles til denne samme beanen.
-        // Full exception-melding logges kun server-side. Den kan inneholde interne detaljer
-        // (forventet issuer/audience, årsak til token-parsing-feil o.l.) som ikke skal ut i
-        // responsen til en uautentisert kaller.
-        log.warn("Uautentisert forespørsel: ${authException.message}, ${request.method} ${request.requestURI}")
-        // Setter WWW-Authenticate-header og status (vanligvis 401, men kan variere ved ugyldig
-        // scope) før vi overskriver body med vår egen JSON-kontrakt.
-        bearerTokenEntryPoint.commence(request, response, authException)
-        response.writeErrorResponse(objectMapper, HttpStatus.valueOf(response.status), "Ikke autentisert")
+        // Kun unntakstypen logges; meldingen kan inneholde token-detaljer (issuer/audience o.l.).
+        log.warn(
+            "Uautentisert forespørsel: method={}, årsak={}",
+            request.method,
+            authException.javaClass.simpleName,
+        )
+        // Behold Spring sin statuskode, men erstatt headeren etterpå fordi OAuth-feilbeskrivelsen
+        // kan inneholde interne valideringsdetaljer som ikke skal sendes til kalleren.
+        bearerTokenEntryPoint.commence(
+            request,
+            response,
+            authException,
+        )
+        response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+        response.writeErrorResponse(
+            objectMapper = objectMapper,
+            status = HttpStatus.valueOf(response.status),
+        )
     }
 }
 
@@ -60,29 +70,32 @@ class RestAccessDeniedHandler(
     ) {
         // Samme begrunnelse som i RestAuthenticationEntryPoint - ikke lekk interne detaljer
         // om hvorfor tilgang ble avvist.
-        log.warn("Ikke tilgang til ressurs: ${accessDeniedException.message}, ${request.method} ${request.requestURI}")
-        response.writeErrorResponse(objectMapper, HttpStatus.FORBIDDEN, "Ikke tilgang")
+        log.warn(
+            "Ikke tilgang til ressurs: method={}, årsak={}",
+            request.method,
+            accessDeniedException.javaClass.simpleName,
+        )
+        response.writeErrorResponse(
+            objectMapper = objectMapper,
+            status = HttpStatus.FORBIDDEN,
+        )
     }
 }
 
 // Skriver direkte til outputStream fordi vi er i Spring Security-filterkjeden, før DispatcherServlet
 // og HttpMessageConverter-maskineriet er i bildet - se klassekommentaren øverst i filen.
-// Gjenbruker GlobalExceptionHandler.Response slik at kontrakten er lik uansett hvor i kjeden feilen oppstår.
+// Bruker samme ProblemDetail-format og feiltekster som controller advice.
 private fun HttpServletResponse.writeErrorResponse(
     objectMapper: ObjectMapper,
     status: HttpStatus,
-    detail: String?,
 ) {
     this.status = status.value()
-    contentType = MediaType.APPLICATION_JSON_VALUE
+    contentType = MediaType.APPLICATION_PROBLEM_JSON_VALUE
     objectMapper.writeValue(
         outputStream,
-        GlobalExceptionHandler.Response(
-            status = status.value(),
-            // HttpStatus serialiseres til f.eks. "401 UNAUTHORIZED" (kode + navn), ikke bare "UNAUTHORIZED",
-            // fordi Jackson 3 som standard bruker Enum.toString() ved enum-serialisering.
-            title = status,
-            detail = detail,
+        createProblemDetail(
+            status = status,
+            detail = clientErrorDetail(status),
         ),
     )
 }

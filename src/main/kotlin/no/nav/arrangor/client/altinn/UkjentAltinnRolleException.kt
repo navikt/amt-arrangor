@@ -7,4 +7,11 @@ package no.nav.arrangor.client.altinn
  */
 class UkjentAltinnRolleException(
     rolle: String,
-) : RuntimeException("Ukjent tiltaksarrangør rolle $rolle")
+) : RuntimeException("Ukjent tiltaksarrangørrolle") {
+    val rolleForLogging: String =
+        if (rolle.isNotBlank() && rolle.length <= 64 && rolle.all { it in 'A'..'Z' || it == '_' }) {
+            rolle
+        } else {
+            "uventet format"
+        }
+}

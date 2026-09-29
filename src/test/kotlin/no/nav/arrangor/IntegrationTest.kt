@@ -174,6 +174,8 @@ class TestResponse(
     val contentType: String?
         get() = response.contentType
 
+    fun header(name: String): String? = response.getHeader(name)
+
     val body = TestResponseBody(response.contentAsByteArray)
 }
 
