@@ -1,6 +1,7 @@
 package no.nav.arrangor.client.altinn
 
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import no.nav.arrangor.client.RestClientTestBase
 import no.nav.arrangor.domain.AnsattRolle
@@ -87,16 +88,14 @@ class AltinnAclClientTest(
                 ),
             )
 
-        sut.hentRoller("12345678910").exceptionOrNull().shouldBeInstanceOf<UkjentAltinnRolleException>()
-    }
-
-    @Test
-    fun `ukjent rollekode kan logges uten å logge uventet innhold`() {
-        val exception = UkjentAltinnRolleException("UKJENT_ROLLE")
+        val exception = sut
+            .hentRoller("12345678910")
+            .exceptionOrNull()
+            .shouldBeInstanceOf<UkjentAltinnRolleException>()
 
         exception.message shouldBe "Ukjent tiltaksarrangørrolle"
+        exception.message shouldNotContain "UKJENT_ROLLE"
         exception.rolleForLogging shouldBe "UKJENT_ROLLE"
-        UkjentAltinnRolleException("12345678910").rolleForLogging shouldBe "uventet format"
-        UkjentAltinnRolleException(" ").rolleForLogging shouldBe "uventet format"
+        UkjentAltinnRolleException("ukjent-rolle").rolleForLogging shouldBe "uventet format"
     }
 }

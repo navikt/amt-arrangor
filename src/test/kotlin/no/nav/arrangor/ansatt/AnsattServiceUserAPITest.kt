@@ -224,7 +224,7 @@ class AnsattServiceUserAPITest(
     fun `getAnsatt - ukjent Altinn-rolle returnerer 502 uten interne detaljer`() {
         val personident = "12345678910"
         every { altinnAclClient.hentRoller(personident) } returns
-            Result.failure(UkjentAltinnRolleException("hemmelig-rolle"))
+            Result.failure(UkjentAltinnRolleException("UKJENT_ROLLE"))
 
         val response = sendRequest(
             method = "POST",
@@ -236,7 +236,7 @@ class AnsattServiceUserAPITest(
         response.code shouldBe 502
         response.contentType shouldBe "application/problem+json"
         val body = response.body.string()
-        body.shouldNotContain("hemmelig-rolle")
+        body.shouldNotContain("UKJENT_ROLLE")
         val error = objectMapper.readTree(body)
         error["status"].asInt() shouldBe 502
         error["title"].asString() shouldBe "Bad Gateway"
@@ -245,7 +245,7 @@ class AnsattServiceUserAPITest(
 
         val logEvent = logAppender.list.single()
         logEvent.throwableProxy shouldBe null
-        logEvent.formattedMessage shouldContain "altinnRolle=uventet format"
+        logEvent.formattedMessage shouldContain "altinnRolle=UKJENT_ROLLE"
         logEvent.formattedMessage shouldNotContain "hemmelig-rolle"
     }
 
