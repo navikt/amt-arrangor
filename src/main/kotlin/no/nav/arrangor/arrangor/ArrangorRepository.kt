@@ -12,15 +12,14 @@ import java.util.UUID
 class ArrangorRepository(
     private val template: NamedParameterJdbcTemplate,
 ) {
-    private val rowMapper =
-        RowMapper { rs, _ ->
-            ArrangorDbo(
-                id = UUID.fromString(rs.getString("id")),
-                navn = rs.getString("navn"),
-                organisasjonsnummer = rs.getString("organisasjonsnummer"),
-                overordnetArrangorId = rs.getNullableUUID("overordnet_arrangor_id"),
-            )
-        }
+    private val rowMapper = RowMapper { rs, _ ->
+        ArrangorDbo(
+            id = UUID.fromString(rs.getString("id")),
+            navn = rs.getString("navn"),
+            organisasjonsnummer = rs.getString("organisasjonsnummer"),
+            overordnetArrangorId = rs.getNullableUUID("overordnet_arrangor_id"),
+        )
+    }
 
     fun insertOrUpdate(arrangorInput: ArrangorDbo): ArrangorDbo {
         val sql =

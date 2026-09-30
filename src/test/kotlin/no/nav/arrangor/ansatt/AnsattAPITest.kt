@@ -1,9 +1,9 @@
 package no.nav.arrangor.ansatt
 
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import no.nav.arrangor.ControllerTestBase
-import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.AnsattRolle
 import no.nav.arrangor.domain.AnsattRolle.KOORDINATOR
@@ -17,9 +17,7 @@ import tools.jackson.module.kotlin.readValue
 import java.time.LocalDateTime
 import java.util.UUID
 
-class AnsattAPITest(
-    private val ansattRepository: AnsattRepository,
-) : ControllerTestBase() {
+class AnsattAPITest : ControllerTestBase() {
     @Nested
     @DisplayName("Tester at alle endepunkt er sikret")
     inner class EndpointsSecuredTests {
@@ -196,7 +194,7 @@ class AnsattAPITest(
             mockPerson(personident, personId, "Test", null, "Testersen")
             val oldAnsatt = getAnsatt(personident)
 
-            ansattRepository.setSynchronized(oldAnsatt.id, LocalDateTime.now().minusMinutes(61))
+            testDatabase.setLastSynchronized(oldAnsatt.id, LocalDateTime.now().minusMinutes(61))
 
             resetClientMocks()
             mockAltinnRoller(
@@ -211,7 +209,7 @@ class AnsattAPITest(
 
             nyAnsatt.personalia.navn.fornavn shouldBe "Test"
 
-            nyAnsatt.arrangorer.map { it.arrangorId } shouldContainExactly listOf(arrangorTwo.id, arrangorThree.id)
+            nyAnsatt.arrangorer.map { it.arrangorId } shouldContainExactlyInAnyOrder listOf(arrangorTwo.id, arrangorThree.id)
 
             getRoller(nyAnsatt, arrangorTwo.id) shouldContainExactly listOf(KOORDINATOR)
             getRoller(nyAnsatt, arrangorThree.id) shouldContainExactly listOf(KOORDINATOR, VEILEDER)

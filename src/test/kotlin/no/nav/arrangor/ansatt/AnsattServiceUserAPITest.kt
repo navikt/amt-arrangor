@@ -9,7 +9,6 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.mockk.every
 import no.nav.arrangor.ControllerTestBase
-import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
 import no.nav.arrangor.ansatt.repository.KoordinatorsDeltakerlisteDbo
@@ -306,13 +305,11 @@ class AnsattServiceUserAPITest(
     fun `getAnsatt (id) - autentisert - returnerer ansatt`() {
         val arrangorOne = testDatabase.insertArrangor()
         val personident = "12345678910"
-        val ansattId = UUID.randomUUID()
         val personId = UUID.randomUUID()
-        ansattRepository.insertOrUpdate(
-            AnsattDbo(
-                id = ansattId,
-                personId = personId,
+        val ansattDbo =
+            testDatabase.insertAnsatt(
                 personident = personident,
+                personId = personId,
                 fornavn = "Test",
                 mellomnavn = null,
                 etternavn = "Testersen",
@@ -325,14 +322,13 @@ class AnsattServiceUserAPITest(
                             veileder = emptyList(),
                         ),
                     ),
-            ),
-        )
+            )
         mockPerson(personident, personId, "Test", null, "Testersen")
 
         val response =
             sendRequest(
                 method = "GET",
-                path = "/api/service/ansatt/$ansattId",
+                path = "/api/service/ansatt/${ansattDbo.id}",
                 headers = mapOf(HttpHeaders.AUTHORIZATION to "Bearer ${getAzureAdToken()}"),
             )
 

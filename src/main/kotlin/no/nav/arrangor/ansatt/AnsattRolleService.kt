@@ -79,7 +79,7 @@ class AnsattRolleService(
 
         // Ett delt tidspunkt for hele denne synk-operasjonen (kan omfatte flere roller/arrangører),
         // slik at vi ikke gjentar rotårsaken til de historiske nær-duplikatene i ansatt_arrangor_rolle
-        // (se docs/ansatt-arrangor-dual-write.md): separate ZonedDateTime.now()-kall
+        // (se AnsattArrangorSyncService): separate ZonedDateTime.now()-kall
         // per element ga mikrosekund-forskjellige gyldigTil-verdier for samme logiske hendelse.
         val deaktiveringstidspunkt = ZonedDateTime.now()
 
@@ -138,11 +138,15 @@ class AnsattRolleService(
             .find { it.erGyldig() && it.rolle == rolleOgArrangor.rolle }
             ?.also { it.gyldigTil = deaktiveringstidspunkt }
             ?: return null
+
         val deaktiverteKoordinatorer = if (rolleOgArrangor.rolle == AnsattRolle.KOORDINATOR) {
-            arrangor.koordinator.filter { it.erGyldig() }.onEach { it.gyldigTil = deaktiveringstidspunkt }
+            arrangor.koordinator
+                .filter { it.erGyldig() }
+                .onEach { it.gyldigTil = deaktiveringstidspunkt }
         } else {
             emptyList()
         }
+
         val deaktiverteVeiledere = if (rolleOgArrangor.rolle == AnsattRolle.VEILEDER) {
             arrangor.veileder.filter { it.erGyldig() }.onEach { it.gyldigTil = deaktiveringstidspunkt }
         } else {
@@ -150,6 +154,7 @@ class AnsattRolleService(
         }
 
         logger.info("Ansatt med ${ansatt.id} mistet ${rolleOgArrangor.rolle} hos ${arrangor.arrangorId}")
+
         return DeaktiverteTilganger(
             arrangorId = arrangor.arrangorId,
             rolle = deaktivertRolle,
@@ -190,7 +195,10 @@ class AnsattRolleService(
         roller: List<AltinnRolle>,
         arrangorer: List<Arrangor>,
     ): List<RolleOgArrangor> = roller.flatMap { altinnRolle ->
-        kombinerRollerOgArrangor(altinnRolle, arrangorer)
+        kombinerRollerOgArrangor(
+            altinnRolle = altinnRolle,
+            arrangorer = arrangorer,
+        )
     }
 
     private fun kombinerRollerOgArrangor(

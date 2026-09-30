@@ -14,16 +14,7 @@ import org.springframework.stereotype.Repository
 import java.time.ZonedDateTime
 import java.util.UUID
 
-/**
- * Mekanisk persistens for den normaliserte representasjonen av `ansatt.arrangorer`
- * (ansatt_arrangor + de tre barnetabellene). Denne klassen tar IKKE forretningsbeslutninger
- * (hvilke roller som skal deaktiveres, hvilken dato som skal brukes osv.) — den mottar alltid
- * ferdig beregnet tilstand fra kalleren. Se docs/ansatt-arrangor-dual-write.md.
- *
- * Skriving koordineres i overgangsfasen med [AnsattRepository] sin jsonb-kolonne og
- * transaksjonsbeskyttes av et service-lag (ikke denne klassen). Lesemetodene bygger hele
- * arrangøraggregatet fra de normaliserte tabellene.
- */
+/** Persistens og lesing av roller og tilganger fra de normaliserte ansatt-arrangør-tabellene. */
 @Repository
 class AnsattArrangorRepository(
     private val template: NamedParameterJdbcTemplate,
@@ -182,8 +173,15 @@ class AnsattArrangorRepository(
     ) {
         ensureAnsattArrangorer(ansattId, setOf(arrangorId))
         insertKoordinatorer(
-            ansattId,
-            listOf(ArrangorDbo(arrangorId, emptyList(), emptyList(), listOf(koordinator))),
+            ansattId = ansattId,
+            arrangorer = listOf(
+                ArrangorDbo(
+                    arrangorId = arrangorId,
+                    roller = emptyList(),
+                    veileder = emptyList(),
+                    koordinator = listOf(koordinator),
+                ),
+            ),
         )
     }
 
@@ -304,9 +302,8 @@ class AnsattArrangorRepository(
     )
 
     /**
-     * Speiler [AnsattRepository.deaktiverVeiledereForDeltaker]: setter `gyldig_til` for alle
-     * fortsatt-gyldige veiledere for [deltakerId]. Returnerer berørte `ansatt_id` for verifisering
-     * av at jsonb- og ny-tabell-siden endrer nøyaktig de samme radene.
+     * Setter `gyldig_til` for alle fortsatt-gyldige veiledere for [deltakerId].
+     * Returnerer ansatt-ID-ene som skal publiseres på nytt.
      */
     fun deaktiverVeiledereForDeltaker(
         deltakerId: UUID,
@@ -333,8 +330,8 @@ class AnsattArrangorRepository(
     }
 
     /**
-     * Speiler [AnsattRepository.maybeReaktiverVeiledereForDeltaker]: nullstiller `gyldig_til` for
-     * veiledere hvis gyldighet fortsatt lå frem i tid da deaktiveringen ble angret.
+     * Nullstiller `gyldig_til` for veiledere hvis gyldighet fortsatt lå frem i tid da
+     * deaktiveringen ble angret.
      */
     fun maybeReaktiverVeiledereForDeltaker(
         deltakerId: UUID,

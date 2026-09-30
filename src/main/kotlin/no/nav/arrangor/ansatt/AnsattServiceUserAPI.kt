@@ -20,7 +20,8 @@ class AnsattServiceUserAPI(
         @RequestBody body: AnsattRequestBody,
     ): Ansatt {
         body.validatePersonident()
-        return ansattService.get(body.personident) ?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
+        return ansattService.get(body.personident)
+            ?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
     }
 
     @GetMapping("{id}")

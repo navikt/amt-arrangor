@@ -15,6 +15,7 @@ data class AnsattDbo(
     val fornavn: String,
     val mellomnavn: String?,
     val etternavn: String,
+    // Fylles av AnsattRepository fra normaliserte tabeller; lagres ikke i ansatt-tabellen.
     val arrangorer: List<ArrangorDbo>,
     val modifiedAt: LocalDateTime = LocalDateTime.now(),
     val lastSynchronized: LocalDateTime = LocalDateTime.now(),

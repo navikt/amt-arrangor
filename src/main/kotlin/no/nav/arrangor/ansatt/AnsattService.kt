@@ -26,7 +26,6 @@ import java.util.UUID
 class AnsattService(
     private val personClient: PersonClient,
     private val ansattRepository: AnsattRepository,
-    private val ansattArrangorReadService: AnsattArrangorReadService,
     private val ansattArrangorSyncService: AnsattArrangorSyncService,
     private val rolleService: AnsattRolleService,
     private val producerService: ProducerService,
@@ -53,7 +52,8 @@ class AnsattService(
     ): Ansatt {
         val (ansatt, arrangor) = hentKoordinatorOgArrangor(personident, arrangorId)
 
-        val eksisterendeDeltakerliste = arrangor.koordinator.find { it.deltakerlisteId == deltakerlisteId }
+        val eksisterendeDeltakerliste = arrangor.koordinator
+            .find { it.deltakerlisteId == deltakerlisteId }
 
         return when {
             eksisterendeDeltakerliste?.erGyldig() == true -> {
@@ -61,9 +61,7 @@ class AnsattService(
                 getAndMaybeUpdateAnsatt(ansatt)
             }
 
-            else -> {
-                opprettKoordinatorTilgang(arrangor, deltakerlisteId, ansatt)
-            }
+            else -> opprettKoordinatorTilgang(arrangor, deltakerlisteId, ansatt)
         }
     }
 
@@ -118,18 +116,19 @@ class AnsattService(
         ansattDbo: AnsattDbo,
         fjerningstidspunkt: ZonedDateTime,
     ): Ansatt {
-        arrangor.koordinator
+        val deaktivertAnsatt = arrangor.koordinator
             .find { it.deltakerlisteId == deltakerlisteId && it.erGyldig() }
             ?.let {
                 it.gyldigTil = fjerningstidspunkt
 
-                mapToAnsatt(ansattArrangorSyncService.deaktiverKoordinator(ansattDbo, arrangor.arrangorId, it))
-                    .also { ansatt -> producerService.publishAnsatt(ansatt) }
+                ansattArrangorSyncService
+                    .deaktiverKoordinator(ansattDbo, arrangor.arrangorId, it)
+                    .also { oppdatert -> producerService.publishAnsatt(mapToAnsatt(oppdatert)) }
                     .also { metricsService.incFjernetSomKoordinator() }
                     .also { logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId") }
             }
 
-        return getAndMaybeUpdateAnsatt(ansattDbo)
+        return getAndMaybeUpdateAnsatt(deaktivertAnsatt ?: ansattDbo)
     }
 
     private fun hentKoordinatorOgArrangor(
@@ -138,7 +137,6 @@ class AnsattService(
     ): Pair<AnsattDbo, ArrangorDbo> {
         val ansattDbo = ansattRepository
             .get(personident)
-            ?.let { ansattArrangorReadService.ansattMedValgtArrangorkilde(it) }
             ?: throw NoSuchElementException("Ansatt finnes ikke")
 
         val arrangor = finnArrangorMedRolle(
@@ -174,7 +172,6 @@ class AnsattService(
     ) {
         val ansattDbo = ansattRepository
             .get(personident)
-            ?.let { ansattArrangorReadService.ansattMedValgtArrangorkilde(it) }
             ?: throw NoSuchElementException("Ansatt finnes ikke")
 
         finnArrangorMedRolle(
@@ -183,9 +180,7 @@ class AnsattService(
             rolle = AnsattRolle.KOORDINATOR,
         ).getOrThrow()
 
-        val ansatteSomFjernes = ansattArrangorReadService.ansatteMedValgtArrangorkilde(
-            ansattRepository.getAnsatte(request.veilederSomFjernes.map { it.ansattId }),
-        )
+        val ansatteSomFjernes = ansattRepository.getAnsatte(request.veilederSomFjernes.map { it.ansattId })
         val fjerningstidspunkt = ZonedDateTime.now()
 
         ansatteSomFjernes.forEach { ansatt ->
@@ -199,9 +194,7 @@ class AnsattService(
             )
         }
 
-        val ansatteSomLeggesTil = ansattArrangorReadService.ansatteMedValgtArrangorkilde(
-            ansattRepository.getAnsatte(request.veilederSomLeggesTil.map { it.ansattId }),
-        )
+        val ansatteSomLeggesTil = ansattRepository.getAnsatte(request.veilederSomLeggesTil.map { it.ansattId })
 
         ansatteSomLeggesTil.forEach { ansatt ->
             setVeileder(
@@ -312,13 +305,11 @@ class AnsattService(
     }
 
     fun oppdaterAnsattesRoller() {
-        val ansatte = ansattRepository.getToSynchronize(
-            maxSize = 50,
-            synchronizedBefore = LocalDateTime.now().minusDays(7),
-        )
-        ansattArrangorReadService
-            .ansatteMedValgtArrangorkilde(ansatte)
-            .forEach { oppdaterRollerMedValgtArrangorkilde(it) }
+        ansattRepository
+            .getToSynchronize(
+                maxSize = 50,
+                synchronizedBefore = LocalDateTime.now().minusDays(7),
+            ).forEach { oppdaterRoller(it) }
     }
 
     private fun getAndMaybeUpdateAnsatt(ansattDbo: AnsattDbo): Ansatt {
@@ -331,10 +322,8 @@ class AnsattService(
         }
     }
 
-    fun oppdaterRoller(ansattDbo: AnsattDbo): Ansatt =
-        oppdaterRollerMedValgtArrangorkilde(ansattArrangorReadService.ansattMedValgtArrangorkilde(ansattDbo))
-
-    private fun oppdaterRollerMedValgtArrangorkilde(ansattDbo: AnsattDbo): Ansatt {
+    /** Tar bare imot [AnsattDbo] lest fra [AnsattRepository], slik at arrangørrelasjonene er med. */
+    private fun oppdaterRoller(ansattDbo: AnsattDbo): Ansatt {
         val ansattDboMedOppdaterteRoller = rolleService.getAnsattDboMedOppdaterteRoller(ansattDbo)
 
         val oppdatertAnsattDbo = ansattArrangorSyncService.oppdaterRoller(ansattDboMedOppdaterteRoller)
@@ -346,14 +335,9 @@ class AnsattService(
     fun getAll(
         offset: Int,
         limit: Int,
-    ): List<Ansatt> = ansattArrangorReadService
-        .ansatteMedValgtArrangorkilde(ansattRepository.getAll(offset, limit))
-        .map { mapToAnsattMedArrangorer(it) }
+    ): List<Ansatt> = ansattRepository.getAll(offset, limit).map { mapToAnsatt(it) }
 
-    private fun mapToAnsatt(ansattDbo: AnsattDbo): Ansatt =
-        mapToAnsattMedArrangorer(ansattArrangorReadService.ansattMedValgtArrangorkilde(ansattDbo))
-
-    private fun mapToAnsattMedArrangorer(ansattDbo: AnsattDbo): Ansatt = Ansatt(
+    private fun mapToAnsatt(ansattDbo: AnsattDbo): Ansatt = Ansatt(
         id = ansattDbo.id,
         personalia = ansattDbo.toPersonalia(),
         arrangorer = mapToTilknyttetArrangorListe(ansattDbo.arrangorer),
@@ -373,13 +357,12 @@ class AnsattService(
             }
             TilknyttetArrangor(
                 arrangorId = arrangorDbo.arrangorId,
-                arrangor =
-                    Arrangor(
-                        id = arrangor.id,
-                        navn = arrangor.navn,
-                        organisasjonsnummer = arrangor.organisasjonsnummer,
-                        overordnetArrangorId = arrangor.overordnetArrangor?.id,
-                    ),
+                arrangor = Arrangor(
+                    id = arrangor.id,
+                    navn = arrangor.navn,
+                    organisasjonsnummer = arrangor.organisasjonsnummer,
+                    overordnetArrangorId = arrangor.overordnetArrangor?.id,
+                ),
                 overordnetArrangor = arrangor.overordnetArrangor,
                 roller = arrangorDbo.roller.filter { it.erGyldig() }.map { it.rolle },
                 veileder = arrangorDbo.veileder.filter { it.erGyldig() }.map {
@@ -398,9 +381,9 @@ class AnsattService(
         deaktiveringsdato: ZonedDateTime,
         status: DeltakerStatusType?,
     ) {
-        val endring = ansattArrangorSyncService.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
-        val ansatteEndret = ansattArrangorReadService.endredeAnsatteFraValgtKilde(endring)
-        ansatteEndret.forEach { producerService.publishAnsatt(mapToAnsattMedArrangorer(it)) }
+        val endredeAnsattIder = ansattArrangorSyncService.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
+        val ansatteEndret = ansattRepository.getAnsatte(endredeAnsattIder)
+        ansatteEndret.forEach { producerService.publishAnsatt(mapToAnsatt(it)) }
 
         if (ansatteEndret.isNotEmpty()) {
             logger.info("Deaktiverte veiledere for deltaker $deltakerId med status ${status?.name ?: "slettet"}")
@@ -411,13 +394,10 @@ class AnsattService(
         deltakerId: UUID,
         status: DeltakerStatusType,
     ) {
-        // Delt terskel-tidspunkt for jsonb- og tabell-skriving i samme kall — se
-        // docs/ansatt-arrangor-dual-write.md. To separate ZonedDateTime.now()-kall
-        // (ett i hvert repository) ville kunne gitt mikrosekund-avvikende terskler.
         val terskel = ZonedDateTime.now()
-        val endring = ansattArrangorSyncService.maybeReaktiverVeiledereForDeltaker(deltakerId, terskel)
-        val ansatteEndret = ansattArrangorReadService.endredeAnsatteFraValgtKilde(endring)
-        ansatteEndret.forEach { producerService.publishAnsatt(mapToAnsattMedArrangorer(it)) }
+        val endredeAnsattIder = ansattArrangorSyncService.maybeReaktiverVeiledereForDeltaker(deltakerId, terskel)
+        val ansatteEndret = ansattRepository.getAnsatte(endredeAnsattIder)
+        ansatteEndret.forEach { producerService.publishAnsatt(mapToAnsatt(it)) }
 
         if (ansatteEndret.isNotEmpty()) {
             logger.info("Reaktiverte veiledere ${ansatteEndret.size} for deltaker $deltakerId med status ${status.name}")
@@ -429,7 +409,7 @@ class AnsattService(
         deltakerIder: List<UUID>,
         arrangorId: UUID,
     ) {
-        val ansatte = ansattArrangorReadService.getAnsatteHosArrangor(arrangorId)
+        val ansatte = ansattRepository.getAnsatteHosArrangor(arrangorId)
         val fjerningstidspunkt = ZonedDateTime.now()
 
         for (ansatt in ansatte) {

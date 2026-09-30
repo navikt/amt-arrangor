@@ -61,7 +61,6 @@ dependencies {
     implementation(libs.nav.common.job)
     implementation(libs.amt.lib.utils)
     implementation(libs.amt.lib.spring.boot)
-    implementation(libs.unleash)
 
     // Test – Spring Boot testoppsett (JDBC, RestClient, MVC)
     testImplementation("org.springframework.boot:spring-boot-starter-test")
