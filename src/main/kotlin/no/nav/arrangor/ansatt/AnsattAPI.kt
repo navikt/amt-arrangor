@@ -30,7 +30,7 @@ class AnsattAPI(
         return ansatt
     }
 
-    @PostMapping("koordinator/{arrangorId}/{deltakerlisteId}")
+    @PostMapping("/koordinator/{arrangorId}/{deltakerlisteId}")
     fun setKoordinatorForDeltakerliste(
         @PathVariable deltakerlisteId: UUID,
         @PathVariable arrangorId: UUID,
@@ -43,7 +43,7 @@ class AnsattAPI(
         )
     }
 
-    @DeleteMapping("koordinator/{arrangorId}/{deltakerlisteId}")
+    @DeleteMapping("/koordinator/{arrangorId}/{deltakerlisteId}")
     fun fjernKoordinatorForDeltakerliste(
         @PathVariable deltakerlisteId: UUID,
         @PathVariable arrangorId: UUID,
@@ -56,7 +56,7 @@ class AnsattAPI(
         )
     }
 
-    @PostMapping("veiledere/{deltakerId}")
+    @PostMapping("/veiledere/{deltakerId}")
     fun oppdaterVeiledereForDeltaker(
         @PathVariable deltakerId: UUID,
         @RequestBody request: OppdaterVeiledereForDeltakerRequest,

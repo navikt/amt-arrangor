@@ -24,7 +24,7 @@ class AnsattServiceUserAPI(
             ?: throw NoSuchElementException("Ansatt fantes ikke eller kunne ikke opprettes.")
     }
 
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     fun get(
         @PathVariable id: UUID,
     ): Ansatt = ansattService.get(id)

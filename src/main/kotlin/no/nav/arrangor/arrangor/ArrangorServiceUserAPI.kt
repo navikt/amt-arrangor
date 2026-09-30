@@ -21,7 +21,7 @@ class ArrangorServiceUserAPI(
         return arrangorService.getArrangorMedOverordnetArrangor(gyldigOrgnummer)
     }
 
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     fun get(
         @PathVariable id: UUID,
     ): ArrangorMedOverordnetArrangor = arrangorService.getArrangorMedOverordnetArrangor(id)
