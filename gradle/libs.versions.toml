@@ -22,7 +22,6 @@ amt-lib = "1.2026.09.28_05.44-15fb3d33d2d7"
 kotest = "6.2.5"
 mockk = "1.14.11"
 mock-oauth2-server = "6.0.3"
-unleash = "12.3.0"
 
 kafka-clients = "4.3.1"
 springmockk = "5.0.1"
@@ -57,4 +56,3 @@ amt-lib-spring-boot = { module = "no.nav.amt.deltakelser.lib:spring-boot", versi
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 mockk = { module = "io.mockk:mockk-jvm", version.ref = "mockk" }
 mock-oauth2-server = { module = "no.nav.security:mock-oauth2-server", version.ref = "mock-oauth2-server" }
-unleash = { module = "io.getunleash:unleash-client-java", version.ref = "unleash" }

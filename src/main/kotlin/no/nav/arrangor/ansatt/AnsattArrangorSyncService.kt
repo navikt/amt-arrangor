@@ -11,30 +11,34 @@ import java.time.ZonedDateTime
 import java.util.UUID
 
 /**
- * Koordinerer dual-write mellom `ansatt.arrangorer` (jsonb) og de normaliserte tabellene
- * `ansatt_arrangor`(_rolle|_veileder|_koordinator). Hver forretningsoperasjon sendes eksplisitt
- * til begge representasjonene, slik at de normaliserte tabellene ikke bygges opp igjen fra jsonb.
- * All skriving skjer i én transaksjon slik at representasjonene ikke drifter pga. delvis feil
- * (ingen `@Transactional`-presedens fantes i kodebasen fra før — se
- * docs/ansatt-arrangor-dual-write.md).
+ * Skriver relasjoner til normaliserte tabeller innenfor samme transaksjon som personalia.
  *
- * Denne klassen tar IKKE forretningsbeslutninger — den mottar ferdig beregnede operasjoner fra
- * [AnsattService]/[AnsattRolleService] og skriver dem begge steder.
- * [ZonedDateTime] for `gyldigTil` MÅ være beregnet én gang av kalleren og sendes uendret inn hit
- * (se §8.4) — denne klassen kaller aldri selv `ZonedDateTime.now()` for å unngå å gjenskape de
- * historiske mikrosekund-nær-duplikatene V14 måtte deduplisere bort.
+ * Tjenesten mottar ferdig beregnede operasjoner og utfører dem mot `ansatt_arrangor_rolle`,
+ * `ansatt_arrangor_veileder` og `ansatt_arrangor_koordinator`. Operasjonene er bevisst
+ * finkornede — legg til eller deaktiver enkeltrader — i stedet for å skrive et helt snapshot.
+ *
+ * [AnsattArrangorRepository.replaceForAnsatt] brukes derfor bare ved opprettelse av en ny
+ * ansatt. Eksisterende ansatte har fått grunnlaget sitt gjennom Flyway-backfillen, og en
+ * full erstatning ved hver endring ville skrevet om historikk som allerede er korrekt.
+ *
+ * Når én forretningsoperasjon påvirker flere rader, beregnes tidspunktet én gang og sendes
+ * videre, slik at rader som hører til samme hendelse får identisk `gyldig_fra`/`gyldig_til`.
+ *
+ * Kafka-hendelser med personalia går utenom denne tjenesten og bruker
+ * [AnsattRepository.updatePersonalia], som ikke rører arrangørrelasjonene. Det hindrer at et
+ * foreldet [AnsattDbo]-snapshot overskriver nyere relasjoner.
  */
 @Service
 class AnsattArrangorSyncService(
     private val ansattRepository: AnsattRepository,
     private val ansattArrangorRepository: AnsattArrangorRepository,
 ) {
-    /** Full initialisering brukes bare når en ny ansatt opprettes etter Flyway-backfillen. */
+    /** Full initialisering brukes bare når en ny ansatt opprettes. */
     @Transactional
     fun opprettAnsatt(ansatt: AnsattDbo): AnsattDbo {
         val lagretAnsatt = ansattRepository.insertOrUpdate(ansatt)
-        ansattArrangorRepository.replaceForAnsatt(lagretAnsatt.id, lagretAnsatt.arrangorer)
-        return lagretAnsatt
+        ansattArrangorRepository.replaceForAnsatt(lagretAnsatt.id, ansatt.arrangorer)
+        return hentLagret(lagretAnsatt.id)
     }
 
     @Transactional
@@ -43,20 +47,31 @@ class AnsattArrangorSyncService(
         oppdatering.nyeRoller.forEach {
             ansattArrangorRepository.insertRolle(lagretAnsatt.id, it.arrangorId, it.rolle)
         }
+
         oppdatering.deaktiverteTilganger.forEach { deaktiverte ->
             ansattArrangorRepository.deaktiverRolle(
-                lagretAnsatt.id,
-                deaktiverte.arrangorId,
-                deaktiverte.rolle,
+                ansattId = lagretAnsatt.id,
+                arrangorId = deaktiverte.arrangorId,
+                rolle = deaktiverte.rolle,
             )
+
             deaktiverte.veiledere.forEach {
-                ansattArrangorRepository.deaktiverVeileder(lagretAnsatt.id, deaktiverte.arrangorId, it)
+                ansattArrangorRepository.deaktiverVeileder(
+                    ansattId = lagretAnsatt.id,
+                    arrangorId = deaktiverte.arrangorId,
+                    veileder = it,
+                )
             }
+
             deaktiverte.koordinatorer.forEach {
-                ansattArrangorRepository.deaktiverKoordinator(lagretAnsatt.id, deaktiverte.arrangorId, it)
+                ansattArrangorRepository.deaktiverKoordinator(
+                    ansattId = lagretAnsatt.id,
+                    arrangorId = deaktiverte.arrangorId,
+                    koordinator = it,
+                )
             }
         }
-        return lagretAnsatt
+        return hentLagret(lagretAnsatt.id)
     }
 
     @Transactional
@@ -66,8 +81,13 @@ class AnsattArrangorSyncService(
         veileder: VeilederDeltakerDbo,
     ): AnsattDbo {
         val lagretAnsatt = ansattRepository.insertOrUpdate(ansatt)
-        ansattArrangorRepository.insertVeileder(lagretAnsatt.id, arrangorId, veileder)
-        return lagretAnsatt
+        ansattArrangorRepository.insertVeileder(
+            ansattId = lagretAnsatt.id,
+            arrangorId = arrangorId,
+            veileder = veileder,
+        )
+
+        return hentLagret(lagretAnsatt.id)
     }
 
     @Transactional
@@ -77,8 +97,14 @@ class AnsattArrangorSyncService(
         veiledere: List<VeilederDeltakerDbo>,
     ): AnsattDbo {
         val lagretAnsatt = ansattRepository.insertOrUpdate(ansatt)
-        veiledere.forEach { ansattArrangorRepository.deaktiverVeileder(lagretAnsatt.id, arrangorId, it) }
-        return lagretAnsatt
+        veiledere.forEach {
+            ansattArrangorRepository.deaktiverVeileder(
+                ansattId = lagretAnsatt.id,
+                arrangorId = arrangorId,
+                veileder = it,
+            )
+        }
+        return hentLagret(lagretAnsatt.id)
     }
 
     @Transactional
@@ -88,8 +114,12 @@ class AnsattArrangorSyncService(
         koordinator: KoordinatorsDeltakerlisteDbo,
     ): AnsattDbo {
         val lagretAnsatt = ansattRepository.insertOrUpdate(ansatt)
-        ansattArrangorRepository.insertKoordinator(lagretAnsatt.id, arrangorId, koordinator)
-        return lagretAnsatt
+        ansattArrangorRepository.insertKoordinator(
+            ansattId = lagretAnsatt.id,
+            arrangorId = arrangorId,
+            koordinator = koordinator,
+        )
+        return hentLagret(lagretAnsatt.id)
     }
 
     @Transactional
@@ -99,46 +129,35 @@ class AnsattArrangorSyncService(
         koordinator: KoordinatorsDeltakerlisteDbo,
     ): AnsattDbo {
         val lagretAnsatt = ansattRepository.insertOrUpdate(ansatt)
-        ansattArrangorRepository.deaktiverKoordinator(lagretAnsatt.id, arrangorId, koordinator)
-        return lagretAnsatt
+        ansattArrangorRepository.deaktiverKoordinator(
+            ansattId = lagretAnsatt.id,
+            arrangorId = arrangorId,
+            koordinator = koordinator,
+        )
+        return hentLagret(lagretAnsatt.id)
     }
 
-    /**
-     * Speiler [AnsattRepository.deaktiverVeiledereForDeltaker] mot [AnsattArrangorRepository]
-     * for samme [deltakerId]. [deaktiveringsdato] må være beregnet én gang av kalleren
-     * — brukes uendret for begge skrivinger, slik at jsonb og ny tabell aldri kan få avvikende
-     * `gyldigTil` for samme logiske hendelse.
-     */
     @Transactional
     fun deaktiverVeiledereForDeltaker(
         deltakerId: UUID,
         deaktiveringsdato: ZonedDateTime,
-    ): EndredeAnsatte {
-        val ansatteEndretIJsonb = ansattRepository.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
-        val ansattIderEndretINormaliserteTabeller =
-            ansattArrangorRepository.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
-        return EndredeAnsatte(ansatteEndretIJsonb, ansattIderEndretINormaliserteTabeller)
-    }
+    ): List<UUID> = ansattArrangorRepository.deaktiverVeiledereForDeltaker(
+        deltakerId = deltakerId,
+        deaktiveringsdato = deaktiveringsdato,
+    )
 
-    /**
-     * Speiler [AnsattRepository.maybeReaktiverVeiledereForDeltaker] mot [AnsattArrangorRepository]
-     * for samme [deltakerId]. [terskel] er grensen for hvilke rader som reaktiveres
-     * (`gyldig_til > terskel`), og må — i likhet med [deaktiverVeiledereForDeltaker] — være ett
-     * delt tidspunkt beregnet én gang av kalleren, ikke to separate `ZonedDateTime.now()`-kall.
-     */
     @Transactional
     fun maybeReaktiverVeiledereForDeltaker(
         deltakerId: UUID,
         terskel: ZonedDateTime,
-    ): EndredeAnsatte {
-        val ansatteEndretIJsonb = ansattRepository.maybeReaktiverVeiledereForDeltaker(deltakerId, terskel)
-        val ansattIderEndretINormaliserteTabeller =
-            ansattArrangorRepository.maybeReaktiverVeiledereForDeltaker(deltakerId, terskel)
-        return EndredeAnsatte(ansatteEndretIJsonb, ansattIderEndretINormaliserteTabeller)
+    ): List<UUID> = ansattArrangorRepository.maybeReaktiverVeiledereForDeltaker(
+        deltakerId = deltakerId,
+        deaktiveringsdato = terskel,
+    )
+
+    private fun hentLagret(ansattId: UUID): AnsattDbo = checkNotNull(
+        ansattRepository.get(ansattId),
+    ) {
+        "Ansatt $ansattId forsvant i samme transaksjon"
     }
 }
-
-data class EndredeAnsatte(
-    val ansatteEndretIJsonb: List<AnsattDbo>,
-    val ansattIderEndretINormaliserteTabeller: List<UUID>,
-)

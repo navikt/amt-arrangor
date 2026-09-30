@@ -18,7 +18,7 @@ class AnsattArrangorSyncServiceDuplicateRoleTest(
     private val ansattArrangorRepository: AnsattArrangorRepository,
 ) : IntegrationTest() {
     @Test
-    fun `bevarer duplikate rolleperioder i jsonb uten a bryte unikhetskravet i nye tabeller`() {
+    fun `dedupliserer kolliderende rolleperioder i normaliserte tabeller`() {
         // Arrange
         val arrangor = testDatabase.insertArrangor()
         val veilederGyldigFra = ZonedDateTime.parse("2025-01-01T00:00:00Z")
@@ -54,8 +54,8 @@ class AnsattArrangorSyncServiceDuplicateRoleTest(
         // Assert
         val ansattFraDatabase = ansattRepository.get(ansatt.id).shouldNotBeNull()
         val normaliserteArrangorer = ansattArrangorRepository.getArrangorerForAnsatt(ansatt.id)
-        lagretAnsatt.arrangorer.single().roller shouldBe arrangorDbo.roller
-        ansattFraDatabase.arrangorer.single().roller shouldBe arrangorDbo.roller
+        lagretAnsatt.arrangorer shouldBe normaliserteArrangorer
+        ansattFraDatabase.arrangorer shouldBe normaliserteArrangorer
         normaliserteArrangorer.single().roller shouldHaveSize 4
     }
 }

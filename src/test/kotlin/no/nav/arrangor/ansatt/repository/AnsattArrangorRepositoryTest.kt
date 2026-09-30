@@ -26,7 +26,7 @@ class AnsattArrangorRepositoryTest(
             // Arrange
             val ansatt = testDatabase.insertAnsatt(arrangorer = emptyList())
             val arrangor = testDatabase.insertArrangor()
-            val deltakerId = UUID.randomUUID()
+            val deltakerId = testDatabase.insertDeltaker()
             val deltakerlisteId = UUID.randomUUID()
 
             val arrangorer = listOf(
@@ -200,7 +200,7 @@ class AnsattArrangorRepositoryTest(
         fun `rolleoperasjoner endrer roller uten a overskrive tilganger`() {
             val ansatt = testDatabase.insertAnsatt(arrangorer = emptyList())
             val arrangor = testDatabase.insertArrangor()
-            val deltakerId = UUID.randomUUID()
+            val deltakerId = testDatabase.insertDeltaker()
             val deltakerlisteId = UUID.randomUUID()
             ansattArrangorRepository.replaceForAnsatt(
                 ansatt.id,
@@ -243,7 +243,7 @@ class AnsattArrangorRepositoryTest(
         fun `insert og deaktiver veileder bruker den konkrete koblingen`() {
             val ansatt = testDatabase.insertAnsatt(arrangorer = emptyList())
             val arrangor = testDatabase.insertArrangor()
-            val veileder = VeilederDeltakerDbo(UUID.randomUUID(), VeilederType.MEDVEILEDER)
+            val veileder = VeilederDeltakerDbo(testDatabase.insertDeltaker(), VeilederType.MEDVEILEDER)
             ansattArrangorRepository.insertVeileder(ansatt.id, arrangor.id, veileder)
             ansattArrangorRepository.insertVeileder(ansatt.id, arrangor.id, veileder)
             val gyldigTil = ZonedDateTime.now().plusDays(1)
@@ -295,8 +295,8 @@ class AnsattArrangorRepositoryTest(
         @Test
         fun `deaktiverVeiledereForDeltaker - aktive veiledere - deaktiverer alle aktive veiledere for deltaker`() {
             // Arrange
-            val deltaker1 = UUID.randomUUID()
-            val deltaker2 = UUID.randomUUID()
+            val deltaker1 = testDatabase.insertDeltaker()
+            val deltaker2 = testDatabase.insertDeltaker()
             val arrangor = testDatabase.insertArrangor()
 
             val ansatt1 = testDatabase.insertAnsatt(arrangorer = emptyList())
@@ -367,7 +367,7 @@ class AnsattArrangorRepositoryTest(
         @Test
         fun `deaktiverVeiledereForDeltaker - allerede deaktivert - endres ikke`() {
             // Arrange
-            val deltaker = UUID.randomUUID()
+            val deltaker = testDatabase.insertDeltaker()
             val arrangor = testDatabase.insertArrangor()
             val ansatt = testDatabase.insertAnsatt(arrangorer = emptyList())
             val opprinneligGyldigTil = ZonedDateTime.now().minusDays(1)
@@ -408,8 +408,8 @@ class AnsattArrangorRepositoryTest(
         @Test
         fun `maybeReaktiverVeiledereForDeltaker - reaktiverer gyldige veiledere for deltaker`() {
             // Arrange
-            val deltaker1 = UUID.randomUUID()
-            val deltaker2 = UUID.randomUUID()
+            val deltaker1 = testDatabase.insertDeltaker()
+            val deltaker2 = testDatabase.insertDeltaker()
             val arrangor = testDatabase.insertArrangor()
 
             val ansatt1 = testDatabase.insertAnsatt(arrangorer = emptyList())
@@ -478,7 +478,7 @@ class AnsattArrangorRepositoryTest(
         @Test
         fun `maybeReaktiverVeiledereForDeltaker - gyldigTil er i fortiden - reaktiverer ikke`() {
             // Arrange
-            val deltaker = UUID.randomUUID()
+            val deltaker = testDatabase.insertDeltaker()
             val arrangor = testDatabase.insertArrangor()
             val ansatt = testDatabase.insertAnsatt(arrangorer = emptyList())
             val gyldigTilIFortiden = ZonedDateTime.now().minusDays(1)
@@ -534,7 +534,7 @@ class AnsattArrangorRepositoryTest(
             val ansatt1 = testDatabase.insertAnsatt(arrangorer = emptyList())
             val ansatt2 = testDatabase.insertAnsatt(arrangorer = emptyList())
             val ansattUtenTilknytning = testDatabase.insertAnsatt(arrangorer = emptyList())
-            val deltakerId = UUID.randomUUID()
+            val deltakerId = testDatabase.insertDeltaker()
             val deltakerlisteId = UUID.randomUUID()
 
             ansattArrangorRepository.replaceForAnsatt(

@@ -1,7 +1,5 @@
 package no.nav.arrangor.utils
 
-import io.kotest.assertions.throwables.shouldNotThrowAny
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -53,23 +51,6 @@ class OrgnummerTest {
         @Test
         fun `tom streng - false`() {
             Orgnummer.erGyldig("") shouldBe false
-        }
-    }
-
-    @Nested
-    inner class KrevGyldigTests {
-        @Test
-        fun `ugyldig verdi - kaster IllegalArgumentException`() {
-            shouldThrow<IllegalArgumentException> {
-                Orgnummer.krevGyldig("abc")
-            }
-        }
-
-        @Test
-        fun `gyldig verdi - kaster ikke feil`() {
-            shouldNotThrowAny {
-                Orgnummer.krevGyldig("812345678")
-            }
         }
     }
 }

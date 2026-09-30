@@ -36,9 +36,12 @@ class ConsumerService(
         val arrangor = arrangorRepository.get(virksomhetDto.organisasjonsnummer)
 
         if (arrangor != null) {
-            val overordnetArrangorId =
-                virksomhetDto.overordnetEnhetOrganisasjonsnummer?.let {
-                    getOverordnetArrangorId(overordnetEnhetOrganisasjonsnummer = it, arrangor = arrangor)
+            val overordnetArrangorId = virksomhetDto.overordnetEnhetOrganisasjonsnummer
+                ?.let {
+                    getOverordnetArrangorId(
+                        overordnetEnhetOrganisasjonsnummer = it,
+                        arrangor = arrangor,
+                    )
                 }
             arrangorRepository
                 .insertOrUpdate(
@@ -55,9 +58,8 @@ class ConsumerService(
     }
 
     fun handleAnsattPersonalia(ansattPersonalia: AnsattPersonaliaDto) {
-        val ansatt =
-            ansattRepository.getByPersonId(ansattPersonalia.id)
-                ?: return logger.warn("Mottok personalia men fant ikke ansatt med personId ${ansattPersonalia.id}")
+        val ansatt = ansattRepository.getByPersonId(ansattPersonalia.id)
+            ?: return logger.warn("Mottok personalia men fant ikke ansatt med personId ${ansattPersonalia.id}")
 
         if (harPersonaliaEndringer(ansatt, ansattPersonalia)) {
             val oppdatert = ansattRepository.updatePersonalia(
@@ -67,10 +69,12 @@ class ConsumerService(
                 mellomnavn = ansattPersonalia.mellomnavn,
                 etternavn = ansattPersonalia.etternavn,
             )
+
             if (!oppdatert) {
                 logger.warn("Ansatt ${ansatt.id} ble fjernet før personalia kunne oppdateres")
                 return
             }
+
             logger.info("Oppdaterte personalia for ansatt ${ansatt.id}")
         }
     }
@@ -100,8 +104,10 @@ class ConsumerService(
                 "Fant ikke overordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer, oppretter overordnet " +
                     "arrangør for arrangør ${arrangor.id}",
             )
-            val nyOverordnetArrangor =
-                enhetsregisterClient.hentVirksomhet(overordnetEnhetOrganisasjonsnummer).let { result ->
+
+            val nyOverordnetArrangor = enhetsregisterClient
+                .hentVirksomhet(overordnetEnhetOrganisasjonsnummer)
+                .let { result ->
                     result.getOrNull()?.let {
                         arrangorRepository.insertOrUpdate(
                             ArrangorRepository.ArrangorDbo(
@@ -113,6 +119,7 @@ class ConsumerService(
                         )
                     }
                 }
+
             if (nyOverordnetArrangor != null) {
                 logger.info("Opprettet ny overordnet arrangør med id ${nyOverordnetArrangor.id}")
                 producerService.publishArrangor(nyOverordnetArrangor.toDomain())
@@ -120,6 +127,7 @@ class ConsumerService(
             } else {
                 logger.warn("Kunne ikke opprette overordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer")
             }
+
             nyOverordnetArrangor?.id
         }
     }

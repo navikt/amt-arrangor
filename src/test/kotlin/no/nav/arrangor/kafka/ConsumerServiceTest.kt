@@ -6,6 +6,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import no.nav.arrangor.IntegrationTest
+import no.nav.arrangor.ansatt.repository.AnsattArrangorRepository
 import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
@@ -32,6 +33,7 @@ class ConsumerServiceTest(
     private val consumerService: ConsumerService,
     private val arrangorRepository: ArrangorRepository,
     private val ansattRepository: AnsattRepository,
+    private val ansattArrangorRepository: AnsattArrangorRepository,
     private val deltakerRepository: DeltakerRepository,
 ) : IntegrationTest() {
     val personIdent = "12345678910"
@@ -279,9 +281,6 @@ class ConsumerServiceTest(
                     VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
                 ),
             )
-        ansattRepository.insertOrUpdate(ansatt1)
-        ansattRepository.insertOrUpdate(ansatt2)
-
         val deltaker =
             Deltaker(
                 id = deltakerId1,
@@ -292,8 +291,8 @@ class ConsumerServiceTest(
 
         val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
-        val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-        oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt1 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt1.id)
+        oppdatertAnsatt1.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil!!
@@ -302,8 +301,8 @@ class ConsumerServiceTest(
             arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
         }
 
-        val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-        oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt2 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt2.id)
+        oppdatertAnsatt2.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil!!
@@ -337,9 +336,6 @@ class ConsumerServiceTest(
                     VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
                 ),
             )
-        ansattRepository.insertOrUpdate(ansatt1)
-        ansattRepository.insertOrUpdate(ansatt2)
-
         val deltaker =
             Deltaker(
                 id = deltakerId1,
@@ -349,15 +345,15 @@ class ConsumerServiceTest(
 
         consumerService.handleDeltakerEndring(deltakerId1, deltaker)
 
-        val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-        oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt1 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt1.id)
+        oppdatertAnsatt1.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil shouldBe null
         }
 
-        val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-        oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt2 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt2.id)
+        oppdatertAnsatt2.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil shouldBe null
@@ -386,9 +382,6 @@ class ConsumerServiceTest(
                     VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
                 ),
             )
-        ansattRepository.insertOrUpdate(ansatt1)
-        ansattRepository.insertOrUpdate(ansatt2)
-
         val deltaker =
             Deltaker(
                 id = deltakerId1,
@@ -399,8 +392,8 @@ class ConsumerServiceTest(
 
         val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
-        val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-        oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt1 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt1.id)
+        oppdatertAnsatt1.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil!!
@@ -409,8 +402,8 @@ class ConsumerServiceTest(
             arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
         }
 
-        val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-        oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt2 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt2.id)
+        oppdatertAnsatt2.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil!!
@@ -442,9 +435,6 @@ class ConsumerServiceTest(
                     VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
                 ),
             )
-        ansattRepository.insertOrUpdate(ansatt1)
-        ansattRepository.insertOrUpdate(ansatt2)
-
         val deltaker =
             Deltaker(
                 id = deltakerId1,
@@ -467,8 +457,8 @@ class ConsumerServiceTest(
             ),
         )
 
-        val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-        oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt1 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt1.id)
+        oppdatertAnsatt1.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil shouldBe null
@@ -476,8 +466,8 @@ class ConsumerServiceTest(
             arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
         }
 
-        val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-        oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt2 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt2.id)
+        oppdatertAnsatt2.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil shouldBe null
@@ -507,23 +497,20 @@ class ConsumerServiceTest(
                     VeilederDeltakerDbo(deltakerId1, VeilederType.VEILEDER),
                 ),
             )
-        ansattRepository.insertOrUpdate(ansatt1)
-        ansattRepository.insertOrUpdate(ansatt2)
-
         consumerService.handleDeltakerEndring(deltakerId1, null)
 
         val forventetDeaktiveringsdato = ZonedDateTime.now().plusDays(50)
 
-        val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-        oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt1 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt1.id)
+        oppdatertAnsatt1.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil!!
                 .shouldBeWithin(Duration.ofSeconds(10), forventetDeaktiveringsdato)
         }
 
-        val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-        oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt2 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt2.id)
+        oppdatertAnsatt2.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil!!
@@ -562,9 +549,6 @@ class ConsumerServiceTest(
                     VeilederDeltakerDbo(deltakerId2, VeilederType.MEDVEILEDER),
                 ),
             )
-        ansattRepository.insertOrUpdate(ansatt1)
-        ansattRepository.insertOrUpdate(ansatt2)
-
         val deltaker =
             Deltaker(
                 id = deltakerId1,
@@ -573,8 +557,8 @@ class ConsumerServiceTest(
 
         consumerService.handleDeltakerEndring(deltakerId1, deltaker)
 
-        val oppdatertAnsatt1 = ansattRepository.get(ansatt1.id)
-        oppdatertAnsatt1?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt1 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt1.id)
+        oppdatertAnsatt1.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil
@@ -583,8 +567,8 @@ class ConsumerServiceTest(
             arr.veileder.first { it.deltakerId == deltakerId2 }.gyldigTil shouldBe null
         }
 
-        val oppdatertAnsatt2 = ansattRepository.get(ansatt2.id)
-        oppdatertAnsatt2?.arrangorer?.forEach { arr ->
+        val oppdatertAnsatt2 = ansattArrangorRepository.getArrangorerForAnsatt(ansatt2.id)
+        oppdatertAnsatt2.forEach { arr ->
             arr.veileder
                 .first { it.deltakerId == deltakerId1 }
                 .gyldigTil!!
@@ -597,7 +581,7 @@ class ConsumerServiceTest(
     private fun veileder(
         arrangor: UUID,
         veilderDeltakere: List<VeilederDeltakerDbo>,
-    ): AnsattDbo = testDatabase.ansatt(
+    ): AnsattDbo = testDatabase.insertAnsatt(
         arrangorer =
             listOf(
                 ArrangorDbo(

@@ -14,17 +14,16 @@ import java.util.UUID
 class DeltakerRepository(
     private val template: NamedParameterJdbcTemplate,
 ) {
-    private val rowMapper =
-        RowMapper { rs, _ ->
-            Deltaker(
-                id = UUID.fromString(rs.getString("id")),
-                status = DeltakerStatus(
-                    type = DeltakerStatusType.valueOf(rs.getString("statustype")),
-                    gyldigFra = rs.getTimestamp("gyldig_fra").toSystemZoneLocalDateTime(),
-                    opprettetDato = rs.getTimestamp("opprettet_dato").toSystemZoneLocalDateTime(),
-                ),
-            )
-        }
+    private val rowMapper = RowMapper { rs, _ ->
+        Deltaker(
+            id = UUID.fromString(rs.getString("id")),
+            status = DeltakerStatus(
+                type = DeltakerStatusType.valueOf(rs.getString("statustype")),
+                gyldigFra = rs.getTimestamp("gyldig_fra").toSystemZoneLocalDateTime(),
+                opprettetDato = rs.getTimestamp("opprettet_dato").toSystemZoneLocalDateTime(),
+            ),
+        )
+    }
 
     fun get(id: UUID): Deltaker? = template
         .query(

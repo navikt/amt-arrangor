@@ -2,35 +2,35 @@ package no.nav.arrangor.ansatt.repository
 
 import no.nav.arrangor.utils.sqlParameters
 import no.nav.arrangor.utils.toSystemZoneLocalDateTime
-import org.postgresql.util.PGobject
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.module.kotlin.readValue
 import java.time.LocalDateTime
-import java.time.ZonedDateTime
 import java.util.UUID
 
+/**
+ * Alle lesemetoder returnerer [AnsattDbo] med arrangørrelasjoner fra de normaliserte tabellene,
+ * slik at rollesynk og tilgangskontroll aldri får en ufullstendig ansatt.
+ * Relasjoner skrives via [AnsattArrangorRepository], ikke her.
+ */
 @Repository
 class AnsattRepository(
     private val template: NamedParameterJdbcTemplate,
-    private val objectMapper: ObjectMapper,
+    private val ansattArrangorRepository: AnsattArrangorRepository,
 ) {
-    private val rowMapper =
-        RowMapper { rs, _ ->
-            AnsattDbo(
-                id = UUID.fromString(rs.getString("id")),
-                personId = UUID.fromString(rs.getString("person_id")),
-                personident = rs.getString("personident"),
-                fornavn = rs.getString("fornavn"),
-                mellomnavn = rs.getString("mellomnavn"),
-                etternavn = rs.getString("etternavn"),
-                arrangorer = objectMapper.readValue(rs.getString("arrangorer")),
-                modifiedAt = rs.getTimestamp("modified_at").toSystemZoneLocalDateTime(),
-                lastSynchronized = rs.getTimestamp("last_synchronized").toSystemZoneLocalDateTime(),
-            )
-        }
+    private val rowMapper = RowMapper { rs, _ ->
+        AnsattDbo(
+            id = UUID.fromString(rs.getString("id")),
+            personId = UUID.fromString(rs.getString("person_id")),
+            personident = rs.getString("personident"),
+            fornavn = rs.getString("fornavn"),
+            mellomnavn = rs.getString("mellomnavn"),
+            etternavn = rs.getString("etternavn"),
+            arrangorer = emptyList(),
+            modifiedAt = rs.getTimestamp("modified_at").toSystemZoneLocalDateTime(),
+            lastSynchronized = rs.getTimestamp("last_synchronized").toSystemZoneLocalDateTime(),
+        )
+    }
 
     fun insertOrUpdate(ansatt: AnsattDbo): AnsattDbo {
         val sql =
@@ -42,7 +42,6 @@ class AnsattRepository(
                 fornavn,
                 mellomnavn,
                 etternavn,
-                arrangorer,
                 modified_at,
                 last_synchronized
             )
@@ -53,7 +52,6 @@ class AnsattRepository(
                 :fornavn,
                 :mellomnavn,
                 :etternavn,
-                :arrangorer,
                 :modified_at,
                 :last_synchronized
             )
@@ -62,7 +60,6 @@ class AnsattRepository(
                 fornavn           = EXCLUDED.fornavn,
                 mellomnavn        = EXCLUDED.mellomnavn,
                 etternavn         = EXCLUDED.etternavn,
-                arrangorer        = EXCLUDED.arrangorer,
                 modified_at       = current_timestamp,
                 last_synchronized = EXCLUDED.last_synchronized
             RETURNING *
@@ -78,15 +75,15 @@ class AnsattRepository(
                     "fornavn" to ansatt.fornavn,
                     "mellomnavn" to ansatt.mellomnavn,
                     "etternavn" to ansatt.etternavn,
-                    "arrangorer" to ansatt.arrangorer.toPGObject(objectMapper),
                     "modified_at" to ansatt.modifiedAt,
                     "last_synchronized" to ansatt.lastSynchronized,
                 ),
                 rowMapper,
             ).first()
+            .medArrangorer()
     }
 
-    /** Oppdaterer bare personalia, slik at et foreldet snapshot ikke kan overskrive `arrangorer`. */
+    /** Oppdaterer bare personalia; tilganger lagres separat i normaliserte tabeller. */
     fun updatePersonalia(
         ansattId: UUID,
         personident: String,
@@ -118,17 +115,21 @@ class AnsattRepository(
             sqlParameters("id" to id),
             rowMapper,
         ).firstOrNull()
+        ?.medArrangorer()
 
     fun getAnsatte(ider: List<UUID>): List<AnsattDbo> {
         if (ider.isEmpty()) {
             return emptyList()
         }
-        return template.query(
-            "SELECT * FROM ansatt WHERE id in(:ids)",
-            sqlParameters("ids" to ider),
-            rowMapper,
-        )
+        return template
+            .query(
+                "SELECT * FROM ansatt WHERE id in(:ids)",
+                sqlParameters("ids" to ider),
+                rowMapper,
+            ).medArrangorer()
     }
+
+    fun getAnsatteHosArrangor(arrangorId: UUID): List<AnsattDbo> = getAnsatte(ansattArrangorRepository.getAnsattIderForArrangor(arrangorId))
 
     fun get(personident: String): AnsattDbo? = template
         .query(
@@ -136,6 +137,7 @@ class AnsattRepository(
             sqlParameters("personident" to personident),
             rowMapper,
         ).firstOrNull()
+        ?.medArrangorer()
 
     fun getIdForPersonident(personident: String): UUID? = template
         .queryForList(
@@ -143,17 +145,6 @@ class AnsattRepository(
             sqlParameters("personident" to personident),
             UUID::class.java,
         ).firstOrNull()
-
-    fun setSynchronized(
-        id: UUID,
-        timestamp: LocalDateTime,
-    ) = template.update(
-        "UPDATE ansatt SET last_synchronized = :last_synchronized WHERE id = :id",
-        sqlParameters(
-            "id" to id,
-            "last_synchronized" to timestamp,
-        ),
-    )
 
     fun getToSynchronize(
         maxSize: Int,
@@ -174,7 +165,7 @@ class AnsattRepository(
                 "synchronized_before" to synchronizedBefore,
             )
 
-        return template.query(sql, parameters, rowMapper)
+        return template.query(sql, parameters, rowMapper).medArrangorer()
     }
 
     fun getAll(
@@ -190,12 +181,11 @@ class AnsattRepository(
             LIMIT :limit
             """.trimIndent()
 
-        val parameters =
-            sqlParameters(
-                "offset" to offset,
-                "limit" to limit,
-            )
-        return template.query(sql, parameters, rowMapper)
+        val parameters = sqlParameters(
+            "offset" to offset,
+            "limit" to limit,
+        )
+        return template.query(sql, parameters, rowMapper).medArrangorer()
     }
 
     fun getByPersonId(personId: UUID) = template
@@ -204,134 +194,13 @@ class AnsattRepository(
             sqlParameters("personId" to personId),
             rowMapper,
         ).firstOrNull()
+        ?.medArrangorer()
 
-    fun deaktiverVeiledereForDeltaker(
-        deltakerId: UUID,
-        deaktiveringsdato: ZonedDateTime,
-    ): List<AnsattDbo> {
-        val sql =
-            """
-            WITH kandidater AS (
-              SELECT id, arrangorer
-              FROM ansatt
-              WHERE arrangorer @>
-            	format(
-            	  '[{"veileder":[{"deltakerId":"%s","gyldigTil":null}]}]',
-            	  :deltakerId
-            	)::jsonb
-            ),
-            unnested_veiledere AS (
-              SELECT
-            	kandidater.id AS ansatt_id,
-            	arrangor.index - 1 AS arrangor_idx,
-            	veileder.index - 1 AS veileder_idx
-              FROM kandidater,
-            	LATERAL jsonb_array_elements(kandidater.arrangorer) WITH ORDINALITY AS arrangor(value, index),
-            	LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
-              WHERE
-              	veileder.value ->> 'deltakerId' = :deltakerId
-            	AND veileder.value ->> 'gyldigTil' IS NULL
-            )
-            UPDATE ansatt
-            SET
-            	arrangorer = jsonb_set(
-            	   ansatt.arrangorer,
-            	   ARRAY[
-            		 unnested_veiledere.arrangor_idx::text,
-            		 'veileder',
-            		 unnested_veiledere.veileder_idx::text,
-            		 'gyldigTil'
-            	   ],
-            	   to_jsonb(:deaktiveringsdato),
-            	   false
-             	),
-            	modified_at = current_timestamp
-            FROM unnested_veiledere
-            WHERE ansatt.id = unnested_veiledere.ansatt_id
-            RETURNING ansatt.*;
-            """.trimIndent()
+    private fun AnsattDbo.medArrangorer(): AnsattDbo = copy(arrangorer = ansattArrangorRepository.getArrangorerForAnsatt(id))
 
-        val parameters =
-            sqlParameters(
-                "deaktiveringsdato" to deaktiveringsdato.toString(),
-                "deltakerId" to deltakerId.toString(),
-            )
-
-        return template.query(sql, parameters, rowMapper)
+    private fun List<AnsattDbo>.medArrangorer(): List<AnsattDbo> {
+        if (isEmpty()) return this
+        val arrangorerPerAnsatt = ansattArrangorRepository.getArrangorerForAnsatte(map { it.id })
+        return map { it.copy(arrangorer = arrangorerPerAnsatt[it.id].orEmpty()) }
     }
-
-    fun maybeReaktiverVeiledereForDeltaker(
-        deltakerId: UUID,
-        deaktiveringsdato: ZonedDateTime = ZonedDateTime.now(),
-    ): List<AnsattDbo> {
-        val sql =
-            """
-            WITH kandidater AS (
-              -- Filtrer først ansatte som potensielt matcher, for å bruke GIN-indeks hvis mulig
-              SELECT id, arrangorer
-              FROM ansatt
-              WHERE arrangorer @>
-            	format(
-            	  '[{"veileder":[{"deltakerId":"%s"}]}]',
-            	  :deltakerId
-            	)::jsonb
-            ),
-            unnested_veiledere AS (
-              -- Finn riktige indekser for jsonb_set
-              SELECT
-            	kandidater.id AS ansatt_id,
-            	arrangor.index - 1 AS arrangor_idx,
-            	veileder.index - 1 AS veileder_idx
-              FROM kandidater,
-            	LATERAL jsonb_array_elements(kandidater.arrangorer) WITH ORDINALITY AS arrangor(value, index),
-            	LATERAL jsonb_array_elements(arrangor.value -> 'veileder') WITH ORDINALITY AS veileder(value, index)
-              WHERE
-              	veileder.value ->> 'deltakerId' = :deltakerId
-                AND veileder.value ->> 'gyldigTil' > :deaktiveringsdato
-            )
-            UPDATE ansatt
-            	SET
-            		arrangorer = jsonb_set(
-            		   ansatt.arrangorer,
-            		   ARRAY[
-            			 unnested_veiledere.arrangor_idx::text,
-            			 'veileder',
-            			 unnested_veiledere.veileder_idx::text,
-            			 'gyldigTil'
-            		   ],
-            		   'null',   -- setter gyldigTil til null
-            		   false
-            	 	),
-            		modified_at = current_timestamp
-            FROM unnested_veiledere
-            WHERE ansatt.id = unnested_veiledere.ansatt_id
-            RETURNING ansatt.*
-            """.trimIndent()
-
-        val parameters =
-            sqlParameters(
-                "deaktiveringsdato" to deaktiveringsdato.toString(),
-                "deltakerId" to deltakerId.toString(),
-            )
-
-        return template.query(sql, parameters, rowMapper)
-    }
-
-    fun getAnsatteHosArrangor(arrangorId: UUID): List<AnsattDbo> {
-        val sql =
-            """
-            select ansatt.* from ansatt,
-            	lateral jsonb_array_elements(arrangorer) a
-            where a->>'arrangorId' = :arrangorId
-            """.trimIndent()
-
-        val parameters = sqlParameters("arrangorId" to arrangorId.toString())
-
-        return template.query(sql, parameters, rowMapper)
-    }
-}
-
-fun List<ArrangorDbo>.toPGObject(objectMapper: ObjectMapper) = PGobject().also {
-    it.type = "json"
-    it.value = objectMapper.writeValueAsString(this)
 }
