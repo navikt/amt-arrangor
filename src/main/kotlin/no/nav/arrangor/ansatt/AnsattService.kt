@@ -1,6 +1,5 @@
 package no.nav.arrangor.ansatt
 
-import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
 import no.nav.arrangor.ansatt.repository.ArrangorDbo
@@ -16,8 +15,12 @@ import no.nav.arrangor.domain.Veileder
 import no.nav.arrangor.domain.VeilederType
 import no.nav.arrangor.kafka.ProducerService
 import no.nav.arrangor.kafka.model.DeltakerStatusType
+import no.nav.arrangor.metrics.MetricEvent
+import no.nav.arrangor.utils.executeInTransactionAndRequireResult
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -29,7 +32,8 @@ class AnsattService(
     private val ansattArrangorSyncService: AnsattArrangorSyncService,
     private val rolleService: AnsattRolleService,
     private val producerService: ProducerService,
-    private val metricsService: MetricsService,
+    private val transactionTemplate: TransactionTemplate,
+    private val eventPublisher: ApplicationEventPublisher,
     private val arrangorService: ArrangorService,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -69,7 +73,7 @@ class AnsattService(
         arrangor: ArrangorDbo,
         deltakerlisteId: UUID,
         ansatt: AnsattDbo,
-    ): Ansatt {
+    ): Ansatt = transactionTemplate.executeInTransactionAndRequireResult {
         val nyKoordinator = KoordinatorsDeltakerlisteDbo(deltakerlisteId)
         val oppdatertDeltakerlisterForArrangor = arrangor.koordinator + nyKoordinator
         val oppdatertAnsattDbo = oppdaterAnsattArrangorer(
@@ -85,11 +89,11 @@ class AnsattService(
             ),
         )
 
-        producerService.publishAnsatt(oppdatertAnsatt)
-        metricsService.incLagtTilSomKoordinator()
+        producerService.publishAnsatt(ansatt = oppdatertAnsatt)
+        eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.KOORDINATOR_ADDED))
         logger.info("Ansatt ${oppdatertAnsattDbo.id} ble koordinator for deltakerliste $deltakerlisteId")
 
-        return oppdatertAnsatt
+        oppdatertAnsatt
     }
 
     fun fjernKoordinatorForDeltakerliste(
@@ -118,14 +122,19 @@ class AnsattService(
     ): Ansatt {
         val deaktivertAnsatt = arrangor.koordinator
             .find { it.deltakerlisteId == deltakerlisteId && it.erGyldig() }
-            ?.let {
-                it.gyldigTil = fjerningstidspunkt
-
-                ansattArrangorSyncService
-                    .deaktiverKoordinator(ansattDbo, arrangor.arrangorId, it)
-                    .also { oppdatert -> producerService.publishAnsatt(mapToAnsatt(oppdatert)) }
-                    .also { metricsService.incFjernetSomKoordinator() }
-                    .also { logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId") }
+            ?.let { koordinator ->
+                transactionTemplate.executeInTransactionAndRequireResult {
+                    koordinator.gyldigTil = fjerningstidspunkt
+                    val oppdatert = ansattArrangorSyncService.deaktiverKoordinator(
+                        ansatt = ansattDbo,
+                        arrangorId = arrangor.arrangorId,
+                        koordinator = koordinator,
+                    )
+                    producerService.publishAnsatt(ansatt = mapToAnsatt(oppdatert))
+                    eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.KOORDINATOR_REMOVED))
+                    logger.info("Ansatt ${ansattDbo.id} mistet koordinator for deltakerliste $deltakerlisteId")
+                    oppdatert
+                }
             }
 
         return getAndMaybeUpdateAnsatt(deaktivertAnsatt ?: ansattDbo)
@@ -232,12 +241,18 @@ class AnsattService(
             oppdatertArrangor = ansattArrangor.copy(veileder = ansattArrangor.veileder + nyVeileder),
         )
 
-        val oppdaterAnsatt = mapToAnsatt(
-            ansattArrangorSyncService.insertVeileder(oppdatertAnsattDbo, arrangorId, nyVeileder),
-        )
-        producerService.publishAnsatt(oppdaterAnsatt)
-        metricsService.incLagtTilSomVeileder()
-        logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId")
+        transactionTemplate.executeWithoutResult {
+            val oppdatertAnsatt = mapToAnsatt(
+                ansattArrangorSyncService.insertVeileder(
+                    ansatt = oppdatertAnsattDbo,
+                    arrangorId = arrangorId,
+                    veileder = nyVeileder,
+                ),
+            )
+            producerService.publishAnsatt(oppdatertAnsatt)
+            eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.VEILEDER_ADDED))
+            logger.info("Ansatt ${ansattDbo.id} ble $type for deltaker $deltakerId")
+        }
     }
 
     private fun oppdaterAnsattArrangorer(
@@ -266,14 +281,19 @@ class AnsattService(
 
         ansattArrangor.veileder
             .find { it.deltakerId == deltakerId && it.veilederType == type && it.erGyldig() }
-            ?.let {
-                it.gyldigTil = fjerningstidspunkt
-
-                val oppdatertAnsatt = mapToAnsatt(
-                    ansattArrangorSyncService.deaktiverVeiledere(ansattDbo, arrangorId, listOf(it)),
-                )
-                producerService.publishAnsatt(oppdatertAnsatt)
-                metricsService.incFjernetSomVeileder()
+            ?.let { veileder ->
+                transactionTemplate.executeWithoutResult {
+                    veileder.gyldigTil = fjerningstidspunkt
+                    val oppdatertAnsatt = mapToAnsatt(
+                        ansattArrangorSyncService.deaktiverVeiledere(
+                            ansatt = ansattDbo,
+                            arrangorId = arrangorId,
+                            veiledere = listOf(veileder),
+                        ),
+                    )
+                    producerService.publishAnsatt(oppdatertAnsatt)
+                    eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.VEILEDER_REMOVED))
+                }
             }
 
         logger.info("Ansatt ${ansattDbo.id} mistet veilederrolle for $deltakerId")
@@ -289,19 +309,21 @@ class AnsattService(
 
         val arrangorer = rolleService.mapAltinnRollerTilArrangorListeForNyAnsatt(altinnRoller)
 
-        val ansattDbo = ansattArrangorSyncService.opprettAnsatt(
-            AnsattDbo(
-                id = UUID.randomUUID(),
-                personident = personIdent,
-                personId = person.id,
-                fornavn = person.fornavn,
-                mellomnavn = person.mellomnavn,
-                etternavn = person.etternavn,
-                arrangorer = arrangorer,
-            ),
-        )
-        logger.info("Opprettet ny ansatt og lagret roller for ansattId ${ansattDbo.id}")
-        return mapToAnsatt(ansattDbo).also { producerService.publishAnsatt(it) }
+        return transactionTemplate.executeInTransactionAndRequireResult {
+            val ansattDbo = ansattArrangorSyncService.opprettAnsatt(
+                AnsattDbo(
+                    id = UUID.randomUUID(),
+                    personident = personIdent,
+                    personId = person.id,
+                    fornavn = person.fornavn,
+                    mellomnavn = person.mellomnavn,
+                    etternavn = person.etternavn,
+                    arrangorer = arrangorer,
+                ),
+            )
+            logger.info("Opprettet ny ansatt og lagret roller for ansattId ${ansattDbo.id}")
+            mapToAnsatt(ansattDbo).also { producerService.publishAnsatt(ansatt = it) }
+        }
     }
 
     fun oppdaterAnsattesRoller() {
@@ -326,10 +348,11 @@ class AnsattService(
     private fun oppdaterRoller(ansattDbo: AnsattDbo): Ansatt {
         val ansattDboMedOppdaterteRoller = rolleService.getAnsattDboMedOppdaterteRoller(ansattDbo)
 
-        val oppdatertAnsattDbo = ansattArrangorSyncService.oppdaterRoller(ansattDboMedOppdaterteRoller)
-
-        return mapToAnsatt(oppdatertAnsattDbo)
-            .also { if (ansattDboMedOppdaterteRoller.isUpdated) producerService.publishAnsatt(it) }
+        return transactionTemplate.executeInTransactionAndRequireResult {
+            val oppdatertAnsattDbo = ansattArrangorSyncService.oppdaterRoller(ansattDboMedOppdaterteRoller)
+            mapToAnsatt(oppdatertAnsattDbo)
+                .also { if (ansattDboMedOppdaterteRoller.isUpdated) producerService.publishAnsatt(ansatt = it) }
+        }
     }
 
     fun getAll(
@@ -381,12 +404,17 @@ class AnsattService(
         deaktiveringsdato: ZonedDateTime,
         status: DeltakerStatusType?,
     ) {
-        val endredeAnsattIder = ansattArrangorSyncService.deaktiverVeiledereForDeltaker(deltakerId, deaktiveringsdato)
-        val ansatteEndret = ansattRepository.getAnsatte(endredeAnsattIder)
-        ansatteEndret.forEach { producerService.publishAnsatt(mapToAnsatt(it)) }
+        transactionTemplate.executeWithoutResult {
+            val endredeAnsattIder = ansattArrangorSyncService.deaktiverVeiledereForDeltaker(
+                deltakerId = deltakerId,
+                deaktiveringsdato = deaktiveringsdato,
+            )
+            val ansatteEndret = ansattRepository.getAnsatte(endredeAnsattIder)
+            ansatteEndret.forEach { producerService.publishAnsatt(ansatt = mapToAnsatt(it)) }
 
-        if (ansatteEndret.isNotEmpty()) {
-            logger.info("Deaktiverte veiledere for deltaker $deltakerId med status ${status?.name ?: "slettet"}")
+            if (ansatteEndret.isNotEmpty()) {
+                logger.info("Deaktiverte veiledere for deltaker $deltakerId med status ${status?.name ?: "slettet"}")
+            }
         }
     }
 
@@ -394,13 +422,18 @@ class AnsattService(
         deltakerId: UUID,
         status: DeltakerStatusType,
     ) {
-        val terskel = ZonedDateTime.now()
-        val endredeAnsattIder = ansattArrangorSyncService.maybeReaktiverVeiledereForDeltaker(deltakerId, terskel)
-        val ansatteEndret = ansattRepository.getAnsatte(endredeAnsattIder)
-        ansatteEndret.forEach { producerService.publishAnsatt(mapToAnsatt(it)) }
+        transactionTemplate.executeWithoutResult {
+            val terskel = ZonedDateTime.now()
+            val endredeAnsattIder = ansattArrangorSyncService.maybeReaktiverVeiledereForDeltaker(
+                deltakerId = deltakerId,
+                terskel = terskel,
+            )
+            val ansatteEndret = ansattRepository.getAnsatte(endredeAnsattIder)
+            ansatteEndret.forEach { producerService.publishAnsatt(ansatt = mapToAnsatt(it)) }
 
-        if (ansatteEndret.isNotEmpty()) {
-            logger.info("Reaktiverte veiledere ${ansatteEndret.size} for deltaker $deltakerId med status ${status.name}")
+            if (ansatteEndret.isNotEmpty()) {
+                logger.info("Reaktiverte veiledere ${ansatteEndret.size} for deltaker $deltakerId med status ${status.name}")
+            }
         }
     }
 
@@ -428,12 +461,23 @@ class AnsattService(
                 )
 
                 if (fjernedeTilganger.isNotEmpty()) {
-                    val oppdatertAnsatt = mapToAnsatt(
-                        ansattArrangorSyncService.deaktiverVeiledere(ansatt, arrangorId, fjernedeTilganger),
-                    )
-                    producerService.publishAnsatt(oppdatertAnsatt)
-                    metricsService.incFjernetSomVeileder(fjernedeTilganger.size)
-                    logger.info("Ansatt ${ansatt.id} mistet veilederroller for deltakere på deltakerlisten $deltakerlisteId")
+                    transactionTemplate.executeWithoutResult {
+                        val oppdatertAnsatt = mapToAnsatt(
+                            ansattArrangorSyncService.deaktiverVeiledere(
+                                ansatt = ansatt,
+                                arrangorId = arrangorId,
+                                veiledere = fjernedeTilganger,
+                            ),
+                        )
+                        producerService.publishAnsatt(ansatt = oppdatertAnsatt)
+                        eventPublisher.publishEvent(
+                            MetricEvent(
+                                name = MetricEvent.MetricName.VEILEDER_REMOVED,
+                                count = fjernedeTilganger.size,
+                            ),
+                        )
+                        logger.info("Ansatt ${ansatt.id} mistet veilederroller for deltakere på deltakerlisten $deltakerlisteId")
+                    }
                 }
             }
         }

@@ -5,6 +5,7 @@ import io.kotest.matchers.date.shouldBeWithin
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.micrometer.core.instrument.MeterRegistry
 import no.nav.arrangor.IntegrationTest
 import no.nav.arrangor.ansatt.repository.AnsattArrangorRepository
 import no.nav.arrangor.ansatt.repository.AnsattDbo
@@ -35,6 +36,7 @@ class ConsumerServiceTest(
     private val ansattRepository: AnsattRepository,
     private val ansattArrangorRepository: AnsattArrangorRepository,
     private val deltakerRepository: DeltakerRepository,
+    private val meterRegistry: MeterRegistry,
 ) : IntegrationTest() {
     val personIdent = "12345678910"
     val personId: UUID = UUID.randomUUID()
@@ -91,6 +93,33 @@ class ConsumerServiceTest(
         val oppdatertArrangor = arrangorRepository.get(arrangorId)
         oppdatertArrangor?.navn shouldBe "Nytt navn"
         oppdatertArrangor?.overordnetArrangorId shouldBe overordnetArrangorId
+    }
+
+    @Test
+    fun `handleVirksomhetEndring - samme arrangørdata - teller hendelse men ikke arrangørendring`() {
+        val arrangorId = UUID.randomUUID()
+        val orgnummer = "999988888"
+        arrangorRepository.insertOrUpdate(
+            ArrangorRepository.ArrangorDbo(
+                id = arrangorId,
+                navn = "Arrangør",
+                organisasjonsnummer = orgnummer,
+                overordnetArrangorId = null,
+            ),
+        )
+        val endredeArrangorerBefore = metricCount("amt_arrangor_endrede_arrangorer")
+        val mottatteHendelserBefore = metricCount("amt_arrangor_consumed_virksomhet")
+
+        consumerService.handleVirksomhetEndring(
+            VirksomhetDto(
+                organisasjonsnummer = orgnummer,
+                navn = "Arrangør",
+                overordnetEnhetOrganisasjonsnummer = null,
+            ),
+        )
+
+        metricCount("amt_arrangor_endrede_arrangorer") shouldBe endredeArrangorerBefore
+        metricCount("amt_arrangor_consumed_virksomhet") shouldBe mottatteHendelserBefore + 1
     }
 
     @Test
@@ -592,4 +621,6 @@ class ConsumerServiceTest(
                 ),
             ),
     )
+
+    private fun metricCount(name: String): Double = meterRegistry.counter(name).count()
 }

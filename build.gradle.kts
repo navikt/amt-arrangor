@@ -59,6 +59,9 @@ dependencies {
     implementation(libs.nav.common.log)
     implementation(libs.nav.common.rest)
     implementation(libs.nav.common.job)
+    implementation(libs.nav.common.kafka)
+    implementation(libs.shedlock.spring)
+    implementation(libs.shedlock.jdbc.template)
     implementation(libs.amt.lib.utils)
     implementation(libs.amt.lib.spring.boot)
 
@@ -72,7 +75,6 @@ dependencies {
     // Test – Testcontainers (Postgres og Kafka)
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-postgresql")
-    testImplementation("org.testcontainers:testcontainers-kafka")
 
     // Test – autentisering, assertions og mocking
     testImplementation(libs.mock.oauth2.server)

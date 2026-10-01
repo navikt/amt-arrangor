@@ -1,6 +1,5 @@
 package no.nav.arrangor.kafka
 
-import no.nav.arrangor.MetricsService
 import no.nav.arrangor.ansatt.AnsattService
 import no.nav.arrangor.ansatt.repository.AnsattDbo
 import no.nav.arrangor.ansatt.repository.AnsattRepository
@@ -12,8 +11,11 @@ import no.nav.arrangor.kafka.model.AnsattPersonaliaDto
 import no.nav.arrangor.kafka.model.Deltaker
 import no.nav.arrangor.kafka.model.SKJULES_ALLTID_STATUSER
 import no.nav.arrangor.kafka.model.VirksomhetDto
+import no.nav.arrangor.metrics.MetricEvent
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
@@ -24,9 +26,10 @@ class ConsumerService(
     private val ansattService: AnsattService,
     private val arrangorRepository: ArrangorRepository,
     private val enhetsregisterClient: EnhetsregisterClient,
-    private val metricsService: MetricsService,
+    private val eventPublisher: ApplicationEventPublisher,
     private val producerService: ProducerService,
     private val deltakerRepository: DeltakerRepository,
+    private val transactionTemplate: TransactionTemplate,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -36,25 +39,85 @@ class ConsumerService(
         val arrangor = arrangorRepository.get(virksomhetDto.organisasjonsnummer)
 
         if (arrangor != null) {
-            val overordnetArrangorId = virksomhetDto.overordnetEnhetOrganisasjonsnummer
-                ?.let {
-                    getOverordnetArrangorId(
-                        overordnetEnhetOrganisasjonsnummer = it,
-                        arrangor = arrangor,
-                    )
+            val overordnetOrgNr = virksomhetDto.overordnetEnhetOrganisasjonsnummer
+            val lagretOverordnetArrangor = overordnetOrgNr?.let(arrangorRepository::get)
+
+            // Hent eventuell manglende overordnet før transaksjonen, så HTTP-kallet ikke holder den åpen.
+            val nyOverordnetArrangor = if (overordnetOrgNr != null && lagretOverordnetArrangor == null) {
+                logger.warn(
+                    "Fant ikke overordnet arrangør for orgnummer $overordnetOrgNr, oppretter overordnet arrangør for arrangør ${arrangor.id}",
+                )
+
+                enhetsregisterClient
+                    .hentVirksomhet(overordnetOrgNr)
+                    .getOrNull()
+                    ?.let {
+                        ArrangorRepository.ArrangorDbo(
+                            id = UUID.randomUUID(),
+                            navn = it.navn,
+                            organisasjonsnummer = it.organisasjonsnummer,
+                            overordnetArrangorId = null,
+                        )
+                    }.also {
+                        if (it == null) logger.warn("Kunne ikke opprette overordnet arrangør for orgnummer $overordnetOrgNr")
+                    }
+            } else {
+                null
+            }
+
+            // Lagre forelder, arrangør og tilhørende outbox-meldinger atomisk
+            transactionTemplate.executeWithoutResult {
+                val overordnetArrangorId = getOverordnetArrangorId(
+                    overordnetEnhetOrganisasjonsnummer = overordnetOrgNr,
+                    arrangor = arrangor,
+                    nyOverordnetArrangor = nyOverordnetArrangor,
+                )
+
+                val endringer = arrangor.copy(
+                    navn = virksomhetDto.navn,
+                    organisasjonsnummer = virksomhetDto.organisasjonsnummer,
+                    overordnetArrangorId = overordnetArrangorId,
+                )
+
+                val oppdatertArrangor = arrangorRepository.insertOrUpdate(endringer)
+                producerService.publishArrangor(oppdatertArrangor.toDomain())
+
+                // tell bare reelle dataendringer; mottatte hendelser telles separat nedenfor
+                if (arrangor != endringer) {
+                    eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.ARRANGOR_CHANGED))
                 }
-            arrangorRepository
-                .insertOrUpdate(
-                    arrangor.copy(
-                        navn = virksomhetDto.navn,
-                        organisasjonsnummer = virksomhetDto.organisasjonsnummer,
-                        overordnetArrangorId = overordnetArrangorId,
-                    ),
-                ).also { producerService.publishArrangor(it.toDomain()) }
-                .also { metricsService.incEndredeArrangorer() }
+                eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.VIRKSOMHET_EVENT_CONSUMED))
+            }
             logger.info("Oppdatert arrangør med id ${arrangor.id}")
-            metricsService.incConsumedVirksomhetEndring()
         }
+    }
+
+    private fun getOverordnetArrangorId(
+        overordnetEnhetOrganisasjonsnummer: String?,
+        arrangor: ArrangorRepository.ArrangorDbo,
+        nyOverordnetArrangor: ArrangorRepository.ArrangorDbo?,
+    ): UUID? {
+        if (overordnetEnhetOrganisasjonsnummer == null) return null
+
+        // Slå opp på nytt i transaksjonen; forelderen kan ha blitt opprettet mens http-kallet pågikk
+        val overordnetArrangor = arrangorRepository.get(overordnetEnhetOrganisasjonsnummer)
+            ?: nyOverordnetArrangor?.let {
+                arrangorRepository
+                    .insertOrUpdate(it)
+                    .also { opprettet ->
+                        logger.info("Opprettet ny overordnet arrangør med id ${opprettet.id}")
+                        producerService.publishArrangor(opprettet.toDomain())
+                        eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.ARRANGOR_CHANGED))
+                    }
+            }
+
+        if (overordnetArrangor?.id != arrangor.overordnetArrangorId) {
+            overordnetArrangor?.let {
+                logger.info("Arrangør ${arrangor.id} har fått ny overordnet arrangør med id ${it.id}")
+            }
+        }
+
+        return overordnetArrangor?.id
     }
 
     fun handleAnsattPersonalia(ansattPersonalia: AnsattPersonaliaDto) {
@@ -87,70 +150,29 @@ class ConsumerService(
         ansatt.mellomnavn != ansattPersonalia.mellomnavn ||
         ansatt.etternavn != ansattPersonalia.etternavn
 
-    private fun getOverordnetArrangorId(
-        overordnetEnhetOrganisasjonsnummer: String,
-        arrangor: ArrangorRepository.ArrangorDbo,
-    ): UUID? {
-        val overordnetArrangorFraDb = arrangorRepository.get(overordnetEnhetOrganisasjonsnummer)
-        if (overordnetArrangorFraDb?.id == arrangor.overordnetArrangorId) {
-            return arrangor.overordnetArrangorId
-        }
-
-        return if (overordnetArrangorFraDb != null) {
-            logger.info("Arrangør ${arrangor.id} har fått ny overordnet arrangør med id ${overordnetArrangorFraDb.id}")
-            overordnetArrangorFraDb.id
-        } else {
-            logger.warn(
-                "Fant ikke overordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer, oppretter overordnet " +
-                    "arrangør for arrangør ${arrangor.id}",
-            )
-
-            val nyOverordnetArrangor = enhetsregisterClient
-                .hentVirksomhet(overordnetEnhetOrganisasjonsnummer)
-                .let { result ->
-                    result.getOrNull()?.let {
-                        arrangorRepository.insertOrUpdate(
-                            ArrangorRepository.ArrangorDbo(
-                                id = UUID.randomUUID(),
-                                navn = it.navn,
-                                organisasjonsnummer = it.organisasjonsnummer,
-                                overordnetArrangorId = null,
-                            ),
-                        )
-                    }
-                }
-
-            if (nyOverordnetArrangor != null) {
-                logger.info("Opprettet ny overordnet arrangør med id ${nyOverordnetArrangor.id}")
-                producerService.publishArrangor(nyOverordnetArrangor.toDomain())
-                metricsService.incEndredeArrangorer()
-            } else {
-                logger.warn("Kunne ikke opprette overordnet arrangør for orgnummer $overordnetEnhetOrganisasjonsnummer")
-            }
-
-            nyOverordnetArrangor?.id
-        }
-    }
-
     fun handleDeltakerEndring(
         id: UUID,
         deltaker: Deltaker?,
     ) {
         if (skalOppdatereVeiledereForDeltaker(id, deltaker)) {
-            if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER || deltaker.status.type in AVSLUTTENDE_STATUSER) {
-                val deaktiveringsdato = LocalDateTime.now().plusDays(50).atZone(ZoneId.systemDefault())
-                // Deltakere fjernes fra deltakeroversikten 40 dager etter avsluttende status er satt,
-                // så veiledere må ikke deaktiveres før den datoen er passert. For statuser som skjules umiddelbart deaktiverer vi
-                // om 50 dager for litt sikkerhetsmargin i tilfelle deltaker blir aktiv igjen.
-                ansattService.deaktiverVeiledereForDeltaker(
-                    deltakerId = id,
-                    deaktiveringsdato = deaktiveringsdato,
-                    status = deltaker?.status?.type,
-                )
-            } else {
-                ansattService.maybeReaktiverVeiledereForDeltaker(id, deltaker.status.type)
+            // Hold deltakerstatus, veiledertilganger og outbox-meldinger konsistente ved feil.
+            transactionTemplate.executeWithoutResult {
+                if (deltaker == null || deltaker.status.type in SKJULES_ALLTID_STATUSER || deltaker.status.type in AVSLUTTENDE_STATUSER) {
+                    val deaktiveringsdato = LocalDateTime.now().plusDays(50).atZone(ZoneId.systemDefault())
+
+                    // Deltakere fjernes fra deltakeroversikten 40 dager etter avsluttende status er satt,
+                    // så veiledere må ikke deaktiveres før den datoen er passert. For statuser som skjules umiddelbart deaktiverer vi
+                    // om 50 dager for litt sikkerhetsmargin i tilfelle deltaker blir aktiv igjen.
+                    ansattService.deaktiverVeiledereForDeltaker(
+                        deltakerId = id,
+                        deaktiveringsdato = deaktiveringsdato,
+                        status = deltaker?.status?.type,
+                    )
+                } else {
+                    ansattService.maybeReaktiverVeiledereForDeltaker(id, deltaker.status.type)
+                }
+                deltaker?.let { deltakerRepository.insertOrUpdate(it) }
             }
-            deltaker?.let { deltakerRepository.insertOrUpdate(it) }
         }
     }
 

@@ -29,19 +29,18 @@ import java.util.UUID
  * foreldet [AnsattDbo]-snapshot overskriver nyere relasjoner.
  */
 @Service
+@Transactional
 class AnsattArrangorSyncService(
     private val ansattRepository: AnsattRepository,
     private val ansattArrangorRepository: AnsattArrangorRepository,
 ) {
     /** Full initialisering brukes bare når en ny ansatt opprettes. */
-    @Transactional
     fun opprettAnsatt(ansatt: AnsattDbo): AnsattDbo {
         val lagretAnsatt = ansattRepository.insertOrUpdate(ansatt)
         ansattArrangorRepository.replaceForAnsatt(lagretAnsatt.id, ansatt.arrangorer)
         return hentLagret(lagretAnsatt.id)
     }
 
-    @Transactional
     fun oppdaterRoller(oppdatering: AnsattRolleoppdatering): AnsattDbo {
         val lagretAnsatt = ansattRepository.insertOrUpdate(oppdatering.data)
         oppdatering.nyeRoller.forEach {
@@ -74,7 +73,6 @@ class AnsattArrangorSyncService(
         return hentLagret(lagretAnsatt.id)
     }
 
-    @Transactional
     fun insertVeileder(
         ansatt: AnsattDbo,
         arrangorId: UUID,
@@ -90,7 +88,6 @@ class AnsattArrangorSyncService(
         return hentLagret(lagretAnsatt.id)
     }
 
-    @Transactional
     fun deaktiverVeiledere(
         ansatt: AnsattDbo,
         arrangorId: UUID,
@@ -107,7 +104,6 @@ class AnsattArrangorSyncService(
         return hentLagret(lagretAnsatt.id)
     }
 
-    @Transactional
     fun insertKoordinator(
         ansatt: AnsattDbo,
         arrangorId: UUID,
@@ -122,7 +118,6 @@ class AnsattArrangorSyncService(
         return hentLagret(lagretAnsatt.id)
     }
 
-    @Transactional
     fun deaktiverKoordinator(
         ansatt: AnsattDbo,
         arrangorId: UUID,
@@ -137,7 +132,6 @@ class AnsattArrangorSyncService(
         return hentLagret(lagretAnsatt.id)
     }
 
-    @Transactional
     fun deaktiverVeiledereForDeltaker(
         deltakerId: UUID,
         deaktiveringsdato: ZonedDateTime,
@@ -146,7 +140,6 @@ class AnsattArrangorSyncService(
         deaktiveringsdato = deaktiveringsdato,
     )
 
-    @Transactional
     fun maybeReaktiverVeiledereForDeltaker(
         deltakerId: UUID,
         terskel: ZonedDateTime,
