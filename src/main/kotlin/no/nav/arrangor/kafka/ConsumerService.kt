@@ -79,16 +79,17 @@ class ConsumerService(
                     overordnetArrangorId = overordnetArrangorId,
                 )
 
-                val oppdatertArrangor = arrangorRepository.insertOrUpdate(endringer)
-                producerService.publishArrangor(oppdatertArrangor.toDomain())
-
-                // tell bare reelle dataendringer; mottatte hendelser telles separat nedenfor
                 if (arrangor != endringer) {
+                    val oppdatertArrangor = arrangorRepository.insertOrUpdate(endringer)
+                    producerService.publishArrangor(oppdatertArrangor.toDomain())
                     eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.ARRANGOR_CHANGED))
+                    logger.info("Oppdatert arrangør med id ${arrangor.id}")
+                } else {
+                    logger.info("Arrangør med id ${arrangor.id} er uendret")
                 }
+
                 eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.VIRKSOMHET_EVENT_CONSUMED))
             }
-            logger.info("Oppdatert arrangør med id ${arrangor.id}")
         }
     }
 
