@@ -92,6 +92,12 @@ class ConsumerService(
         }
     }
 
+    /**
+     * Finner ID-en til overordnet arrangør, eventuelt ved å opprette den forhåndshentede arrangøren.
+     *
+     * Har sideeffekter: kan lagre arrangøren, legge en melding i Kafka-outbox og publisere et metric-event.
+     * Kalles fra [handleVirksomhetEndring] innenfor samme transaksjon.
+     */
     private fun getOverordnetArrangorId(
         overordnetEnhetOrganisasjonsnummer: String?,
         arrangor: ArrangorRepository.ArrangorDbo,

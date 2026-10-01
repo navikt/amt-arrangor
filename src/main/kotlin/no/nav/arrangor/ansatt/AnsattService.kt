@@ -404,6 +404,7 @@ class AnsattService(
         deaktiveringsdato: ZonedDateTime,
         status: DeltakerStatusType?,
     ) {
+        // REQUIRED blir med i ConsumerService-transaksjonen eller åpner en transaksjon ved selvstendige kall.
         transactionTemplate.executeWithoutResult {
             val endredeAnsattIder = ansattArrangorSyncService.deaktiverVeiledereForDeltaker(
                 deltakerId = deltakerId,
@@ -422,6 +423,7 @@ class AnsattService(
         deltakerId: UUID,
         status: DeltakerStatusType,
     ) {
+        // REQUIRED blir med i ConsumerService-transaksjonen eller åpner en transaksjon ved selvstendige kall.
         transactionTemplate.executeWithoutResult {
             val terskel = ZonedDateTime.now()
             val endredeAnsattIder = ansattArrangorSyncService.maybeReaktiverVeiledereForDeltaker(
