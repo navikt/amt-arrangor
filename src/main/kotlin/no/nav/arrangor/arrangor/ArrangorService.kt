@@ -1,13 +1,16 @@
 package no.nav.arrangor.arrangor
 
-import no.nav.arrangor.MetricsService
 import no.nav.arrangor.arrangor.model.ArrangorMedOverordnetArrangor
 import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.kafka.ProducerService
+import no.nav.arrangor.metrics.MetricEvent
+import no.nav.arrangor.utils.executeInTransactionAndRequireResult
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import org.springframework.transaction.support.TransactionTemplate
 import java.util.UUID
 
 @Service
@@ -15,7 +18,8 @@ class ArrangorService(
     private val arrangorRepository: ArrangorRepository,
     private val enhetsregisterClient: EnhetsregisterClient,
     private val producerService: ProducerService,
-    private val metricsService: MetricsService,
+    private val eventPublisher: ApplicationEventPublisher,
+    private val transactionTemplate: TransactionTemplate,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -91,32 +95,39 @@ class ArrangorService(
 
     private fun insertArrangor(orgNr: String): ArrangorRepository.ArrangorDbo {
         val virksomhet = enhetsregisterClient.hentVirksomhet(orgNr).getOrThrow()
-        val overordnetArrangor = getOverordnetArrangor(virksomhet)
-        val arrangor = arrangorRepository.insertOrUpdate(
-            ArrangorRepository.ArrangorDbo(
-                id = UUID.randomUUID(),
-                navn = virksomhet.navn,
-                organisasjonsnummer = virksomhet.organisasjonsnummer,
-                overordnetArrangorId = overordnetArrangor?.id,
-            ),
-        )
-        producerService.publishArrangor(arrangor.toDomain())
-        metricsService.incEndredeArrangorer()
-        return arrangor
+        val overordnetArrangor = virksomhet.toOverordnetArrangorDbo()
+
+        return transactionTemplate.executeInTransactionAndRequireResult {
+            val lagretOverordnetArrangor = overordnetArrangor?.let {
+                arrangorRepository
+                    .insertOrUpdate(it)
+                    .also { arrangor ->
+                        producerService.publishArrangor(arrangor.toDomain())
+                        eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.ARRANGOR_CHANGED))
+                    }
+            }
+
+            val arrangor = arrangorRepository.insertOrUpdate(
+                ArrangorRepository.ArrangorDbo(
+                    id = UUID.randomUUID(),
+                    navn = virksomhet.navn,
+                    organisasjonsnummer = virksomhet.organisasjonsnummer,
+                    overordnetArrangorId = lagretOverordnetArrangor?.id,
+                ),
+            )
+            producerService.publishArrangor(arrangor.toDomain())
+            eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.ARRANGOR_CHANGED))
+            arrangor
+        }
     }
 
-    private fun getOverordnetArrangor(virksomhet: Virksomhet): ArrangorRepository.ArrangorDbo? {
-        if (virksomhet.overordnetEnhetOrganisasjonsnummer == null || virksomhet.overordnetEnhetNavn == null) return null
-        val overordnetArrangor = arrangorRepository.insertOrUpdate(
-            ArrangorRepository.ArrangorDbo(
-                id = UUID.randomUUID(),
-                navn = virksomhet.overordnetEnhetNavn,
-                organisasjonsnummer = virksomhet.overordnetEnhetOrganisasjonsnummer,
-                overordnetArrangorId = null,
-            ),
+    private fun Virksomhet.toOverordnetArrangorDbo(): ArrangorRepository.ArrangorDbo? {
+        if (overordnetEnhetOrganisasjonsnummer == null || overordnetEnhetNavn == null) return null
+        return ArrangorRepository.ArrangorDbo(
+            id = UUID.randomUUID(),
+            navn = overordnetEnhetNavn,
+            organisasjonsnummer = overordnetEnhetOrganisasjonsnummer,
+            overordnetArrangorId = null,
         )
-        producerService.publishArrangor(overordnetArrangor.toDomain())
-        metricsService.incEndredeArrangorer()
-        return overordnetArrangor
     }
 }

@@ -1,6 +1,7 @@
 package no.nav.arrangor.kafka
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
@@ -9,6 +10,7 @@ import tools.jackson.module.kotlin.readValue
 import java.util.UUID
 
 @Component
+@ConditionalOnProperty("kafka.enabled", havingValue = "true", matchIfMissing = true)
 class KafkaConsumer(
     private val consumerService: ConsumerService,
     private val objectMapper: ObjectMapper,

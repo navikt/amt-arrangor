@@ -1,47 +1,48 @@
 package no.nav.arrangor.kafka
 
-import no.nav.arrangor.MetricsService
 import no.nav.arrangor.domain.Ansatt
 import no.nav.arrangor.domain.Arrangor
 import no.nav.arrangor.dto.AMT_ARRANGOR_SOURCE
 import no.nav.arrangor.dto.AnsattDto
 import no.nav.arrangor.dto.ArrangorDto
+import no.nav.common.kafka.producer.feilhandtering.KafkaProducerRecordStorage
+import no.nav.common.kafka.producer.util.ProducerUtils
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
 
 @Component
+@Transactional(propagation = Propagation.MANDATORY)
 class ProducerService(
-    private val template: KafkaTemplate<String, String>,
-    private val metricsService: MetricsService,
+    private val producerRecordStorage: KafkaProducerRecordStorage,
     private val objectMapper: ObjectMapper,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun publishArrangor(arrangor: Arrangor) {
-        template
-            .send(
-                ARRANGOR_TOPIC,
-                arrangor.id.toString(),
-                objectMapper.writeValueAsString(arrangor.toDto()),
-            ).get()
-            .also { metricsService.incPubliserteArrangorer() }
-            .also { logger.info("Publiserte arrangør med id ${arrangor.id}") }
+        val record = ProducerRecord(
+            ARRANGOR_TOPIC,
+            arrangor.id.toString(),
+            objectMapper.writeValueAsString(arrangor.toDto()),
+        )
+        producerRecordStorage.store(ProducerUtils.serializeStringRecord(record))
+        logger.info("La arrangørmelding i Kafka-outbox for arrangør ${arrangor.id}")
     }
 
     fun publishAnsatt(ansatt: Ansatt) {
-        template
-            .send(
-                ANSATT_TOPIC,
-                ansatt.id.toString(),
-                objectMapper.writeValueAsString(ansatt.toDto()),
-            ).get()
-            .also { metricsService.incPubliserteAnsatte() }
-            .also { logger.info("Publiserte ansatt med id ${ansatt.id}") }
+        val record = ProducerRecord(
+            ANSATT_TOPIC,
+            ansatt.id.toString(),
+            objectMapper.writeValueAsString(ansatt.toDto()),
+        )
+        producerRecordStorage.store(ProducerUtils.serializeStringRecord(record))
+        logger.info("La ansattmelding i Kafka-outbox for ansatt ${ansatt.id}")
     }
 
-    private fun Arrangor.toDto(): ArrangorDto = ArrangorDto(
+    private fun Arrangor.toDto() = ArrangorDto(
         id = id,
         source = AMT_ARRANGOR_SOURCE,
         navn = navn,
@@ -49,7 +50,7 @@ class ProducerService(
         overordnetArrangorId = overordnetArrangorId,
     )
 
-    private fun Ansatt.toDto(): AnsattDto = AnsattDto(
+    private fun Ansatt.toDto() = AnsattDto(
         id = id,
         source = AMT_ARRANGOR_SOURCE,
         personalia = personalia,

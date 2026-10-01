@@ -9,22 +9,18 @@ import no.nav.arrangor.client.enhetsregister.EnhetsregisterClient
 import no.nav.arrangor.client.enhetsregister.Virksomhet
 import no.nav.arrangor.client.person.PersonApi
 import no.nav.arrangor.client.person.PersonClient
-import no.nav.arrangor.kafka.TestKafkaConfig
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
 import org.junit.jupiter.api.AfterEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.annotation.Import
+import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.kafka.KafkaContainer
-import org.testcontainers.utility.DockerImageName
 import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestKafkaConfig::class)
 abstract class IntegrationTest : RepositoryTestBase() {
     @Autowired
     protected lateinit var objectMapper: ObjectMapper
@@ -51,15 +47,6 @@ abstract class IntegrationTest : RepositoryTestBase() {
 
         private fun getDiscoveryUrl(issuer: String = TOKEN_X): String = mockOAuth2Server.wellKnownUrl(issuer).toString()
 
-        @Suppress("unused")
-        private val kafkaContainer = KafkaContainer(DockerImageName.parse("apache/kafka"))
-            .withEnv("KAFKA_LISTENERS", "PLAINTEXT://:9092,BROKER://:9093,CONTROLLER://:9094")
-            // workaround for https://github.com/testcontainers/testcontainers-java/issues/9506
-            .apply {
-                start()
-                System.setProperty("KAFKA_BROKERS", bootstrapServers)
-            }
-
         @JvmStatic
         @DynamicPropertySource
         @Suppress("unused")
@@ -68,20 +55,7 @@ abstract class IntegrationTest : RepositoryTestBase() {
             registry.add(
                 "AZURE_OPENID_CONFIG_ISSUER",
             ) { getDiscoveryUrl(AZURE_AD).removeSuffix("/.well-known/openid-configuration") }
-            registry.add("AZURE_APP_CLIENT_ID") { "test-aud" }
-            registry.add("AZURE_APP_CLIENT_SECRET") { "test-client-secret" }
-            registry.add("AZURE_APP_JWK") { "test-jwk" }
-            registry.add("AZURE_OPENID_CONFIG_TOKEN_ENDPOINT") { "http://azuread/token" }
             registry.add("TOKEN_X_ISSUER") { getDiscoveryUrl(TOKEN_X).removeSuffix("/.well-known/openid-configuration") }
-            registry.add("TOKEN_X_CLIENT_ID") { "amt-arrangor-client-id" }
-
-            registry.add("AMT_ENHETSREGISTER_URL") { "http://amt-enhetsregister" }
-            registry.add("AMT_ENHETSREGISTER_SCOPE") { "test.enhetsregister.scope" }
-            registry.add("AMT_ENHETSREGISTER_ALLOWED_HOSTS") { "amt-enhetsregister" }
-            registry.add("AMT_ALTINN_URL") { "http://amt-altinn" }
-            registry.add("AMT_ALTINN_SCOPE") { "test.altinn.scope" }
-            registry.add("AMT_PERSON_URL") { "http://amt-person" }
-            registry.add("AMT_PERSON_SCOPE") { "test.person.scope" }
         }
     }
 
@@ -166,7 +140,7 @@ abstract class IntegrationTest : RepositoryTestBase() {
 }
 
 class TestResponse(
-    private val response: org.springframework.mock.web.MockHttpServletResponse,
+    private val response: MockHttpServletResponse,
 ) {
     val code: Int
         get() = response.status
