@@ -48,7 +48,7 @@ class ConsumerService(
             ?.takeIf { lagretOverordnetArrangor == null }
             ?.let { innerOverordnetOrgNr ->
                 logger.warn(
-                    "Fant ikke overordnet arrangør i db for orgnummer $innerOverordnetOrgNr, hneter overordnet arrangør for arrangør ${eksisterendeArrangor.id}",
+                    "Fant ikke overordnet arrangør i db for orgnummer $innerOverordnetOrgNr, henter overordnet arrangør for arrangør ${eksisterendeArrangor.id}",
                 )
 
                 enhetsregisterClient
