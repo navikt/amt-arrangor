@@ -34,22 +34,25 @@ class ConsumerService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun handleVirksomhetEndring(virksomhetDto: VirksomhetDto?) {
+        // tombstone ignoreres
         if (virksomhetDto == null) return
 
-        val arrangor = arrangorRepository.get(virksomhetDto.organisasjonsnummer)
+        // consumer er for oppdatering av eksisterende arrangør, om en slik ikke finnes, returner
+        val eksisterendeArrangor = arrangorRepository.get(virksomhetDto.organisasjonsnummer) ?: return
 
-        if (arrangor != null) {
-            val overordnetOrgNr = virksomhetDto.overordnetEnhetOrganisasjonsnummer
-            val lagretOverordnetArrangor = overordnetOrgNr?.let(arrangorRepository::get)
+        val overordnetOrgNr = virksomhetDto.overordnetEnhetOrganisasjonsnummer
+        val lagretOverordnetArrangor = overordnetOrgNr?.let(arrangorRepository::get)
 
-            // Hent eventuell manglende overordnet før transaksjonen, så HTTP-kallet ikke holder den åpen.
-            val nyOverordnetArrangor = if (overordnetOrgNr != null && lagretOverordnetArrangor == null) {
+        // Hent eventuell manglende overordnet arrangør før transaksjonen, så HTTP-kallet ikke holder den åpen.
+        val nyOverordnetArrangor = overordnetOrgNr
+            ?.takeIf { lagretOverordnetArrangor == null }
+            ?.let { innerOverordnetOrgNr ->
                 logger.warn(
-                    "Fant ikke overordnet arrangør for orgnummer $overordnetOrgNr, oppretter overordnet arrangør for arrangør ${arrangor.id}",
+                    "Fant ikke overordnet arrangør i db for orgnummer $innerOverordnetOrgNr, henter overordnet arrangør for arrangør ${eksisterendeArrangor.id}",
                 )
 
                 enhetsregisterClient
-                    .hentVirksomhet(overordnetOrgNr)
+                    .hentVirksomhet(innerOverordnetOrgNr)
                     .getOrNull()
                     ?.let {
                         ArrangorRepository.ArrangorDbo(
@@ -59,36 +62,37 @@ class ConsumerService(
                             overordnetArrangorId = null,
                         )
                     }.also {
-                        if (it == null) logger.warn("Kunne ikke opprette overordnet arrangør for orgnummer $overordnetOrgNr")
+                        if (it == null) logger.warn("Fant ikke overordnet arrangør for orgnummer $overordnetOrgNr i amt-enhetsregister")
                     }
-            } else {
-                null
             }
 
-            // Lagre forelder, arrangør og tilhørende outbox-meldinger atomisk
-            transactionTemplate.executeWithoutResult {
-                val overordnetArrangorId = getOverordnetArrangorId(
-                    overordnetEnhetOrganisasjonsnummer = overordnetOrgNr,
-                    arrangor = arrangor,
+        // Lagre forelder, arrangør og tilhørende outbox-meldinger atomisk
+        transactionTemplate.executeWithoutResult {
+            val overordnetArrangorId = overordnetOrgNr?.let {
+                getOverordnetArrangorId(
+                    overordnetEnhetOrganisasjonsnummer = it,
+                    arrangor = eksisterendeArrangor,
                     nyOverordnetArrangor = nyOverordnetArrangor,
                 )
-
-                val endringer = arrangor.copy(
-                    navn = virksomhetDto.navn,
-                    organisasjonsnummer = virksomhetDto.organisasjonsnummer,
-                    overordnetArrangorId = overordnetArrangorId,
-                )
-
-                val oppdatertArrangor = arrangorRepository.insertOrUpdate(endringer)
-                producerService.publishArrangor(oppdatertArrangor.toDomain())
-
-                // tell bare reelle dataendringer; mottatte hendelser telles separat nedenfor
-                if (arrangor != endringer) {
-                    eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.ARRANGOR_CHANGED))
-                }
-                eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.VIRKSOMHET_EVENT_CONSUMED))
             }
-            logger.info("Oppdatert arrangør med id ${arrangor.id}")
+
+            val oppdatertArrangor = eksisterendeArrangor.copy(
+                navn = virksomhetDto.navn,
+                organisasjonsnummer = virksomhetDto.organisasjonsnummer,
+                overordnetArrangorId = overordnetArrangorId,
+            )
+
+            // lagre og publiser arrangør kun hvis endringer
+            if (eksisterendeArrangor != oppdatertArrangor) {
+                val oppdatertArrangorFraDatabase = arrangorRepository.insertOrUpdate(oppdatertArrangor)
+                producerService.publishArrangor(oppdatertArrangorFraDatabase.toDomain())
+                eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.ARRANGOR_CHANGED))
+                logger.info("Oppdatert arrangør med id ${oppdatertArrangorFraDatabase.id}")
+            } else {
+                logger.info("Arrangør med id ${eksisterendeArrangor.id} er uendret")
+            }
+
+            eventPublisher.publishEvent(MetricEvent(MetricEvent.MetricName.VIRKSOMHET_EVENT_CONSUMED))
         }
     }
 
@@ -99,17 +103,15 @@ class ConsumerService(
      * Kalles fra [handleVirksomhetEndring] innenfor samme transaksjon.
      */
     private fun getOverordnetArrangorId(
-        overordnetEnhetOrganisasjonsnummer: String?,
+        overordnetEnhetOrganisasjonsnummer: String,
         arrangor: ArrangorRepository.ArrangorDbo,
         nyOverordnetArrangor: ArrangorRepository.ArrangorDbo?,
     ): UUID? {
-        if (overordnetEnhetOrganisasjonsnummer == null) return null
-
         // Slå opp på nytt i transaksjonen; forelderen kan ha blitt opprettet mens http-kallet pågikk
         val overordnetArrangor = arrangorRepository.get(overordnetEnhetOrganisasjonsnummer)
-            ?: nyOverordnetArrangor?.let {
+            ?: nyOverordnetArrangor?.let { arrangorDbo ->
                 arrangorRepository
-                    .insertOrUpdate(it)
+                    .insertOrUpdate(arrangorDbo)
                     .also { opprettet ->
                         logger.info("Opprettet ny overordnet arrangør med id ${opprettet.id}")
                         producerService.publishArrangor(opprettet.toDomain())
