@@ -16,8 +16,7 @@ import org.springframework.test.web.client.MockRestServiceServer
         "spring.http.serviceclient.amt-enhetsregister.base-url=http://amt-enhetsregister",
         "spring.http.serviceclient.amt-altinn.base-url=http://amt-altinn",
         "spring.http.serviceclient.amt-person.base-url=http://amt-person",
-        "amt-enhetsregister.url=http://amt-enhetsregister",
-        "amt-enhetsregister.allowed-hosts=amt-enhetsregister",
+        "AMT_ENHETSREGISTER_ALLOWED_HOSTS=amt-enhetsregister",
         "spring.test.restclient.mockrestserviceserver.enabled=false",
     ],
 )

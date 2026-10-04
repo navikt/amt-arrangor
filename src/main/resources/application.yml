@@ -9,7 +9,7 @@ spring:
   datasource:
     url: ${DB_JDBC_URL}
     hikari:
-      maximum-pool-size: 3
+      maximum-pool-size: 10
   flyway:
     postgresql:
       transactional-lock: false
@@ -86,19 +86,6 @@ management:
     metrics:
       export:
         enabled: true
-
-amt-enhetsregister:
-  url: ${AMT_ENHETSREGISTER_URL}
-  scope: ${AMT_ENHETSREGISTER_SCOPE}
-  allowed-hosts: ${AMT_ENHETSREGISTER_ALLOWED_HOSTS}
-
-amt-altinn:
-  url: ${AMT_ALTINN_URL}
-  scope: ${AMT_ALTINN_SCOPE}
-
-amt-person:
-  url: ${AMT_PERSON_URL}
-  scope: ${AMT_PERSON_SCOPE}
 
 kafka:
   auto-offset-reset: earliest
