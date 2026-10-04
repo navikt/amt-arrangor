@@ -8,7 +8,7 @@ import java.net.URI
 
 @Service
 class EnhetsregisterClient(
-    @Value($$"${amt-enhetsregister.allowed-hosts}") private val allowedHosts: Set<String>,
+    @Value($$"${AMT_ENHETSREGISTER_ALLOWED_HOSTS}") private val allowedHosts: Set<String>,
     @Value($$"${spring.http.serviceclient.amt-enhetsregister.base-url}") private val baseUrl: String,
     private val enhetsregisterApi: EnhetsregisterApi,
 ) {
