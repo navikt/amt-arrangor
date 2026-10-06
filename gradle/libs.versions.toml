@@ -9,7 +9,7 @@ spring-boot = "4.1.1"
 spring-dependency-management = "1.1.7"
 
 # Serialization / Avro
-jackson-module-kotlin = "3.2.2"
+jackson-module-kotlin = "3.2.3"
 
 # HTTP / logging
 logstash-encoder = "9.0"
