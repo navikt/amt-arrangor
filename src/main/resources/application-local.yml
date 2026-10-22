@@ -9,7 +9,7 @@ server:
 
 management:
   server:
-    port: 9093
+    port: 8084
 
 logging:
   config: classpath:logback-local.xml
