@@ -1,15 +1,15 @@
 [versions]
 # Kotlin & build
-kotlin = "2.4.10"
+kotlin = "2.4.21"
 ktlint-plugin = "14.2.0"
 ktlint-cli-version = "1.8.0"
 
 # Spring
-spring-boot = "4.1.1"
+spring-boot = "4.1.2"
 spring-dependency-management = "1.1.7"
 
 # Serialization / Avro
-jackson-module-kotlin = "3.2.3"
+jackson-module-kotlin = "3.2.4"
 
 # HTTP / logging
 logstash-encoder = "9.0"
@@ -20,11 +20,11 @@ amt-lib = "1.2026.10.20_09.19-755cf2186842"
 shedlock = "7.10.1"
 
 # Testing
-kotest = "6.2.5"
+kotest = "6.2.6"
 mockk = "1.14.11"
 mock-oauth2-server = "6.1.3"
 
-kafka-clients = "4.3.1"
+kafka-clients = "4.3.2"
 springmockk = "5.0.1"
 
 [plugins]
