@@ -14,6 +14,12 @@ repositories {
 }
 
 dependencies {
+    constraints {
+        implementation("at.yawk.lz4:lz4-java") {
+            version { strictly("1.11.4") }
+            because("Fixes CVE-2026-59949")
+        }
+    }
 
     // Spring Boot – kjerne og webserver (Jetty i stedet for medfølgende Tomcat)
     runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
