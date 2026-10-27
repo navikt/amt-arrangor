@@ -13,21 +13,7 @@ repositories {
     maven("https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
 }
 
-// Override Spring Boot's managed Jackson versions to apply the security fixes in 3.1.7.
-dependencyManagement {
-    dependencies {
-        dependency("tools.jackson.core:jackson-core:3.2.4")
-        dependency("tools.jackson.core:jackson-databind:3.2.4")
-    }
-}
-
 dependencies {
-    constraints {
-        implementation("at.yawk.lz4:lz4-java") {
-            version { strictly("1.11.4") }
-            because("Fixes CVE-2026-106451")
-        }
-    }
 
     // Spring Boot – kjerne og webserver (Jetty i stedet for medfølgende Tomcat)
     runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
@@ -101,6 +87,17 @@ kotlin {
 
 ktlint {
     version = libs.versions.ktlint.cli.version.get()
+}
+
+configurations.named("ktlint") {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            requested.version?.let {
+                useVersion(it)
+                because("ktlint must use the Kotlin versions it was compiled against")
+            }
+        }
+    }
 }
 
 tasks.named<Jar>("jar") {
